@@ -1,3 +1,4 @@
+import type { Window as KeplrWindow } from "@keplr-wallet/types"
 import { Effect, Option, Schedule, Stream, SubscriptionRef } from "effect"
 import { BINANCE_SMART_CHAIN, type Chain, type ChainId, COSMOS_HUB, ETHEREUM, RUJIRA_STAGENET } from "../chains.js"
 import type { EIP1193Provider } from "../evm.js"
@@ -13,6 +14,10 @@ import {
     WalletNotInstalledError
 } from "./index.js"
 
+declare global {
+    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+    interface Window extends KeplrWindow {}
+}
 const KEPLR_CONNECTION_KEY = "calc_keplr_connection"
 
 const SUPPORTED_CHAINS: ReadonlyArray<Chain> = [
@@ -87,7 +92,7 @@ export class KeplrService extends Effect.Service<KeplrService>()("KeplrService",
 
         if (storedConnection.status === "connected") {
             const provider = evmProviders.get("Keplr")?.provider
-            if (provider) setupEventListeners(provider, connectionRef)
+            if (provider) setupEvmEventListeners(provider, connectionRef)
         }
 
         return {
@@ -184,7 +189,7 @@ export class KeplrService extends Effect.Service<KeplrService>()("KeplrService",
     dependencies: [EIP1193Providers.Default, StorageService.Default]
 }) {}
 
-const setupEventListeners = (
+const setupEvmEventListeners = (
     provider: EIP1193Provider,
     connectionRef: SubscriptionRef.SubscriptionRef<Connection>
 ) => {
@@ -192,7 +197,6 @@ const setupEventListeners = (
     provider.removeAllListeners("accountsChanged")
 
     provider.on("chainChanged", (chainId: string) => {
-        console.log("Chain changed in Keplr:", chainId)
         Effect.runSync(
             SubscriptionRef.update(
                 connectionRef,
@@ -209,7 +213,6 @@ const setupEventListeners = (
     })
 
     provider.on("accountsChanged", (accounts: Array<string>) => {
-        console.log("Accounts changed in Keplr:", accounts)
         Effect.runSync(
             SubscriptionRef.update(connectionRef, (state) => {
                 if (!accounts.length) {
@@ -222,6 +225,24 @@ const setupEventListeners = (
                     }
                 }
 
+                return state
+            })
+        )
+    })
+}
+
+const setupCosmosEventListeners = (
+    connectionRef: SubscriptionRef.SubscriptionRef<Connection>
+) => {
+    window.addEventListener("keplr_keystorechange", () => {
+        console.log("Keplr keystore changed, updating connection state")
+        Effect.runSync(
+            SubscriptionRef.update(connectionRef, (state) => {
+                if (state.status === "connected" && typeof state.chain !== "string") {
+                    if (state.chain.type === "cosmos") {
+                        Effect.runPromise(connectCosmos(connectionRef, state.chain))
+                    }
+                }
                 return state
             })
         )
@@ -270,7 +291,7 @@ const connectEvm = (
         chain = SUPPORTED_CHAINS_BY_ID[newChainId]
     }
 
-    setupEventListeners(provider, connectionRef)
+    setupEvmEventListeners(provider, connectionRef)
 
     yield* SubscriptionRef.update(connectionRef, () => ({
         status: "connected" as const,
@@ -311,6 +332,8 @@ const connectCosmos = (
             }))
         )
     )
+
+    setupCosmosEventListeners(connectionRef)
 
     yield* SubscriptionRef.set(connectionRef, {
         status: "connected" as const,
@@ -407,7 +430,7 @@ const switchToEvmChainKeplr = (
         )
     )
 
-    setupEventListeners(provider, connectionRef)
+    setupEvmEventListeners(provider, connectionRef)
 
     yield* SubscriptionRef.update(connectionRef, (currentConnection) => ({
         ...currentConnection,

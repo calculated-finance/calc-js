@@ -6,6 +6,7 @@ import { BigDecimal, Schema } from "effect";
 import { useEffect, useState } from "react";
 import { Input } from "../../components/ui/input";
 import { useAssets } from "../../hooks/use-assets";
+import { useAvailableRoutes } from "../../hooks/use-available-routes";
 import {
   type ActionNodeParams,
   type CustomNodeData,
@@ -89,6 +90,11 @@ export function SwapNode({
     </div>
   );
 
+  const routes = useAvailableRoutes([
+    action.swap.swap_amount.denom,
+    action.swap.minimum_receive_amount.denom,
+  ]);
+
   return (
     <BaseNode
       handleLeft
@@ -162,13 +168,18 @@ export function SwapNode({
                 }}
               >
                 <div className="flex flex-col gap-8 text-xl">
+                  <code className="font-mono text-sm text-zinc-600 underline cursor-pointer absolute top-6 right-8">
+                    help
+                  </code>
                   <form.Field
                     name="swap.swap_amount.amount"
                     children={(field) => (
                       <div className="flex flex-col gap-2">
-                        <code className="font-mono ml-1 text-sm text-zinc-400">
-                          swap_amount
-                        </code>
+                        <div className="flex items-center justify-between">
+                          <code className="font-mono ml-1 text-sm text-zinc-400">
+                            swap_amount
+                          </code>
+                        </div>
                         <div className="flex bg-zinc-900 rounded gap-4">
                           <Input
                             type="number"
@@ -269,6 +280,25 @@ export function SwapNode({
                       </div>
                     )}
                   />
+                  <div className="flex flex-col gap-2">
+                    <code className="font-mono ml-1 text-sm text-zinc-400">
+                      swap_routes
+                    </code>
+                    <div className="flex gap-2 items-center h-9 w-full">
+                      <code
+                        className="text-sm text-black px-3 py-1 rounded-xs cursor-pointer"
+                        style={{ backgroundColor: "#B223EF" }}
+                      >
+                        RUJIRA
+                      </code>
+                      <code
+                        className="text-sm text-black px-3 py-1 rounded-xs cursor-pointer"
+                        style={{ backgroundColor: "#2CBE8C" }}
+                      >
+                        THORCHAIN
+                      </code>
+                    </div>
+                  </div>
                   <form.Field
                     name="swap.adjustment"
                     children={(field) => (
@@ -281,8 +311,9 @@ export function SwapNode({
                                 <code className="font-mono ml-1 text-sm text-zinc-400">
                                   slippage_tolerance
                                 </code>
-                                <div className="flex bg-zinc-900 rounded gap-4">
+                                <div className="flex bg-zinc-900 rounded">
                                   <Input
+                                    className="text-right"
                                     type="number"
                                     placeholder="0"
                                     id={field.name}
@@ -306,7 +337,7 @@ export function SwapNode({
                                     autoFocus={false}
                                   />
                                   <div className="flex items-center pr-4">
-                                    <code className="font-mono text-xl text-zinc-400">
+                                    <code className="font-mono text-xl text-zinc-500">
                                       %
                                     </code>
                                   </div>
@@ -325,7 +356,7 @@ export function SwapNode({
                             </code>
                             <div className="flex w-full justify-around items-center h-full">
                               <code
-                                className={`text-sm cursor-pointer hover:underline ${
+                                className={`text-sm cursor-pointer hover:text-green-500/60 ${
                                   field.state.value === "fixed"
                                     ? "text-green-500/90"
                                     : "text-zinc-500"
@@ -334,11 +365,11 @@ export function SwapNode({
                                   field.handleChange("fixed");
                                 }}
                               >
-                                fixed
+                                FIXED
                               </code>
                               <code className="text-sm">|</code>
                               <code
-                                className={`text-sm cursor-pointer hover:underline ${
+                                className={`text-sm cursor-pointer hover:text-orange-500/60 ${
                                   field.state.value !== "fixed"
                                     ? "text-orange-500/90"
                                     : "text-zinc-500"
@@ -354,7 +385,7 @@ export function SwapNode({
                                   });
                                 }}
                               >
-                                scaled
+                                SCALED
                               </code>
                             </div>
                           </div>
@@ -374,8 +405,9 @@ export function SwapNode({
                                   <code className="font-mono ml-1 text-sm text-zinc-400">
                                     base_receive_amount
                                   </code>
-                                  <div className="flex bg-zinc-900 rounded gap-4">
+                                  <div className="bg-zinc-900 rounded">
                                     <Input
+                                      className="text-right"
                                       type="number"
                                       placeholder="0.00"
                                       id={field.name}
@@ -398,9 +430,6 @@ export function SwapNode({
                                       tabIndex={-1}
                                       autoFocus={false}
                                     />
-                                    <div className="flex items-center pr-4">
-                                      <code className="font-mono text-xl"></code>
-                                    </div>
                                   </div>
                                 </div>
                               )}
@@ -412,8 +441,9 @@ export function SwapNode({
                                   <code className="font-mono ml-1 text-sm text-zinc-400">
                                     multiplier
                                   </code>
-                                  <div className="flex bg-zinc-900 rounded gap-4">
+                                  <div className="bg-zinc-900 rounded">
                                     <Input
+                                      className="text-right"
                                       type="number"
                                       placeholder="0.00"
                                       id={field.name}
@@ -443,9 +473,6 @@ export function SwapNode({
                                       tabIndex={-1}
                                       autoFocus={false}
                                     />
-                                    <div className="flex items-center pr-4">
-                                      <code className="font-mono text-xl"></code>
-                                    </div>
                                   </div>
                                 </div>
                               )}

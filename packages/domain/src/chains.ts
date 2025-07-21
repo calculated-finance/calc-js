@@ -69,7 +69,7 @@ export const RUJIRA_STAGENET: Chain = {
     type: "cosmos",
     id: "thorchain-stagenet-2",
     displayName: "Rujira Stagenet",
-    color: "#2B8CBE",
+    color: "#B223EF",
     rpcUrls: ["https://stagenet-rpc.ninerealms.com"],
     nativeCurrency: {
         name: "Rune",

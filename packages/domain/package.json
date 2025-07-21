@@ -39,5 +39,8 @@
         "**/*.ts"
       ]
     }
+  },
+  "devDependencies": {
+    "@keplr-wallet/types": "^0.12.252"
   }
 }

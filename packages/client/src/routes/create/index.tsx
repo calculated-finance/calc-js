@@ -303,7 +303,7 @@ export default function CreateStrategy() {
               >
                 Connect
               </code>
-              {connections.map((connection, i) => (
+              {connections.filter(c => c.status === 'connected').map((connection, i) => (
                 <ConnectionItem key={i} connection={connection} />
               ))}
             </div>

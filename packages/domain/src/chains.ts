@@ -25,3 +25,55 @@ export const Chain = Schema.Struct({
 export type Chain = Schema.Schema.Type<typeof Chain>
 
 export type ChainId = Schema.Schema.Type<typeof ChainId>
+
+export const ETHEREUM: Chain = {
+    type: "evm",
+    id: "0x1",
+    displayName: "Ethereum",
+    color: "#627EEA",
+    rpcUrls: ["https://ethereum-rpc.publicnode.com"],
+    nativeCurrency: {
+        name: "Ether",
+        symbol: "ETH",
+        decimals: 18
+    }
+}
+
+export const BINANCE_SMART_CHAIN: Chain = {
+    type: "evm",
+    id: "0x38",
+    displayName: "Binance Smart Chain",
+    color: "#F3BA2E",
+    rpcUrls: ["https://bsc-rpc.publicnode.com"],
+    nativeCurrency: {
+        name: "Binance Coin",
+        symbol: "BNB",
+        decimals: 18
+    }
+}
+
+export const COSMOS_HUB: Chain = {
+    type: "cosmos",
+    id: "cosmoshub-4",
+    displayName: "Cosmos Hub",
+    color: "#2B8CBE",
+    rpcUrls: ["https://rpc.cosmos.network"],
+    nativeCurrency: {
+        name: "Atom",
+        symbol: "ATOM",
+        decimals: 6
+    }
+}
+
+export const RUJIRA_STAGENET: Chain = {
+    type: "cosmos",
+    id: "thorchain-stagenet-2",
+    displayName: "Rujira Stagenet",
+    color: "#2B8CBE",
+    rpcUrls: ["https://stagenet-rpc.ninerealms.com"],
+    nativeCurrency: {
+        name: "Rune",
+        symbol: "RUNE",
+        decimals: 8
+    }
+}

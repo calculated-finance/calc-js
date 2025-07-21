@@ -45,13 +45,13 @@ export const SwapRoute = Schema.Union(
     ThorchainRoute
 )
 
-export const SwapRoutes = Schema.Array(SwapRoute)
+export type SwapRoute = Schema.Schema.Type<typeof SwapRoute>
 
 export const Swap = Schema.Struct({
     adjustment: SwapAmountAdjustment,
     maximum_slippage_bps: BasisPoints,
     minimum_receive_amount: Amount,
-    routes: SwapRoutes,
+    routes: Schema.Array(SwapRoute),
     swap_amount: Amount
 })
 

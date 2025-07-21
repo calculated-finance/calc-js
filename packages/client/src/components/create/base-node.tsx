@@ -87,7 +87,7 @@ export function BaseNode({
         }}
       >
         <ModalContent
-          className="bg-black p-10 rounded-lg border border-gray-300 w-fit"
+          className="bg-black p-10 rounded-xl border w-fit h-fit"
           drawerProps={{
             className: "px-6 pt-2 pb-10 border-none",
           }}

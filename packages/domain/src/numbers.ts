@@ -2,6 +2,13 @@ import { Schema } from "effect"
 
 export const BasisPoints = Schema.NonNegativeInt.pipe(
     Schema.clamp(0, 10_000)
+).pipe(
+    Schema.annotations({
+        message: () => ({
+            message: "Please provide a valid % value",
+            override: true
+        })
+    })
 )
 
 export const PercentageFromBasisPoints = Schema.transform(
@@ -14,7 +21,12 @@ export const PercentageFromBasisPoints = Schema.transform(
         decode: (value) => Math.round(value / 10_000),
         encode: (value) => Math.round(value * 10_000)
     }
-)
+).pipe(Schema.annotations({
+    message: () => ({
+        message: "Please provide a % value",
+        override: true
+    })
+}))
 
 export const formatNumber = (value: number, options?: Intl.NumberFormatOptions) => {
     return new Intl.NumberFormat("en-US", {

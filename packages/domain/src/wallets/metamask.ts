@@ -1,44 +1,23 @@
-import { Effect, Option, Stream, SubscriptionRef } from "effect"
-import type { Chain, ChainId } from "../chains.js"
+import { Effect, Option, Schedule, Stream, SubscriptionRef } from "effect"
+import { BINANCE_SMART_CHAIN, type Chain, type ChainId, ETHEREUM } from "../chains.js"
 import type { EIP1193Provider } from "../evm.js"
 import { EIP1193Providers } from "../evm.js"
 import { StorageService } from "../storage.js"
 import type { Connection, Wallet } from "./index.js"
 import {
     AccountsNotAvailableError,
-    ChainNotAvailableError,
+    ChainNotAddedError,
     ChainNotSupportedError,
     ConnectionRejectedError,
+    RpcError,
     WalletNotInstalledError
 } from "./index.js"
 
-const METAMASK_CONNECTION_KEY = "metamask_connection"
+const METAMASK_CONNECTION_KEY = "calc_metamask_connection"
 
 const SUPPORTED_CHAINS: ReadonlyArray<Chain> = [
-    {
-        type: "evm",
-        id: "0x1",
-        displayName: "Ethereum",
-        color: "#627EEA",
-        rpcUrls: ["https://ethereum-rpc.publicnode.com"],
-        nativeCurrency: {
-            name: "Ether",
-            symbol: "ETH",
-            decimals: 18
-        }
-    },
-    {
-        type: "evm",
-        id: "0x38",
-        displayName: "Binance Smart Chain",
-        color: "#F3BA2E",
-        rpcUrls: ["https://bsc-rpc.publicnode.com"],
-        nativeCurrency: {
-            name: "Binance Coin",
-            symbol: "BNB",
-            decimals: 18
-        }
-    }
+    ETHEREUM,
+    BINANCE_SMART_CHAIN
 ] as const
 
 export const SUPPORTED_CHAINS_BY_DISPLAY_NAME: Record<string, Chain> = SUPPORTED_CHAINS.reduce(
@@ -57,64 +36,72 @@ export const SUPPORTED_CHAINS_BY_ID: Record<string, Chain> = SUPPORTED_CHAINS.re
     {} as Record<string, Chain>
 )
 
+const METAMASK_WALLET: Wallet = {
+    type: "MetaMask" as const,
+    supportedChains: SUPPORTED_CHAINS,
+    icon: "images/metamask.svg"
+}
+
 export class MetaMaskService extends Effect.Service<MetaMaskService>()("MetaMaskService", {
     effect: Effect.gen(function*() {
         const providersRef = yield* EIP1193Providers
         const providers = yield* providersRef.get
         const storage = yield* StorageService
 
-        const storedConnection = yield* Effect.gen(function*() {
-            const stored = yield* storage.get(METAMASK_CONNECTION_KEY)
-            if (!stored) return { status: "disconnected" as const }
+        const connectionData = yield* storage.get(METAMASK_CONNECTION_KEY)
+        const storedConnection = connectionData ? JSON.parse(connectionData) : { status: "disconnected" }
 
-            try {
-                const parsed = JSON.parse(stored) as Connection
-                if (parsed.status === "connected") {
-                    const provider = providers.get("MetaMask")
-                    if (provider) {
-                        const accounts = yield* Effect.tryPromise({
-                            try: () => provider.provider.request({ method: "eth_accounts" }),
+        const connectionRef = yield* SubscriptionRef.make<Connection>(storedConnection)
+
+        if (storedConnection.status === "connected") {
+            yield* Effect.gen(function*() {
+                const provider = (yield* providersRef.get).get("MetaMask")?.provider
+
+                if (provider) {
+                    const accounts = yield* Effect.tryPromise({
+                        try: () => provider.request({ method: "eth_accounts" }),
+                        catch: () => []
+                    })
+
+                    if (!accounts.length) {
+                        yield* SubscriptionRef.set(connectionRef, { status: "disconnected" as const })
+                    } else {
+                        const chainId = yield* Effect.tryPromise({
+                            try: () => provider.request({ method: "eth_chainId" }),
                             catch: () => null
                         })
 
-                        if (accounts && accounts.length > 0 && accounts.includes(parsed.account.address)) {
-                            console.log("Restored MetaMask connection from storage")
-                            return parsed
-                        }
+                        yield* SubscriptionRef.set(connectionRef, {
+                            status: "connected" as const,
+                            account: {
+                                address: accounts[0],
+                                chainType: "evm" as const
+                            },
+                            wallet: METAMASK_WALLET,
+                            chain: SUPPORTED_CHAINS_BY_ID[chainId] || "unsupported"
+                        })
+
+                        setupEventListeners(provider, connectionRef)
                     }
+                } else {
+                    yield* SubscriptionRef.set(connectionRef, { status: "disconnected" as const })
                 }
-            } catch {
-                yield* storage.remove(METAMASK_CONNECTION_KEY)
-            }
+            })
+        }
 
-            return { status: "disconnected" as const }
-        }).pipe(Effect.orElse(() => Effect.succeed({ status: "disconnected" as const })))
-
-        const connection = yield* SubscriptionRef.make<Connection>(storedConnection)
-
-        const setupStorageSync = Effect.gen(function*() {
-            yield* Stream.runForEach(
-                connection.changes,
+        yield* Effect.forkDaemon(
+            Stream.runForEach(
+                connectionRef.changes,
                 (connectionState) =>
-                    Effect.gen(function*() {
-                        if (connectionState.status === "connected") {
-                            yield* storage.set(METAMASK_CONNECTION_KEY, JSON.stringify(connectionState))
-                        } else {
-                            yield* storage.remove(METAMASK_CONNECTION_KEY)
-                        }
-                    })
+                    connectionState.status === "connected"
+                        ? storage.set(METAMASK_CONNECTION_KEY, JSON.stringify(connectionState))
+                        : storage.remove(METAMASK_CONNECTION_KEY)
             )
-        })
-
-        yield* Effect.forkDaemon(setupStorageSync)
+        )
 
         if (storedConnection.status === "connected") {
-            const provider = providers.get("MetaMask")
-            if (provider) {
-                yield* Effect.sync(() => {
-                    setupEventListeners(provider.provider, connection)
-                })
-            }
+            const provider = providers.get("MetaMask")?.provider
+            if (provider) setupEventListeners(provider, connectionRef)
         }
 
         return {
@@ -122,60 +109,69 @@ export class MetaMaskService extends Effect.Service<MetaMaskService>()("MetaMask
                 providersRef.changes,
                 (providers) =>
                     providers.has("MetaMask")
-                        ? Option.some({
-                            type: "MetaMask",
-                            supportedChains: SUPPORTED_CHAINS,
-                            icon: "images/metamask.svg"
-                        } as Wallet)
+                        ? Option.some(METAMASK_WALLET)
                         : Option.none()
             ),
+
             connect: (chainId?: ChainId) =>
                 Effect.gen(function*() {
-                    const provider = providers.get("MetaMask")
+                    const provider = (yield* providersRef.get).get("MetaMask")?.provider
 
                     if (!provider) {
                         return yield* Effect.fail(new WalletNotInstalledError({ walletType: "MetaMask" }))
                     }
 
-                    const chain = chainId && SUPPORTED_CHAINS_BY_ID[chainId]
-
-                    if (chainId && (!chain || chain.type !== "evm")) {
-                        return yield* Effect.fail(new ChainNotSupportedError({ walletType: "MetaMask", chainId }))
+                    if (chainId) {
+                        const chain = SUPPORTED_CHAINS_BY_ID[chainId]
+                        if (!chain || chain.type !== "evm") {
+                            return yield* Effect.fail(new ChainNotSupportedError({ walletType: "MetaMask", chainId }))
+                        }
                     }
 
-                    yield* connectEvm(provider.provider, connection, chainId)
+                    yield* SubscriptionRef.set(connectionRef, {
+                        status: "connecting" as const,
+                        wallet: METAMASK_WALLET.type
+                    })
+
+                    yield* connectEvm(provider, connectionRef, chainId)
                 }),
-            connection: connection.changes,
+
+            connection: connectionRef.changes,
+
             switchChain: (chainId: ChainId) =>
                 Effect.gen(function*() {
-                    const provider = providers.get("MetaMask")
+                    const connection = yield* connectionRef.get
+
+                    if (connection.status === "connected" && typeof connection.chain !== "string") {
+                        if (connection.chain.id === chainId) {
+                            return yield* Effect.succeed(connection)
+                        }
+                    }
+
+                    const provider = (yield* providersRef.get).get("MetaMask")?.provider
 
                     if (!provider) {
                         return yield* Effect.fail(new WalletNotInstalledError({ walletType: "MetaMask" }))
                     }
 
-                    const chain = chainId && SUPPORTED_CHAINS_BY_ID[chainId]
-
-                    if (chainId && (!chain || chain.type !== "evm")) {
+                    const chain = SUPPORTED_CHAINS_BY_ID[chainId]
+                    if (!chain || chain.type !== "evm") {
                         return yield* Effect.fail(new ChainNotSupportedError({ walletType: "MetaMask", chainId }))
                     }
 
-                    yield* switchChainMetaMask(provider.provider, connection, chainId)
+                    yield* switchChainMetaMask(provider, connectionRef, chainId)
                 }),
+
             disconnect: () =>
                 Effect.gen(function*() {
-                    const provider = providers.get("MetaMask")
+                    const provider = (yield* providersRef.get).get("MetaMask")?.provider
 
-                    if (!provider) {
-                        return yield* Effect.fail(new WalletNotInstalledError({ walletType: "MetaMask" }))
+                    if (provider) {
+                        provider.removeAllListeners("chainChanged")
+                        provider.removeAllListeners("accountsChanged")
                     }
 
-                    provider.provider.removeAllListeners("chainChanged")
-                    provider.provider.removeAllListeners("accountsChanged")
-
-                    yield* SubscriptionRef.update(connection, () => ({
-                        status: "disconnected" as const
-                    }))
+                    yield* SubscriptionRef.set(connectionRef, { status: "disconnected" as const })
                 })
         }
     }),
@@ -186,62 +182,38 @@ const setupEventListeners = (
     provider: EIP1193Provider,
     connectionRef: SubscriptionRef.SubscriptionRef<Connection>
 ) => {
-    const handleChainChanged = (newChainId: string) => {
-        const newChain = SUPPORTED_CHAINS_BY_ID[newChainId]
-        if (newChain) {
-            Effect.runSync(
-                SubscriptionRef.update(connectionRef, (currentConnection) => {
-                    if (currentConnection.status === "connected") {
-                        return {
-                            ...currentConnection,
-                            chain: newChain
-                        }
-                    }
-                    return currentConnection
-                })
-            )
-        } else {
-            Effect.runSync(
-                SubscriptionRef.update(connectionRef, (currentConnection) => {
-                    if (currentConnection.status === "connected") {
-                        return {
-                            ...currentConnection,
-                            chain: "unsupported_chain" as const
-                        }
-                    }
-                    return currentConnection
-                })
-            )
-        }
-    }
-
-    const handleAccountsChanged = (newAccounts: Array<string>) => {
-        if (newAccounts.length === 0) {
-            Effect.runPromise(
-                SubscriptionRef.update(connectionRef, () => ({
-                    status: "disconnected" as const
-                }))
-            )
-        } else {
-            Effect.runPromise(
-                SubscriptionRef.update(connectionRef, (currentConnection) => {
-                    if (currentConnection.status === "connected") {
-                        return {
-                            ...currentConnection,
-                            account: { ...currentConnection.account, address: newAccounts[0] }
-                        }
-                    }
-                    return currentConnection
-                })
-            )
-        }
-    }
-
     provider.removeAllListeners("chainChanged")
     provider.removeAllListeners("accountsChanged")
 
-    provider.on("chainChanged", handleChainChanged)
-    provider.on("accountsChanged", handleAccountsChanged)
+    provider.on("chainChanged", (chainId: string) => {
+        Effect.runSync(
+            SubscriptionRef.update(
+                connectionRef,
+                (state) =>
+                    state.status === "connected"
+                        ? { ...state, chain: SUPPORTED_CHAINS_BY_ID[chainId] || "unsupported" }
+                        : state
+            )
+        )
+    })
+
+    provider.on("accountsChanged", (accounts: Array<string>) => {
+        Effect.runSync(
+            SubscriptionRef.update(connectionRef, (state) => {
+                if (!accounts.length) {
+                    return { status: "disconnected" as const }
+                }
+                if (state.status === "connected") {
+                    return {
+                        ...state,
+                        account: { ...state.account, address: accounts[0] }
+                    }
+                }
+
+                return state
+            })
+        )
+    })
 }
 
 const connectEvm = (
@@ -249,27 +221,40 @@ const connectEvm = (
     connectionRef: SubscriptionRef.SubscriptionRef<Connection>,
     requestedChainId?: ChainId
 ) => Effect.gen(function*() {
-    const accounts = yield* Effect.tryPromise({
+    const tryFetchAccounts = Effect.tryPromise({
         try: () => provider.request({ method: "eth_requestAccounts" }),
-        catch: () => new AccountsNotAvailableError({ walletType: "MetaMask" })
+        catch: (error: any) =>
+            "code" in error && error.code === 4001
+                ? new ConnectionRejectedError({ walletType: "MetaMask", reason: "User rejected connection request" })
+                : new RpcError({ walletType: "MetaMask", message: error.message })
+    })
+
+    const accounts = yield* Effect.retry(tryFetchAccounts, {
+        while: (error) => error instanceof RpcError,
+        times: 3,
+        schedule: Schedule.exponential("2 seconds")
     })
 
     if (!accounts || accounts.length === 0) {
-        throw new Error("No accounts found")
+        return yield* Effect.fail(new AccountsNotAvailableError({ walletType: "MetaMask" }))
     }
 
     const chainId = yield* Effect.tryPromise({
         try: () => provider.request({ method: "eth_chainId" }),
-        catch: () => new ChainNotAvailableError({ walletType: "MetaMask" })
+        catch: (e) =>
+            Effect.fail(
+                new RpcError({
+                    walletType: "MetaMask",
+                    message: e instanceof Error ? e.message : `Unknown network issue: ${e}`
+                })
+            )
     })
 
     let chain = SUPPORTED_CHAINS_BY_ID[chainId]
 
-    if (!chain || chainId !== requestedChainId) {
-        const newChainId = requestedChainId || SUPPORTED_CHAINS_BY_DISPLAY_NAME["Ethereum"].id
-
+    if (!chain || (requestedChainId && chainId !== requestedChainId)) {
+        const newChainId = requestedChainId || SUPPORTED_CHAINS[0].id
         yield* switchChainMetaMask(provider, connectionRef, newChainId)
-
         chain = SUPPORTED_CHAINS_BY_ID[newChainId]
     }
 
@@ -277,17 +262,13 @@ const connectEvm = (
 
     yield* SubscriptionRef.update(connectionRef, () => ({
         status: "connected" as const,
-        wallet: {
-            type: "MetaMask" as const,
-            supportedChains: SUPPORTED_CHAINS,
-            icon: "images/metamask.svg"
-        },
+        wallet: METAMASK_WALLET,
         account: { address: accounts[0], chainType: "evm" as const },
         chain
     }))
 })
 
-const addEthereumChain = (
+const addEvmChain = (
     provider: EIP1193Provider,
     connectionRef: SubscriptionRef.SubscriptionRef<Connection>,
     chain: Chain
@@ -297,7 +278,7 @@ const addEthereumChain = (
         chain: "adding_chain" as const
     }))
 
-    yield* Effect.tryPromise({
+    const tryAddChain = Effect.tryPromise({
         try: () =>
             provider.request({
                 method: "wallet_addEthereumChain",
@@ -308,18 +289,27 @@ const addEthereumChain = (
                     nativeCurrency: chain.nativeCurrency
                 }]
             }),
-        catch: (error) => {
-            if (error instanceof Error) {
-                if (error.message.includes("User rejected")) {
-                    return new ConnectionRejectedError({
-                        walletType: "MetaMask",
-                        reason: error.message
-                    })
-                }
-                return new WalletNotInstalledError({ walletType: "MetaMask" })
-            }
-        }
+        catch: (error: any) =>
+            "code" in error && (error.code === 4001 || error.code === 4100) ?
+                new ConnectionRejectedError({
+                    walletType: "MetaMask",
+                    reason: error.message
+                }) :
+                new RpcError({ walletType: "MetaMask", message: error.message })
     })
+
+    yield* Effect.retry(tryAddChain, {
+        while: (error) => error instanceof RpcError,
+        times: 3,
+        schedule: Schedule.exponential("2 seconds")
+    }).pipe(
+        Effect.catchAll(() =>
+            SubscriptionRef.update(connectionRef, (conn) => ({
+                ...conn,
+                chain: "unsupported" as const
+            }))
+        )
+    )
 })
 
 const switchChainMetaMask = (
@@ -332,35 +322,31 @@ const switchChainMetaMask = (
         chain: "switching_chain" as const
     }))
 
-    yield* Effect.tryPromise({
+    const trySwitchChain = Effect.tryPromise({
         try: () =>
             provider.request({
                 method: "wallet_switchEthereumChain",
                 params: [{ chainId }]
             }),
-        catch: (error: any) => {
-            if ("code" in error) {
-                if (error.code == 4902) {
-                    return new ChainNotSupportedError({ walletType: "MetaMask", chainId })
-                }
-            }
-            return error
-        }
-    }).pipe(Effect.catchTag("ChainNotSupportedError", (_) =>
-        Effect.gen(function*() {
-            yield* addEthereumChain(provider, connectionRef, SUPPORTED_CHAINS_BY_ID[chainId])
-        })))
-
-    yield* SubscriptionRef.update(connectionRef, (currentConnection) => {
-        if (currentConnection.status === "connected") {
-            const newChain = SUPPORTED_CHAINS_BY_ID[chainId]
-            if (newChain) {
-                return {
-                    ...currentConnection,
-                    chain: newChain
-                }
-            }
-        }
-        return currentConnection
+        catch: (error: any) =>
+            "code" in error || error.code == 4902
+                ? new ChainNotAddedError({ walletType: "MetaMask", chainId })
+                : new RpcError({ walletType: "MetaMask", message: error.message })
     })
+
+    yield* Effect.retry(trySwitchChain, {
+        while: (error) => error instanceof RpcError,
+        schedule: Schedule.exponential("2 seconds")
+    }).pipe(
+        Effect.catchTag(
+            "ChainNotAddedError",
+            (_) => addEvmChain(provider, connectionRef, SUPPORTED_CHAINS_BY_ID[chainId])
+        ),
+        Effect.catchAll(() =>
+            SubscriptionRef.update(connectionRef, (conn) => ({
+                ...conn,
+                chain: "unsupported" as const
+            }))
+        )
+    )
 })

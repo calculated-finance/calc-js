@@ -1,6 +1,7 @@
 import { Data, Effect, Schema, Stream } from "effect"
 import type { ChainId } from "../chains.js"
 import { Chain, ChainType } from "../chains.js"
+import { KeplrService } from "./keplr.js"
 import { MetaMaskService } from "./metamask.js"
 
 export const WalletType = Schema.Literal(
@@ -37,7 +38,7 @@ export const Connection = Schema.Union(
     Schema.Struct({
         status: Schema.Literal("connected"),
         wallet: Wallet,
-        chain: Schema.Union(Chain, Schema.Literal("switching_chain", "adding_chain", "unsupported_chain")),
+        chain: Schema.Union(Chain, Schema.Literal("switching_chain", "adding_chain", "unsupported")),
         account: Account
     })
 )
@@ -49,6 +50,11 @@ export class WalletNotInstalledError extends Data.TaggedError("WalletNotInstalle
 }> {}
 
 export class ChainNotSupportedError extends Data.TaggedError("ChainNotSupportedError")<{
+    walletType: string
+    chainId: ChainId
+}> {}
+
+export class ChainNotAddedError extends Data.TaggedError("ChainNotAddedError")<{
     walletType: string
     chainId: ChainId
 }> {}
@@ -66,6 +72,11 @@ export class ConnectionRejectedError extends Data.TaggedError("ConnectionRejecte
     reason?: string
 }> {}
 
+export class RpcError extends Data.TaggedError("RpcError")<{
+    walletType: string
+    message: string
+}> {}
+
 export type WalletError =
     | WalletNotInstalledError
     | AccountsNotAvailableError
@@ -76,20 +87,37 @@ export type WalletError =
 export class WalletService extends Effect.Service<WalletService>()("WalletService", {
     effect: Effect.gen(function*() {
         const metaMaskService = yield* MetaMaskService
+        const keplrService = yield* KeplrService
 
         return {
-            wallets: Stream.map(metaMaskService.wallet, (wallet) => wallet ? [wallet] : []),
+            wallets: Stream.zipLatestWith(
+                metaMaskService.wallet,
+                keplrService.wallet,
+                (...wallets) => wallets.filter((wallet) => !!wallet)
+            ),
+
             connect: (wallet: Wallet, chainId?: ChainId) =>
                 Effect.gen(function*() {
                     switch (wallet.type) {
                         case "MetaMask":
                             yield* metaMaskService.connect(chainId)
                             break
+                        case "Keplr":
+                            yield* keplrService.connect(chainId)
+                            break
                         default:
                             yield* Effect.fail(new WalletNotInstalledError({ walletType: wallet.type }))
                     }
                 }),
-            connection: Stream.debounce(metaMaskService.connection, 200),
+
+            connection: Stream.debounce(
+                Stream.zipLatest(
+                    metaMaskService.connection,
+                    keplrService.connection
+                ),
+                200
+            ),
+
             switchChain: (wallet: Wallet, chainId: ChainId) =>
                 Effect.gen(function*() {
                     console.log("Switching chain", wallet, chainId)
@@ -97,15 +125,22 @@ export class WalletService extends Effect.Service<WalletService>()("WalletServic
                         case "MetaMask":
                             yield* metaMaskService.switchChain(chainId)
                             break
+                        case "Keplr":
+                            yield* keplrService.switchChain(chainId)
+                            break
                         default:
                             return yield* Effect.fail(new WalletNotInstalledError({ walletType: wallet.type }))
                     }
                 }),
+
             disconnect: (wallet: Wallet) =>
                 Effect.gen(function*() {
                     switch (wallet.type) {
                         case "MetaMask":
                             yield* metaMaskService.disconnect()
+                            break
+                        case "Keplr":
+                            yield* keplrService.disconnect()
                             break
                         default:
                             return yield* Effect.fail(new WalletNotInstalledError({ walletType: wallet.type }))
@@ -113,5 +148,5 @@ export class WalletService extends Effect.Service<WalletService>()("WalletServic
                 })
         }
     }),
-    dependencies: [MetaMaskService.Default]
+    dependencies: [MetaMaskService.Default, KeplrService.Default]
 }) {}

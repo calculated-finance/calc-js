@@ -1,7 +1,7 @@
 import { useCreateActionStore } from "@/hooks/use-action-store";
 import { createFileRoute } from "@tanstack/react-router";
 import { Action, ManyAction, SwapAction } from "@template/domain/src/calc";
-import type { Wallet } from "@template/domain/src/wallets";
+import { Connection, type Wallet } from "@template/domain/src/wallets";
 import {
   Background,
   Panel,
@@ -18,10 +18,9 @@ import { Schema } from "effect";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { BaseNode } from "../../components/create/base-node";
 import { SwapNode } from "../../components/create/swap-node";
-import { useWalletContext } from "../../components/providers/wallet-provider";
-import { Button } from "../../components/ui/button";
 import { Dialog, DialogContent } from "../../components/ui/dialog";
 import { useNodeVisibilityStore } from "../../hooks/use-node-visibility";
+import { useWalletContext } from "../../hooks/use-wallet-context";
 import {
   layoutAction,
   type ActionNodeParams,
@@ -132,22 +131,6 @@ function ConnectWallet({
   );
 }
 
-function SwitchChain(wallet: Wallet) {
-  return (
-    <div className="flex flex-col gap-2">
-      {wallet.supportedChains.map((chain) => (
-        <code
-          key={chain.id}
-          style={{ color: chain.color }}
-          className="text-lg hover:underline cursor-pointer"
-        >
-          {chain.displayName}
-        </code>
-      ))}
-    </div>
-  );
-}
-
 const nodeTypes = {
   swapNode: SwapNode,
   manyNode: ManyNode,
@@ -159,16 +142,17 @@ export default function CreateStrategy() {
   const { action, updateAction, removeAction } = useCreateActionStore();
 
   const [isShowingWallets, setIsShowingWallets] = useState(false);
-  const [isShowingChains, setIsShowingChains] = useState(false);
+  const [switchingChainsConnection, setSwitchingChainsConnection] =
+    useState<Connection>();
 
-  const { wallets, connect, connection, switchChain, disconnect } =
+  const { wallets, connect, connections, switchChain, disconnect } =
     useWalletContext();
 
   const { isVisible, setVisible: setFlowVisible } = useNodeVisibilityStore();
 
   useEffect(() => {
-    setFlowVisible(!isShowingWallets && !isShowingChains);
-  }, [isShowingWallets, isShowingChains]);
+    setFlowVisible(!isShowingWallets && !switchingChainsConnection);
+  }, [isShowingWallets, switchingChainsConnection]);
 
   const handleRootUpdate = useCallback(
     (action: Action) => {
@@ -224,6 +208,54 @@ export default function CreateStrategy() {
     layoutNodes();
   }, [layoutNodes]);
 
+  function ConnectionItem({ connection }: { connection: Connection }) {
+    return (
+      <div className="flex flex-col gap-2">
+        {connection?.status === "connecting" ? (
+          <code>Connecting...</code>
+        ) : (
+          connection?.status === "connected" && (
+            <code
+              onClick={() => disconnect(connection.wallet)}
+              className="text-lg hover:underline cursor-pointer"
+            >
+              {connection.wallet.type}:{" "}
+              {connection.account.address.substring(0, 5)}...
+              {connection.account.address.substring(
+                connection.account.address.length - 7
+              )}
+            </code>
+          )
+        )}
+        {connection?.status === "connected" &&
+          (typeof connection.chain !== "string" ? (
+            <code
+              style={{
+                color: connection.chain.color,
+              }}
+              className="text-lg hover:underline cursor-pointer text-right"
+              onClick={() => setSwitchingChainsConnection(connection)}
+            >
+              {connection.chain.displayName}
+            </code>
+          ) : connection.chain === "switching_chain" ? (
+            <code className="text-lg text-right">Switching Chain...</code>
+          ) : connection.chain === "adding_chain" ? (
+            <code className="text-lg text-right">Adding Chain...</code>
+          ) : (
+            connection.chain === "unsupported" && (
+              <code
+                className="text-lg hover:underline cursor-pointer"
+                onClick={() => setSwitchingChainsConnection(connection)}
+              >
+                Unsupported Chain
+              </code>
+            )
+          ))}
+      </div>
+    );
+  }
+
   return (
     <div className="h-screen w-screen flex">
       <ReactFlow
@@ -254,62 +286,26 @@ export default function CreateStrategy() {
         defaultViewport={{ x: 0, y: 0, zoom: 1 }}
         className="w-screen h-screen"
       >
-        <Background id="1" gap={30} color="#FFB636" offset={30} />
-        <Background id="2" gap={30} color="#9CCBF0" />
-        {!isShowingWallets && (
+        <Background
+          id="1"
+          gap={30}
+          color="#FFB636"
+          offset={30}
+          className="opacity-80"
+        />
+        <Background id="2" gap={30} color="#9CCBF0" className="opacity-80" />
+        {!isShowingWallets && !switchingChainsConnection && (
           <Panel position="top-right">
-            <div className="flex flex-col gap-2 items-end">
-              {connection?.status === "disconnected" ? (
-                <code
-                  onClick={() => setIsShowingWallets(!isShowingWallets)}
-                  className="text-lg hover:underline cursor-pointer"
-                >
-                  Connect
-                </code>
-              ) : connection?.status === "connecting" ? (
-                <Button
-                  disabled
-                  className="bg-black text-zinc-200 border-zinc-300 border hover:bg-zinc-800 transition-colors"
-                >
-                  <code>Connecting...</code>
-                </Button>
-              ) : (
-                connection?.status === "connected" && (
-                  <code
-                    onClick={() => disconnect(connection.wallet)}
-                    className="text-lg hover:underline cursor-pointer"
-                  >
-                    {connection.wallet.type}:{" "}
-                    {connection.account.address.substring(0, 6)}...
-                    {connection.account.address.substring(
-                      connection.account.address.length - 4
-                    )}{" "}
-                  </code>
-                )
-              )}
-              {connection?.status === "connected" &&
-                (typeof connection.chain !== "string" ? (
-                  <code
-                    style={{ color: connection.chain.color }}
-                    className="text-lg hover:underline cursor-pointer"
-                    onClick={() => setIsShowingChains(!isShowingChains)}
-                  >
-                    {connection.chain.displayName}
-                  </code>
-                ) : connection.chain === "switching_chain" ? (
-                  <code className="text-lg">Switching Chain...</code>
-                ) : connection.chain === "adding_chain" ? (
-                  <code className="text-lg">Adding Chain...</code>
-                ) : (
-                  connection.chain === "unsupported_chain" && (
-                    <code
-                      className="text-lg hover:underline cursor-pointer"
-                      onClick={() => setIsShowingChains(!isShowingChains)}
-                    >
-                      Unsupported Chain
-                    </code>
-                  )
-                ))}
+            <div className="flex flex-col gap-8 items-end pt-1 pr-1">
+              <code
+                onClick={() => setIsShowingWallets(!isShowingWallets)}
+                className="text-lg hover:underline cursor-pointer"
+              >
+                Connect
+              </code>
+              {connections.map((connection, i) => (
+                <ConnectionItem key={i} connection={connection} />
+              ))}
             </div>
           </Panel>
         )}
@@ -335,8 +331,10 @@ export default function CreateStrategy() {
             </DialogContent>
           </Dialog>
           <Dialog
-            open={connection?.status === "connected" && isShowingChains}
-            onOpenChange={setIsShowingChains}
+            open={!!switchingChainsConnection}
+            onOpenChange={(open) =>
+              open ? null : setSwitchingChainsConnection(undefined)
+            }
           >
             <DialogContent
               className="bg-transparent border-none flex justify-center items-center"
@@ -344,20 +342,25 @@ export default function CreateStrategy() {
               showCloseButton={false}
             >
               <div className="flex gap-14 flex-wrap justify-center">
-                {connection?.status === "connected" &&
-                  connection.wallet.supportedChains.map((chain) => (
-                    <code
-                      key={chain.id}
-                      style={{ color: chain.color }}
-                      className="text-lg hover:underline cursor-pointer"
-                      onClick={() => {
-                        switchChain(connection.wallet, chain.id);
-                        setIsShowingChains(false);
-                      }}
-                    >
-                      {chain.displayName}
-                    </code>
-                  ))}
+                {switchingChainsConnection?.status === "connected" &&
+                  switchingChainsConnection.wallet.supportedChains.map(
+                    (chain) => (
+                      <code
+                        key={chain.id}
+                        style={{ color: chain.color }}
+                        className="text-lg hover:underline cursor-pointer"
+                        onClick={() => {
+                          switchChain(
+                            switchingChainsConnection.wallet,
+                            chain.id
+                          );
+                          setSwitchingChainsConnection(undefined);
+                        }}
+                      >
+                        {chain.displayName}
+                      </code>
+                    )
+                  )}
               </div>
             </DialogContent>
           </Dialog>

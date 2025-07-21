@@ -13,7 +13,7 @@ type WalletProviderProps = {
 
 type WalletProviderState = {
   wallets: Array<Wallet>;
-  connection: Connection | null;
+  connections: Array<Connection>;
   connect: (wallet: Wallet) => Promise<void>;
   switchChain: (wallet: Wallet, chainId: ChainId) => Promise<void>;
   disconnect: (wallet: Wallet) => void;
@@ -21,7 +21,7 @@ type WalletProviderState = {
 
 const initialState: WalletProviderState = {
   wallets: [],
-  connection: null,
+  connections: [],
   connect: () => {
     throw new Error("Connect function not provided yet");
   },
@@ -37,7 +37,7 @@ const memoMap = Effect.runSync(Layer.makeMemoMap);
 
 const runtime = ManagedRuntime.make(WalletService.Default, memoMap);
 
-const WalletProviderContext =
+export const WalletProviderContext =
   React.createContext<WalletProviderState>(initialState);
 
 export const WalletProvider = ({ children }: WalletProviderProps) => {
@@ -70,7 +70,7 @@ export const WalletProvider = ({ children }: WalletProviderProps) => {
             Effect.sync(() => {
               setState((prev) => ({
                 ...prev,
-                connection,
+                connections: connection,
                 connect: (wallet: Wallet) =>
                   Effect.runPromise(walletService.connect(wallet)),
                 switchChain: (wallet: Wallet, chainId: ChainId) =>
@@ -94,13 +94,4 @@ export const WalletProvider = ({ children }: WalletProviderProps) => {
       {children}
     </WalletProviderContext.Provider>
   );
-};
-
-export const useWalletContext = () => {
-  const context = React.useContext(WalletProviderContext);
-
-  if (context === undefined)
-    throw new Error("useWallet must be used within a WalletProvider");
-
-  return context;
 };

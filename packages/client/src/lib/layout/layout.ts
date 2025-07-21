@@ -1,0 +1,64 @@
+import type { Action } from "@template/domain/src/calc";
+import type { Wallet } from "@template/domain/src/wallets";
+import type { Edge, Node } from "@xyflow/react";
+import { layoutManyAction } from "./layout-many";
+import { layoutSwapAction } from "./layout-swap";
+
+export interface LayoutContext {
+  startX: number;
+  startY: number;
+  nodeSpacing: number;
+  generateId: () => string;
+}
+
+export type ActionNodeParams<T extends Action = Action> = {
+  action: T;
+  update: (action: T) => void;
+  remove: () => void;
+}
+
+export type WalletNodeParams = {
+  wallet: Wallet
+}
+
+export type CustomNodeData<T> = {
+  data: T;
+}
+
+export interface LayoutResult<T extends Record<string, any>> {
+  nodes: Node<T>[];
+  edges: Edge[];
+  bounds: {
+    width: number;
+    height: number;
+  };
+}
+
+export type LayoutFunction<T extends Record<string, any>> = (
+  nodeData: T,
+  context: LayoutContext,
+  layout: LayoutFunction<T>
+) => LayoutResult<T>;
+
+const layoutFunctions: Record<string, LayoutFunction<ActionNodeParams>> = {
+  swap: layoutSwapAction,
+  many: layoutManyAction,
+};
+
+export const layoutAction = (
+  { action, ...params }: ActionNodeParams,
+  context: LayoutContext,
+): LayoutResult<ActionNodeParams> => {
+  if (!action || typeof action !== "object") {
+    throw new Error("Invalid data provided for layoutAction");
+  }
+
+  const actionType = Object.keys(action)[0];
+  const layoutFunction = layoutFunctions[actionType];
+
+  if (!layoutFunction) {
+    throw new Error(`No layout function found for action type: ${actionType}`);
+  }
+
+  return layoutFunction({ action, ...params }, context, layoutAction);
+};

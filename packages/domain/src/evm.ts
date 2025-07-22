@@ -39,7 +39,6 @@ export class EIP1193Providers extends Effect.Service<EIP1193Providers>()("EIP119
         function onAnnouncement(event: EIP6963AnnounceProviderEvent) {
             Effect.runPromise(
                 SubscriptionRef.update(ref, (providers) => {
-                    console.log("EIP6963 Provider announced:", event.detail.info.name)
                     if (providers.has(event.detail.info.name)) {
                         return providers
                     }

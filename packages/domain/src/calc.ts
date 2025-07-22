@@ -1,6 +1,5 @@
 import { Schema } from "effect"
 import { Amount } from "./assets.js"
-import { Decimal } from "./cosmwasm.js"
 import { BasisPoints } from "./numbers.js"
 
 export const FixedSwapAdjustment = Schema.Literal("fixed")
@@ -9,7 +8,14 @@ export const LinearScalarSwapAdjustment = Schema.Struct({
     linear_scalar: Schema.Struct({
         base_receive_amount: Amount,
         minimum_swap_amount: Schema.NullOr(Amount),
-        scalar: Decimal
+        scalar: Schema.Positive.pipe(Schema.clamp(0, 10)).pipe(
+            Schema.annotations({
+                message: () => ({
+                    message: "Please provide a multiplier between 0 and 10",
+                    override: true
+                })
+            })
+        )
     })
 })
 
@@ -49,7 +55,14 @@ export type SwapRoute = Schema.Schema.Type<typeof SwapRoute>
 
 export const Swap = Schema.Struct({
     adjustment: SwapAmountAdjustment,
-    maximum_slippage_bps: BasisPoints,
+    maximum_slippage_bps: BasisPoints.pipe(
+        Schema.annotations({
+            message: () => ({
+                message: "Please provide slippage % between 0 and 100",
+                override: true
+            })
+        })
+    ),
     minimum_receive_amount: Amount,
     routes: Schema.Array(SwapRoute),
     swap_amount: Amount

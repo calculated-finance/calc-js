@@ -30,8 +30,8 @@ export const PercentageFromBasisPoints = Schema.transform(
 
 export const formatNumber = (value: number, options?: Intl.NumberFormatOptions) => {
     return new Intl.NumberFormat("en-US", {
-        maximumFractionDigits: value > 1 ? 2 : 4,
-        minimumFractionDigits: 2,
+        maximumFractionDigits: value > 1_000 ? 0 : value > 1 ? 2 : 4,
+        minimumFractionDigits: value > 1_000 ? 0 : value > 1 ? 2 : 4,
         ...options
     }).format(value)
 }

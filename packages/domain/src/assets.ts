@@ -47,7 +47,7 @@ export const HardcodedAssetsProvider = {
 
 export const Amount = Schema.transformOrFail(
     Schema.Struct({
-        amount: Schema.Union(Schema.NonEmptyTrimmedString, Schema.Positive).annotations({
+        amount: Schema.Union(Schema.NonEmptyTrimmedString, Schema.Number).annotations({
             message: () => ({
                 message: "Please provide a valid number",
                 override: true
@@ -57,14 +57,14 @@ export const Amount = Schema.transformOrFail(
     }),
     Schema.Struct({
         ...Asset.fields,
-        amount: Schema.Positive
+        amount: Schema.Number
     }),
     {
         strict: true,
         encode: (value) =>
             ParseResult.succeed({
                 amount: BigDecimal.format(BigDecimal.round(BigDecimal.multiply(
-                    BigDecimal.unsafeFromNumber(value.amount),
+                    BigDecimal.unsafeFromNumber(value.amount || 0),
                     BigDecimal.unsafeFromNumber(10 ** value.significantFigures)
                 ))),
                 denom: value.denom

@@ -1,7 +1,7 @@
 import React from "react";
 import { WalletProviderContext } from "../components/providers/wallet-provider";
 
-export const useWalletContext = () => {
+export const useWallets = () => {
   const context = React.useContext(WalletProviderContext);
 
   if (context === undefined)

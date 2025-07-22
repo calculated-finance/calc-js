@@ -1,31 +1,25 @@
 import { useCreateActionStore } from '@/hooks/use-action-store'
 import { createFileRoute } from '@tanstack/react-router'
-import { Action, ManyAction, SwapAction } from '@template/domain/src/calc'
+import { Action } from '@template/domain/src/calc'
 import { Connection, type Wallet } from '@template/domain/src/wallets'
 import {
   Background,
+  BackgroundVariant,
   Panel,
   ReactFlow,
   ReactFlowProvider,
   useEdgesState,
   useNodesState,
-  useReactFlow,
-  useViewport,
   ViewportPortal,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { Schema } from 'effect'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { BaseNode } from '../../components/create/base-node'
+import { StrategyNode } from '../../components/create/strategy-node'
 import { SwapNode } from '../../components/create/swap-node'
 import { Dialog, DialogContent } from '../../components/ui/dialog'
 import { useNodeVisibilityStore } from '../../hooks/use-node-visibility'
 import { useWallets } from '../../hooks/use-wallets'
-import {
-  layoutAction,
-  type ActionNodeParams,
-  type CustomNodeData,
-} from '../../lib/layout/layout'
+import { layoutAction } from '../../lib/layout/layout'
 
 export const Route = createFileRoute('/create/')({
   component: () => (
@@ -34,81 +28,6 @@ export const Route = createFileRoute('/create/')({
     </ReactFlowProvider>
   ),
 })
-
-function ManyNode({
-  data: {
-    action: { many },
-    update,
-  },
-}: CustomNodeData<ActionNodeParams<ManyAction>>) {
-  const { fitView, getNodes } = useReactFlow()
-  const { zoom } = useViewport()
-
-  return (
-    <BaseNode
-      handleLeft
-      handleRight
-      title={
-        <code className="rounded bg-zinc-900 px-1 py-[1px] font-mono text-4xl text-zinc-100">
-          GROUP
-        </code>
-      }
-      summary={
-        <div className="flex flex-col gap-1.5 text-xl text-zinc-300">
-          Execute {many.length}{' '}
-          <code className="rounded px-1 py-[1px] font-mono text-zinc-100">
-            actions
-          </code>
-        </div>
-      }
-      details={
-        <div className="text-md text-zinc-300">
-          {`Execute ${many.length}`}
-          <code className="rounded px-1 py-[1px] font-mono text-zinc-100">
-            actions
-          </code>
-          in parallel
-        </div>
-      }
-      modal={closeModal => (
-        <div className="font-bold">
-          <button
-            onClick={() => {
-              update({
-                many: [
-                  ...many,
-                  Schema.decodeSync(SwapAction)({
-                    swap: {
-                      swap_amount: { amount: '50000003210', denom: 'rune' },
-                      minimum_receive_amount: {
-                        amount: '12312321861',
-                        denom: 'x/ruji',
-                      },
-                      adjustment: 'fixed' as const,
-                      routes: [],
-                      maximum_slippage_bps: 100,
-                    },
-                  }),
-                ],
-              })
-              closeModal()
-              setTimeout(() => {
-                fitView({
-                  nodes: getNodes(),
-                  maxZoom: zoom,
-                  duration: 450,
-                  interpolate: 'smooth',
-                })
-              }, 100)
-            }}
-          >
-            Add Action
-          </button>
-        </div>
-      )}
-    />
-  )
-}
 
 function ConnectWallet({
   wallet,
@@ -133,7 +52,7 @@ function ConnectWallet({
 
 const nodeTypes = {
   swapNode: SwapNode,
-  manyNode: ManyNode,
+  manyNode: StrategyNode,
 }
 
 let nodeIdCounter = 0
@@ -245,7 +164,7 @@ export default function CreateStrategy() {
           ) : (
             connection.chain === 'unsupported' && (
               <code
-                className="cursor-pointer text-lg hover:underline"
+                className="cursor-pointer text-right text-lg hover:underline"
                 onClick={() => setSwitchingChainsConnection(connection)}
               >
                 Unsupported Chain
@@ -290,24 +209,49 @@ export default function CreateStrategy() {
           id="1"
           gap={30}
           color="#FFB636"
-          offset={30}
-          className="opacity-80"
+          offset={25}
+          className="opacity-60"
+          variant={BackgroundVariant.Dots}
         />
-        <Background id="2" gap={30} color="#9CCBF0" className="opacity-80" />
+        <Background
+          id="2"
+          gap={30}
+          color="#9CCBF0"
+          className="opacity-60"
+          variant={BackgroundVariant.Dots}
+        />
+        {!isShowingWallets && !switchingChainsConnection && (
+          <Panel position="top-left">
+            <div className="flex items-start gap-6 pt-1 pl-1">
+              <code className="cursor-pointer text-lg text-zinc-200 underline">
+                Drafts
+              </code>
+              <code className="cursor-pointer text-lg text-zinc-600 hover:underline">
+                Active
+              </code>
+              <code className="cursor-pointer text-lg text-zinc-600 hover:underline">
+                Paused
+              </code>
+              <code className="cursor-pointer text-lg text-zinc-600 hover:underline">
+                Archived
+              </code>
+            </div>
+          </Panel>
+        )}
         {!isShowingWallets && !switchingChainsConnection && (
           <Panel position="top-right">
             <div className="flex flex-col items-end gap-8 pt-1 pr-1">
+              {connections
+                .filter(c => c.status === 'connected')
+                .map((connection, i) => (
+                  <ConnectionItem key={i} connection={connection} />
+                ))}
               <code
                 onClick={() => setIsShowingWallets(!isShowingWallets)}
                 className="cursor-pointer text-lg hover:underline"
               >
                 Connect
               </code>
-              {connections
-                .filter(c => c.status === 'connected')
-                .map((connection, i) => (
-                  <ConnectionItem key={i} connection={connection} />
-                ))}
             </div>
           </Panel>
         )}

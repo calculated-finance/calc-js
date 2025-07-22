@@ -16,6 +16,7 @@ export function BaseNode({
   summary,
   details,
   modal,
+  onDelete,
 }: {
   handleLeft?: boolean
   handleRight?: boolean
@@ -23,6 +24,7 @@ export function BaseNode({
   summary: ReactNode
   details: ReactNode
   modal: (closeModal: () => void) => ReactNode
+  onDelete?: () => void
 }) {
   const { zoom } = useViewport()
   const [isTransitioning, setIsTransitioning] = useState(false)
@@ -57,6 +59,18 @@ export function BaseNode({
 
   return (
     <div>
+      {onDelete && (
+        <div
+          className={`absolute right-[10px] bottom-1 transition-opacity ${getContentType(zoom) === 'title' ? 'opacity-0' : 'opacity-100'}`}
+        >
+          <code
+            className="cursor-pointer text-xs text-zinc-500 hover:underline"
+            onClick={onDelete}
+          >
+            remove
+          </code>
+        </div>
+      )}
       <div
         className={`flex h-[150px] w-[200px] cursor-pointer items-center justify-center rounded-lg border border-gray-300 bg-black p-4 text-center shadow transition-opacity duration-300 ${
           isVisible ? 'opacity-100' : 'opacity-0'

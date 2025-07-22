@@ -77,7 +77,7 @@ function JsonEditor<T, U>({
 }
 
 export function SwapNode({
-  data: { action, update },
+  data: { action, update, remove },
 }: CustomNodeData<ActionNodeParams<SwapAction>>) {
   const form = useForm({
     defaultValues: action,
@@ -178,6 +178,7 @@ export function SwapNode({
 
   return (
     <BaseNode
+      onDelete={remove}
       handleLeft
       title={
         <code className="rounded bg-zinc-900 px-1 py-[1px] font-mono text-4xl text-zinc-100">

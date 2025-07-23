@@ -35,7 +35,7 @@ export const layoutStrategy = (
   const generateId = () => `node-${++nodeIdCounter}`;
 
   const layoutContext = {
-    startX: 350,
+    startX: 300,
     startY: -100,
     nodeSpacing: 50,
     generateId,

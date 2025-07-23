@@ -32,7 +32,7 @@ export const layoutManyAction: LayoutFunction<ActionNodeParams> = (
 
   const tempChildLayoutResults = [];
   let tempCurrentChildY = context.startY;
-  const tempChildrenStartX = context.startX + 650;
+  const tempChildrenStartX = context.startX + 550;
 
   actions?.forEach((childAction) => {
     const tempChildContext = {
@@ -57,7 +57,7 @@ export const layoutManyAction: LayoutFunction<ActionNodeParams> = (
 
   const totalChildrenHeight = tempCurrentChildY - context.startY - context.nodeSpacing;
 
-  const childrenStartX = context.startX + (actions.length > 1 ? 500 : 350);
+  const childrenStartX = context.startX + (actions.length > 1 ? 400 : 300);
 
   let allChildNodes: Node[] = [];
   let allChildEdges: Edge[] = [];

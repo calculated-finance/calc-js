@@ -49,7 +49,7 @@ export function ManyNode({
       title={<code className="rounded bg-zinc-900 px-1 py-[1px] font-mono text-4xl text-zinc-100">GROUP</code>}
       summary={
         <code className="flex flex-col gap-1.5 text-xl text-zinc-300">
-          {many.length} ACTION{many.length > 1 ? "S" : ""}
+          {many.length} ACTION{many.length !== 1 ? "S" : ""}
         </code>
       }
       details={<code className="text-sm text-zinc-300">{`Execute the following ${many.length} actions in order`}</code>}

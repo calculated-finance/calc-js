@@ -98,14 +98,14 @@ export const BlockSchedule = Schema.Struct({
 
 export const TimeSchedule = Schema.Struct({
     time: Schema.Struct({
-        interval: Schema.Positive.pipe(
+        interval: Schema.optional(Schema.Positive.pipe(
             Schema.annotations({
                 message: () => ({
                     message: "Please provide a valid time interval",
                     override: true
                 })
             })
-        ),
+        )),
         previous: Schema.optional(Schema.NullOr(Uint64))
     })
 })
@@ -123,6 +123,8 @@ export const CronSchedule = Schema.Struct({
         previous: Schema.optional(Schema.NullOr(Uint64))
     })
 })
+
+export const LimitOrderSchedule = Schema.Struct({})
 
 export const Cadence = Schema.Union(
     BlockSchedule,
@@ -146,7 +148,7 @@ export const ScheduleAction = Schema.Struct({
 
 export type ScheduleAction = Schema.Schema.Type<typeof ScheduleAction>
 
-export const ActionsExcludingMany = Schema.Union(SwapAction, ScheduleAction)
+export const ActionsExcludingMany = Schema.Union(SwapAction, ScheduleAction, InnerManyAction)
 
 export type ActionsExcludingMany = Schema.Schema.Type<
     typeof ActionsExcludingMany

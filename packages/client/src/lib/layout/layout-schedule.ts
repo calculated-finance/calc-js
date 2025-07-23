@@ -29,7 +29,7 @@ export const layoutScheduleAction: LayoutFunction<ActionNodeParams> = (
   }
 
   const childContext = {
-    startX: context.startX + 350,
+    startX: context.startX + 300,
     startY: context.startY,
     nodeSpacing: 50,
     generateId: context.generateId,

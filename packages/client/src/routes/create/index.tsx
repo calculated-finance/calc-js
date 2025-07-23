@@ -1,6 +1,5 @@
-import { useCreateActionStore } from "@/hooks/use-action-store";
 import { createFileRoute } from "@tanstack/react-router";
-import { Action, Strategy } from "@template/domain/src/calc";
+import { Strategy } from "@template/domain/src/calc";
 import { Connection, type Wallet } from "@template/domain/src/wallets";
 import {
   Background,
@@ -57,7 +56,6 @@ const nodeTypes = {
 let nodeIdCounter = 0;
 
 export default function CreateStrategy() {
-  const { action, updateAction, removeAction } = useCreateActionStore();
   const [strategyFilter, setStrategyFilter] = useState<"draft" | "active" | "paused" | "archived">("draft");
 
   const { add, update, deleteStrategy, strategies } = useStrategyStore();
@@ -77,20 +75,6 @@ export default function CreateStrategy() {
   useEffect(() => {
     setFlowVisible(!isShowingWallets && !switchingChainsConnection);
   }, [isShowingWallets, switchingChainsConnection]);
-
-  const handleRootUpdate = useCallback(
-    (action: Action) => {
-      if (action === undefined) {
-        removeAction();
-      }
-      updateAction(action);
-    },
-    [updateAction],
-  );
-
-  const handleRootRemove = useCallback(() => {
-    removeAction();
-  }, [removeAction]);
 
   const generateId = useCallback(() => `node-${++nodeIdCounter}`, []);
 
@@ -122,12 +106,14 @@ export default function CreateStrategy() {
 
     setNodes(layout.nodes as any);
     setEdges(layout.edges as any);
-  }, [strategy, layoutContext, setNodes, setEdges, handleRootUpdate, handleRootRemove]);
+  }, [strategy, layoutContext, setNodes, setEdges]);
 
   useEffect(() => {
     layoutNodes();
     fitView();
   }, [layoutNodes, strategy]);
+
+  const [isDisconnecting, setIsDisconnecting] = useState<string>();
 
   function ConnectionItem({ connection }: { connection: Connection }) {
     return (
@@ -136,9 +122,41 @@ export default function CreateStrategy() {
           <code>Connecting...</code>
         ) : (
           connection?.status === "connected" && (
-            <code onClick={() => disconnect(connection.wallet)} className="cursor-pointer text-lg hover:underline">
-              {connection.wallet.type}: {connection.account.address.substring(0, 5)}...
-              {connection.account.address.substring(connection.account.address.length - 7)}
+            <code className="text-right text-lg">
+              {isDisconnecting == connection.account.address ? (
+                <code className="text-lg">
+                  Are you sure?{" "}
+                  <code
+                    onClick={() => {
+                      disconnect(connection.wallet);
+                      setIsDisconnecting(undefined);
+                    }}
+                    className="cursor-pointer text-lg text-red-300 hover:underline"
+                  >
+                    Yes
+                  </code>
+                  <code> / </code>
+                  <code
+                    onClick={() => setIsDisconnecting(undefined)}
+                    className="cursor-pointer text-green-300 hover:underline"
+                  >
+                    No
+                  </code>
+                </code>
+              ) : (
+                <>
+                  <code className="text-right text-lg">
+                    ({connection.wallet.type}) {connection.account.address.substring(0, 5)}...
+                    {connection.account.address.substring(connection.account.address.length - 7)}:{" "}
+                  </code>
+                  <code
+                    onClick={() => setIsDisconnecting(connection.account.address)}
+                    className="cursor-pointer text-lg text-red-300 hover:underline"
+                  >
+                    Disconnect
+                  </code>
+                </>
+              )}
             </code>
           )
         )}
@@ -148,10 +166,15 @@ export default function CreateStrategy() {
               style={{
                 color: connection.chain.color,
               }}
-              className="cursor-pointer text-right text-lg hover:underline"
-              onClick={() => setSwitchingChainsConnection(connection)}
+              className="text-right text-lg"
             >
-              {connection.chain.displayName}
+              <code>{connection.chain.displayName}: </code>
+              <code
+                onClick={() => setSwitchingChainsConnection(connection)}
+                className="cursor-pointer text-green-300 hover:underline"
+              >
+                Switch
+              </code>
             </code>
           ) : connection.chain === "switching_chain" ? (
             <code className="text-right text-lg">Switching Chain...</code>

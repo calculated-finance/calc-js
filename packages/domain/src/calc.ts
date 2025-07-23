@@ -69,6 +69,7 @@ export const Swap = Schema.Struct({
 })
 
 export const SwapAction = Schema.Struct({
+    id: Schema.NonEmptyTrimmedString,
     swap: Swap
 })
 
@@ -83,6 +84,7 @@ export type ActionsExcludingMany = Schema.Schema.Type<
 export const Many = Schema.Array(ActionsExcludingMany)
 
 export const ManyAction = Schema.Struct({
+    id: Schema.NonEmptyTrimmedString,
     many: Many
 })
 
@@ -91,3 +93,28 @@ export type ManyAction = Schema.Schema.Type<typeof ManyAction>
 export const Action = Schema.Union(SwapAction, ManyAction)
 
 export type Action = Schema.Schema.Type<typeof Action>
+
+export const Strategy = Schema.Struct({
+    id: Schema.NonEmptyTrimmedString,
+    action: Schema.optional(Action),
+    address: Schema.optional(Schema.NonEmptyTrimmedString),
+    owner: Schema.optional(Schema.NonEmptyString.pipe(
+        Schema.annotations({
+            message: () => ({
+                message: "Please provide a valid owner address",
+                override: true
+            })
+        })
+    )),
+    label: Schema.NonEmptyString.pipe(
+        Schema.annotations({
+            message: () => ({
+                message: "Please provide a label for the strategy",
+                override: true
+            })
+        })
+    ),
+    status: Schema.Literal("draft", "active", "paused", "archived")
+})
+
+export type Strategy = Schema.Schema.Type<typeof Strategy>

@@ -1,4 +1,4 @@
-import type { Action } from "@template/domain/src/calc";
+import type { Action, Strategy } from "@template/domain/src/calc";
 import type { Wallet } from "@template/domain/src/wallets";
 import type { Edge, Node } from "@xyflow/react";
 import { layoutManyAction } from "./layout-many";
@@ -11,19 +11,26 @@ export interface LayoutContext {
   generateId: () => string;
 }
 
+export type StrategyNodeParams = {
+  strategy: Strategy;
+  update: (strategy: Strategy) => void;
+};
+
 export type ActionNodeParams<T extends Action = Action> = {
   action: T;
   update: (action: T) => void;
   remove: () => void;
-}
+};
 
 export type WalletNodeParams = {
-  wallet: Wallet
-}
+  wallet: Wallet;
+};
+
+export type NodeParams = StrategyNodeParams | ActionNodeParams | WalletNodeParams;
 
 export type CustomNodeData<T> = {
   data: T;
-}
+};
 
 export interface LayoutResult<T extends Record<string, any>> {
   nodes: Node<T>[];
@@ -37,7 +44,7 @@ export interface LayoutResult<T extends Record<string, any>> {
 export type LayoutFunction<T extends Record<string, any>> = (
   nodeData: T,
   context: LayoutContext,
-  layout: LayoutFunction<T>
+  layout: LayoutFunction<T>,
 ) => LayoutResult<T>;
 
 const layoutFunctions: Record<string, LayoutFunction<ActionNodeParams>> = {
@@ -53,7 +60,7 @@ export const layoutAction = (
     throw new Error("Invalid data provided for layoutAction");
   }
 
-  const actionType = Object.keys(action)[0];
+  const actionType = Object.keys(action)[1];
   const layoutFunction = layoutFunctions[actionType];
 
   if (!layoutFunction) {

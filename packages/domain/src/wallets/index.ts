@@ -120,7 +120,6 @@ export class WalletService extends Effect.Service<WalletService>()("WalletServic
 
             switchChain: (wallet: Wallet, chainId: ChainId) =>
                 Effect.gen(function*() {
-                    console.log("Switching chain", wallet, chainId)
                     switch (wallet.type) {
                         case "MetaMask":
                             yield* metaMaskService.switchChain(chainId)

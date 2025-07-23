@@ -1,15 +1,12 @@
-import { Handle, Position, useViewport } from '@xyflow/react'
-import '@xyflow/react/dist/style.css'
-import { useEffect, useState, type ReactNode } from 'react'
-import {
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalTitle,
-} from '../../components/ui/modal'
-import { useNodeVisibilityStore } from '../../hooks/use-node-visibility'
+import { Handle, Position, useViewport } from "@xyflow/react";
+import "@xyflow/react/dist/style.css";
+import { useEffect, useState, type ReactNode } from "react";
+import { Modal, ModalContent, ModalHeader, ModalTitle } from "../../components/ui/modal";
+import { useNodeModalStore } from "../../hooks/use-node-modal-store";
+import { useNodeVisibilityStore } from "../../hooks/use-node-visibility";
 
 export function BaseNode({
+  id,
   handleLeft,
   handleRight,
   title,
@@ -18,74 +15,65 @@ export function BaseNode({
   modal,
   onDelete,
 }: {
-  handleLeft?: boolean
-  handleRight?: boolean
-  title: ReactNode
-  summary: ReactNode
-  details: ReactNode
-  modal: (closeModal: () => void) => ReactNode
-  onDelete?: () => void
+  id: string;
+  handleLeft?: boolean;
+  handleRight?: boolean;
+  title: ReactNode;
+  summary: ReactNode;
+  details: ReactNode;
+  modal: ReactNode;
+  onDelete?: () => void;
 }) {
-  const { zoom } = useViewport()
-  const [isTransitioning, setIsTransitioning] = useState(false)
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const { zoom } = useViewport();
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const { openId, setOpenId } = useNodeModalStore();
 
-  const { isVisible } = useNodeVisibilityStore()
+  const { isVisible } = useNodeVisibilityStore();
 
   const getContentType = (zoomLevel: number) => {
-    if (zoomLevel < 0.6) return 'title'
-    if (zoomLevel < 1.2) return 'summary'
-    return 'details'
-  }
+    if (zoomLevel < 0.6) return "title";
+    if (zoomLevel < 1.2) return "summary";
+    return "details";
+  };
 
-  const currentContentType = getContentType(zoom)
-  const [displayedContentType, setDisplayedContentType] =
-    useState(currentContentType)
+  const currentContentType = getContentType(zoom);
+  const [displayedContentType, setDisplayedContentType] = useState(currentContentType);
 
   useEffect(() => {
     if (currentContentType !== displayedContentType) {
-      setIsTransitioning(true)
+      setIsTransitioning(true);
 
       const fadeOutTimer = setTimeout(() => {
-        setDisplayedContentType(currentContentType)
-        setIsTransitioning(false)
-      }, 110)
+        setDisplayedContentType(currentContentType);
+        setIsTransitioning(false);
+      }, 110);
 
-      return () => clearTimeout(fadeOutTimer)
+      return () => clearTimeout(fadeOutTimer);
     }
-  }, [currentContentType, displayedContentType])
-
-  const closeModal = () => setIsModalOpen(false)
+  }, [currentContentType, displayedContentType]);
 
   return (
     <div>
-      {onDelete && (
-        <div
-          className={`absolute right-[10px] bottom-1 transition-opacity ${getContentType(zoom) === 'title' ? 'opacity-0' : 'opacity-100'}`}
-        >
-          <code
-            className="cursor-pointer text-xs text-zinc-500 hover:underline"
-            onClick={onDelete}
-          >
-            remove
-          </code>
-        </div>
-      )}
       <div
         className={`flex h-[150px] w-[200px] cursor-pointer items-center justify-center rounded-lg border border-gray-300 bg-black p-4 text-center shadow transition-opacity duration-300 ${
-          isVisible ? 'opacity-100' : 'opacity-0'
+          isVisible ? "opacity-100" : "opacity-0"
         } `}
         onClick={(e: React.MouseEvent) => {
-          e.stopPropagation()
-          setIsModalOpen(true)
+          e.stopPropagation();
+          setOpenId(id);
         }}
       >
+        {onDelete && (
+          <div
+            className={`absolute top-1 right-[10px] transition-opacity ${getContentType(zoom) === "title" ? "opacity-0" : "opacity-100"}`}
+          >
+            <code className="cursor-pointer text-xs text-zinc-500 hover:underline" onClick={onDelete}>
+              delete
+            </code>
+          </div>
+        )}
         {handleLeft && <Handle type="target" position={Position.Left} />}
-        <div
-          className={`transition-opacity duration-300 ease-in-out ${
-            isTransitioning ? 'opacity-0' : 'opacity-100'
-          }`}
-        >
+        <div className={`transition-opacity duration-300 ease-in-out ${isTransitioning ? "opacity-0" : "opacity-100"}`}>
           {
             {
               title,
@@ -97,15 +85,15 @@ export function BaseNode({
         {handleRight && <Handle type="source" position={Position.Right} />}
       </div>
       <Modal
-        open={isModalOpen}
-        onOpenChange={open => {
-          setIsModalOpen(open)
+        open={!!id && id == openId}
+        onOpenChange={(open) => {
+          if (!open) setOpenId(null);
         }}
       >
         <ModalContent
           className="h-fit w-fit overflow-auto rounded-xl border bg-black p-10"
           drawerProps={{
-            className: 'px-6 pt-2 pb-10 border-none',
+            className: "px-6 pt-2 pb-10 border-none",
           }}
           dialogProps={{
             showCloseButton: false,
@@ -114,9 +102,9 @@ export function BaseNode({
           <ModalHeader className="hidden">
             <ModalTitle>title</ModalTitle>
           </ModalHeader>
-          {modal(closeModal)}
+          {modal}
         </ModalContent>
       </Modal>
     </div>
-  )
+  );
 }

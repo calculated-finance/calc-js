@@ -5,7 +5,7 @@ import type { ActionNodeParams, LayoutContext, LayoutFunction, LayoutResult } fr
 export const layoutManyAction: LayoutFunction<ActionNodeParams> = (
   params: ActionNodeParams,
   context: LayoutContext,
-  layoutAction: LayoutFunction<ActionNodeParams>
+  layoutAction: LayoutFunction<ActionNodeParams>,
 ): LayoutResult<ActionNodeParams> => {
   const nodeId = context.generateId();
 
@@ -45,23 +45,19 @@ export const layoutManyAction: LayoutFunction<ActionNodeParams> = (
       {
         action: childAction,
         update: () => {},
-        remove: () => {}
+        remove: () => {},
       },
       tempChildContext,
-      layoutAction
+      layoutAction,
     );
 
     tempChildLayoutResults.push(tempChildLayout);
     tempCurrentChildY += tempChildLayout.bounds.height + context.nodeSpacing;
   });
 
-  const totalChildrenHeight =
-    tempCurrentChildY - context.startY - context.nodeSpacing;
+  const totalChildrenHeight = tempCurrentChildY - context.startY - context.nodeSpacing;
 
-  const baseOffset = 500;
-  const heightFactor = Math.max(0, (totalChildrenHeight - 600) / 600);
-  const dynamicOffset = baseOffset + heightFactor * 200;
-  const childrenStartX = context.startX + Math.min(dynamicOffset, 1200);
+  const childrenStartX = context.startX + (actions.length > 1 ? 500 : 350);
 
   let allChildNodes: Node[] = [];
   let allChildEdges: Edge[] = [];
@@ -76,21 +72,23 @@ export const layoutManyAction: LayoutFunction<ActionNodeParams> = (
     };
 
     const childLayout = layoutAction(
-      { action: childAction, update: (action: Action) => {
-        if ("many" in action) {
-          throw new Error(
-            "Many action should not contain nested 'many' actions"
-          );
-        }
-        const newActions = [...actions];
-        newActions[index] = action;
-        params.update({ many: newActions } as any);
-      }, remove: () => {
-        const newActions = actions.filter((_, i) => i !== index);
-        params.update({ many: newActions } as any);
-      }},
+      {
+        action: childAction,
+        update: (action: Action) => {
+          if ("many" in action) {
+            throw new Error("Many action should not contain nested 'many' actions");
+          }
+          const newActions = [...actions];
+          newActions[index] = action;
+          params.update({ id: params.action.id, many: newActions } as any);
+        },
+        remove: () => {
+          const newActions = actions.filter((action) => action.id !== childAction.id);
+          params.update({ id: params.action.id, many: newActions } as any);
+        },
+      },
       childContext,
-      layoutAction
+      layoutAction,
     );
 
     childLayoutResults.push(childLayout);
@@ -118,11 +116,11 @@ export const layoutManyAction: LayoutFunction<ActionNodeParams> = (
         id: `${nodeId}-to-${childRootId}`,
         source: nodeId,
         target: childRootId,
-        style: { stroke: "#8b5cf6", strokeWidth: 2 },
+        style: { stroke: "#9CCCF0", strokeWidth: 2 },
         type: "smoothstep",
         pathOptions: {
           borderRadius: 16,
-        }
+        },
       });
     }
   });

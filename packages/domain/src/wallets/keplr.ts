@@ -235,7 +235,6 @@ const setupCosmosEventListeners = (
     connectionRef: SubscriptionRef.SubscriptionRef<Connection>
 ) => {
     window.addEventListener("keplr_keystorechange", () => {
-        console.log("Keplr keystore changed, updating connection state")
         Effect.runSync(
             SubscriptionRef.update(connectionRef, (state) => {
                 if (state.status === "connected" && typeof state.chain !== "string") {

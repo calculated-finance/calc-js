@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { ReactFlowProvider } from "@xyflow/react";
 import CreateStrategy from "./create";
 
 export const Route = createFileRoute("/")({
@@ -6,5 +7,9 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  return <CreateStrategy />;
+  return (
+    <ReactFlowProvider>
+      <CreateStrategy />
+    </ReactFlowProvider>
+  );
 }

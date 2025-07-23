@@ -1,13 +1,13 @@
 import { useForm } from "@tanstack/react-form";
-import { Action, Strategy } from "@template/domain/src/calc";
+import { Strategy } from "@template/domain/src/calc";
 import "@xyflow/react/dist/style.css";
 import { Schema } from "effect";
-import { v4 } from "uuid";
+import { useState } from "react";
 import { BaseNode } from "../../components/create/base-node";
-import { useAssets } from "../../hooks/use-assets";
-import { useNodeModalStore } from "../../hooks/use-node-modal-store";
 import { type CustomNodeData, type StrategyNodeParams } from "../../lib/layout/layout";
 import { Input } from "../ui/input";
+import { AddAction } from "./add-action";
+import { Code } from "./code";
 
 export function StrategyNode({ data: { strategy, update } }: CustomNodeData<StrategyNodeParams>) {
   const form = useForm({
@@ -36,20 +36,7 @@ export function StrategyNode({ data: { strategy, update } }: CustomNodeData<Stra
     },
   });
 
-  const assets = useAssets();
-  const { setOpenId } = useNodeModalStore();
-
-  const addAction = (action: Omit<Action, "id">) => {
-    const actionId = v4();
-    update({
-      ...strategy,
-      action: {
-        id: actionId,
-        ...action,
-      } as any,
-    });
-    setOpenId(actionId);
-  };
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
 
   const renderForm = () => {
     return (
@@ -97,55 +84,20 @@ export function StrategyNode({ data: { strategy, update } }: CustomNodeData<Stra
           )}
         />
         {!strategy.action && (
-          <div className="flex flex-col gap-2">
-            <code className="text-sm text-zinc-400">action</code>
-            <div className="flex justify-around pt-2">
-              <code
-                onClick={() => {
-                  addAction({
-                    swap: {
-                      adjustment: "fixed",
-                      maximum_slippage_bps: 300,
-                      routes: [
-                        {
-                          thorchain: {},
-                        },
-                      ],
-                      minimum_receive_amount: {
-                        amount: 100,
-                        ...assets[0],
-                      },
-                      swap_amount: {
-                        amount: 0.001,
-                        ...assets[1],
-                      },
-                    },
-                  });
-                }}
-                className="cursor-pointer text-purple-300 hover:underline"
-              >
-                Swap
-              </code>
-              <code>|</code>
-              <code className="cursor-pointer text-green-300 hover:underline">Limit Order</code>
-              <code>|</code>
-              <code className="cursor-pointer text-blue-300 hover:underline">Distribute</code>
-            </div>
-            <div className="flex justify-around pt-4">
-              <code className="cursor-pointer text-yellow-300 hover:underline">Schedule</code>
-              <code>|</code>
-              <code
-                onClick={() => {
-                  addAction({ many: [] });
-                }}
-                className="cursor-pointer text-red-300 hover:underline"
-              >
-                Group
-              </code>
-              <code>|</code>
-              <code className="cursor-pointer text-orange-300 hover:underline">Conditional</code>
-            </div>
-          </div>
+          <AddAction
+            onAdd={(action) => {
+              console.log({
+                ...strategy,
+                action,
+              });
+              return update({
+                ...strategy,
+                action,
+              });
+            }}
+            isHelpOpen={isHelpOpen}
+            helpMessage="Select the root action for this strategy. You can choose a simple action like a execute a swap or set a limit order, however it's often more useful to start with a schedule or a group action."
+          />
         )}
       </form>
     );
@@ -156,9 +108,11 @@ export function StrategyNode({ data: { strategy, update } }: CustomNodeData<Stra
       id={strategy.id}
       handleRight={!!strategy.action}
       title={<code className="rounded bg-zinc-900 px-1 py-[1px] font-mono text-4xl text-zinc-100">START</code>}
-      summary={<div className="flex flex-col gap-1.5 text-xl text-zinc-300">{strategy.label}</div>}
-      details={<div className="text-md text-zinc-300">{strategy.label}</div>}
+      summary={<code className="flex flex-col gap-1.5 text-xl text-zinc-300">START</code>}
+      details={<Code className="text-md text-zinc-300">{strategy.label}</Code>}
       modal={renderForm()}
+      isHelping={isHelpOpen}
+      setHelp={() => setIsHelpOpen(!isHelpOpen)}
     />
   );
 }

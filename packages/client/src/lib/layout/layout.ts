@@ -2,6 +2,7 @@ import type { Action, Strategy } from "@template/domain/src/calc";
 import type { Wallet } from "@template/domain/src/wallets";
 import type { Edge, Node } from "@xyflow/react";
 import { layoutManyAction } from "./layout-many";
+import { layoutScheduleAction } from "./layout-schedule";
 import { layoutSwapAction } from "./layout-swap";
 
 export interface LayoutContext {
@@ -50,6 +51,7 @@ export type LayoutFunction<T extends Record<string, any>> = (
 const layoutFunctions: Record<string, LayoutFunction<ActionNodeParams>> = {
   swap: layoutSwapAction,
   many: layoutManyAction,
+  schedule: layoutScheduleAction,
 };
 
 export const layoutAction = (

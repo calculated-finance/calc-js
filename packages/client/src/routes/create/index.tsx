@@ -15,11 +15,14 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { v4 as uuid } from "uuid";
+import { v4 } from "uuid";
+import { Code } from "../../components/create/code";
 import { ManyNode } from "../../components/create/many-node";
+import { ScheduleNode } from "../../components/create/schedule-node";
 import { StrategyNode } from "../../components/create/strategy-node";
 import { SwapNode } from "../../components/create/swap-node";
 import { Dialog, DialogContent } from "../../components/ui/dialog";
+import { useNodeModalStore } from "../../hooks/use-node-modal-store";
 import { useNodeVisibilityStore } from "../../hooks/use-node-visibility";
 import { useStrategyStore } from "../../hooks/use-strategy-store";
 import { useWallets } from "../../hooks/use-wallets";
@@ -45,6 +48,7 @@ function ConnectWallet({ wallet, connect }: { wallet: Wallet; connect: () => voi
 }
 
 const nodeTypes = {
+  scheduleNode: ScheduleNode,
   swapNode: SwapNode,
   manyNode: ManyNode,
   strategyNode: StrategyNode,
@@ -170,6 +174,8 @@ export default function CreateStrategy() {
   const [isStarting, setIsStarting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  const { setOpenId } = useNodeModalStore();
+
   return (
     <div className="flex h-screen w-screen">
       <ReactFlow
@@ -201,12 +207,31 @@ export default function CreateStrategy() {
       >
         <Background id={`1`} gap={20} variant={BackgroundVariant.Dots} />
         {!isShowingWallets && !switchingChainsConnection && (
-          <Panel position="top-left">
-            <div className="flex items-start gap-6 pt-1 pl-1">
+          <Panel position="top-left" className="flex flex-col items-start gap-4">
+            <div className="flex items-start gap-6 pt-1 pl-2">
               <code className="cursor-pointer text-lg text-zinc-200 underline">Drafts</code>
               <code className="cursor-pointer text-lg text-zinc-600 hover:underline">Active</code>
               <code className="cursor-pointer text-lg text-zinc-600 hover:underline">Paused</code>
               <code className="cursor-pointer text-lg text-zinc-600 hover:underline">Archived</code>
+            </div>
+            <div className="flex flex-col pl-2">
+              <code
+                onClick={() => {
+                  const strategy = {
+                    id: `${v4()}`,
+                    action: undefined,
+                    label: "New Strategy",
+                    status: "draft" as const,
+                  };
+                  add(strategy);
+                  setStrategy(strategy);
+                  setOpenId(strategy.id);
+                }}
+                className="text-lg text-blue-300"
+              >
+                {"-> "}
+                <code className="cursor-pointer hover:underline">Create Draft</code>
+              </code>
             </div>
           </Panel>
         )}
@@ -214,24 +239,6 @@ export default function CreateStrategy() {
           <Panel position="bottom-left">
             {strategyFilter === "draft" && (
               <div className="flex flex-col items-start gap-4 pb-4 pl-2">
-                <div className="flex flex-col">
-                  <code
-                    onClick={() => {
-                      const strategy = {
-                        id: `${uuid()}`,
-                        action,
-                        label: "New Strategy",
-                        status: "draft" as const,
-                      };
-                      add(strategy);
-                      setStrategy(strategy);
-                    }}
-                    className="text-lg text-blue-300"
-                  >
-                    {"-> "}
-                    <code className="cursor-pointer hover:underline">Create Draft</code>
-                  </code>
-                </div>
                 <div className="flex flex-col gap-4">
                   {Object.values(strategies)
                     .filter((s) => s.status === "draft")
@@ -240,20 +247,20 @@ export default function CreateStrategy() {
                       return (
                         <code
                           key={s.id}
-                          className={`pl-[14px] text-lg ${s.id === strategy?.id ? "text-zinc-200" : "text-zinc-600"}`}
+                          className={`text-lg ${s.id === strategy?.id ? "text-zinc-200" : "text-zinc-600"}`}
                         >
                           *{" "}
                           {(!isSelected || !isDeleting) && (
-                            <code
+                            <Code
                               onClick={() => {
                                 setIsDeleting(false);
                                 setIsStarting(false);
                                 setStrategy(s);
                               }}
-                              className="cursor-pointer hover:underline"
+                              className={`${isSelected ? "" : "cursor-pointer hover:underline"}`}
                             >
                               {s.label}
-                            </code>
+                            </Code>
                           )}
                           {s.id === strategy?.id && (
                             <code>

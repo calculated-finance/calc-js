@@ -3,61 +3,14 @@ import { Swap, SwapAction } from "@template/domain/src/calc";
 import { formatNumber } from "@template/domain/src/numbers";
 import "@xyflow/react/dist/style.css";
 import { Effect, Schema } from "effect";
-import "prism-themes/themes/prism-duotone-sea.css";
-import Prism from "prismjs";
-import "prismjs/components/prism-json";
 import { useEffect, useRef, useState } from "react";
-import Editor from "react-simple-code-editor";
 import { Input } from "../../components/ui/input";
 import { useAssets } from "../../hooks/use-assets";
 import { useAvailableRoutes } from "../../hooks/use-available-routes";
 import { type ActionNodeParams, type CustomNodeData } from "../../lib/layout/layout";
 import { BaseNode } from "./base-node";
-
-function JsonEditor<T, U>({ data, onExit }: { data: T; schema: U; onSave: (data: T) => void; onExit?: () => void }) {
-  const [localCode] = useState<string>(JSON.stringify(data, null, 4));
-
-  return (
-    <div className="mt-4 max-h-150 w-300 overflow-auto" style={{ scrollbarWidth: "none" }}>
-      <Editor
-        textareaClassName="outline-none"
-        value={localCode}
-        onValueChange={() => {}}
-        highlight={(code) => Prism.highlight(code, Prism.languages.json, "json")}
-        autoFocus={true}
-        tabIndex={-1}
-        style={{
-          maxWidth: "450px",
-          backgroundColor: "#transparent",
-          fontFamily: "monospace",
-          fontSize: "1rem",
-          lineHeight: "1.7",
-          overflow: "visible",
-          scrollbarWidth: "none",
-          paddingRight: "50px",
-        }}
-      />
-      <style>{`
-        .max-h-100::-webkit-scrollbar {
-          display: none;
-        }
-      `}</style>
-      <div className="absolute top-6 right-6 flex gap-4">
-        <code
-          className="cursor-pointer text-sm text-zinc-500 underline"
-          onClick={() => {
-            navigator.clipboard.writeText(localCode);
-          }}
-        >
-          copy
-        </code>
-        <code className="cursor-pointer text-sm text-zinc-500 underline" onClick={onExit}>
-          exit
-        </code>
-      </div>
-    </div>
-  );
-}
+import { Code } from "./code";
+import { JsonEditor } from "./json-editor";
 
 export function SwapNode({ data: { action, update, remove } }: CustomNodeData<ActionNodeParams<SwapAction>>) {
   const form = useForm({
@@ -105,7 +58,7 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
           onClick={() => {
             const updatedAction = isSelectingSwapDenom
               ? {
-                  ...form.state.values,
+                  id: form.state.values.id,
                   swap: {
                     ...form.state.values.swap,
                     swap_amount: {
@@ -116,7 +69,7 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
                   },
                 }
               : {
-                  ...form.state.values,
+                  id: form.state.values.id,
                   swap: {
                     ...form.state.values.swap,
                     minimum_receive_amount: {
@@ -157,42 +110,21 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
       id={action.id}
       onDelete={remove}
       handleLeft
+      isHelping={isHelpOpen}
+      setHelp={() => setIsHelpOpen(!isHelpOpen)}
+      isEditingJson={isEditingJson}
+      setIsEditingJson={() => setIsEditingJson(!isEditingJson)}
+      isValid={form.state.isValid && form.state.values.swap.routes.length > 0}
       title={<code className="rounded bg-zinc-900 px-1 py-[1px] font-mono text-4xl text-zinc-100">SWAP</code>}
       summary={
         <div className="flex flex-col gap-1.5 text-xl text-zinc-300">
           <code>SWAP</code>
-          <div>
-            <code className="rounded px-1 font-mono" style={{ color: action.swap.swap_amount.color }}>
-              {action.swap.swap_amount.displayName}
-            </code>
-            {" --> "}
-            <code className="rounded px-1 font-mono" style={{ color: action.swap.minimum_receive_amount.color }}>
-              {action.swap.minimum_receive_amount.displayName}
-            </code>
-          </div>
+          <Code className="rounded px-1 font-mono">{`${action.swap.swap_amount.displayName} -> ${action.swap.minimum_receive_amount.displayName}`}</Code>
         </div>
       }
       details={
-        <p className="text-xs leading-5.5 text-zinc-300">
-          Swap{" "}
-          <code className="rounded bg-zinc-900 px-1 py-[1px] font-mono">
-            {formatNumber(action.swap.swap_amount.amount || 0)}
-          </code>
-          <code className="rounded px-1 py-[1px] font-mono" style={{ color: action.swap.swap_amount.color }}>
-            {action.swap.swap_amount.displayName}
-          </code>{" "}
-          into at least{" "}
-          <code className="rounded bg-zinc-900 px-1 py-[1px] font-mono">
-            {formatNumber(action.swap.minimum_receive_amount.amount || 0)}
-          </code>
-          <code className="rounded px-1 py-[1px] font-mono" style={{ color: action.swap.minimum_receive_amount.color }}>
-            {action.swap.minimum_receive_amount.displayName}
-          </code>{" "}
-          with a maximum slippage of{" "}
-          <code className="rounded bg-zinc-900 px-1 py-[1px] font-mono text-zinc-400">
-            {action.swap.maximum_slippage_bps / 100}%
-          </code>
-        </p>
+        <Code className="text-xs leading-5.5">{`Swap ${formatNumber(action.swap.swap_amount.amount || 0)} ${action.swap.swap_amount.displayName} into at least ${formatNumber(action.swap.minimum_receive_amount.amount || 0)} ${action.swap.minimum_receive_amount.displayName}  with
+          a maximum slippage of ${action.swap.maximum_slippage_bps / 100}%`}</Code>
       }
       modal={
         <div
@@ -213,20 +145,6 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
             {!isSelectingAnyAsset && !isEditingJson && (
               <form>
                 <div className="flex flex-col gap-4 text-xl">
-                  <div className="absolute top-6 right-6 flex gap-4">
-                    <code
-                      className="cursor-pointer font-mono text-sm text-zinc-500 underline"
-                      onClick={() => setIsEditingJson(true)}
-                    >
-                      json
-                    </code>
-                    <code
-                      className="cursor-pointer font-mono text-sm text-zinc-500 underline"
-                      onClick={() => setIsHelpOpen(!isHelpOpen)}
-                    >
-                      {isHelpOpen ? "hide" : "help"}
-                    </code>
-                  </div>
                   <form.Field
                     name="swap.swap_amount.amount"
                     children={(field) => (
@@ -339,27 +257,29 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
                           <p className="font-mono text-sm text-red-500/60">{field.state.meta.errors.join(", ")}</p>
                         ) : (
                           <div className="flex justify-end gap-2 pt-1">
-                            <code className="text-sm text-zinc-200">
-                              {isBuying ? "buy " : "sell "}
-                              {isBuying
-                                ? form.state.values.swap.minimum_receive_amount.displayName
-                                : form.state.values.swap.swap_amount.displayName}{" "}
-                              at {isBuying ? "<" : ">"} $
-                              {isBuying
-                                ? formatNumber(
-                                    field.state.value === 0
-                                      ? 0
-                                      : form.state.values.swap.swap_amount.amount / field.state.value,
-                                  )
-                                : formatNumber(
-                                    field.state.value === 0
-                                      ? Number.NEGATIVE_INFINITY
-                                      : field.state.value / form.state.values.swap.swap_amount.amount,
-                                  )}{" "}
-                              {isBuying
-                                ? form.state.values.swap.swap_amount.displayName
-                                : form.state.values.swap.minimum_receive_amount.displayName}
-                            </code>
+                            <Code className="text-sm text-zinc-200">
+                              {`${isBuying ? "buy " : "sell "} ${
+                                isBuying
+                                  ? form.state.values.swap.minimum_receive_amount.displayName
+                                  : form.state.values.swap.swap_amount.displayName
+                              } at ${isBuying ? "<" : ">"} \$${
+                                isBuying
+                                  ? formatNumber(
+                                      field.state.value === 0
+                                        ? 0
+                                        : form.state.values.swap.swap_amount.amount / field.state.value,
+                                    )
+                                  : formatNumber(
+                                      field.state.value === 0
+                                        ? Number.NEGATIVE_INFINITY
+                                        : field.state.value / form.state.values.swap.swap_amount.amount,
+                                    )
+                              } ${
+                                isBuying
+                                  ? form.state.values.swap.swap_amount.displayName
+                                  : form.state.values.swap.minimum_receive_amount.displayName
+                              }`}
+                            </Code>
                             <code
                               className="mt-[-1px] mr-1 cursor-pointer text-sm text-zinc-500 underline"
                               onClick={() => setIsBuying(!isBuying)}
@@ -630,13 +550,13 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
                                       </div>
                                       <div className="ml-1 flex h-full items-center justify-between">
                                         <div className="flex flex-col items-start gap-2.5">
-                                          <code className="text-xs text-zinc-400">
-                                            price (
-                                            {isBuying
-                                              ? form.state.values.swap.swap_amount.displayName
-                                              : form.state.values.swap.minimum_receive_amount.displayName}
-                                            )
-                                          </code>
+                                          <Code className="text-xs text-zinc-400">
+                                            {`price (${
+                                              isBuying
+                                                ? form.state.values.swap.swap_amount.displayName
+                                                : form.state.values.swap.minimum_receive_amount.displayName
+                                            })`}
+                                          </Code>
                                           <code className="text-xs text-zinc-400">swap_amount</code>
                                         </div>
                                         <div className="flex flex-col items-center gap-2.5">

@@ -14,6 +14,11 @@ export function BaseNode({
   details,
   modal,
   onDelete,
+  isHelping,
+  setHelp,
+  isEditingJson,
+  setIsEditingJson,
+  isValid = true,
 }: {
   id: string;
   handleLeft?: boolean;
@@ -23,6 +28,11 @@ export function BaseNode({
   details: ReactNode;
   modal: ReactNode;
   onDelete?: () => void;
+  isHelping?: boolean;
+  setHelp?: () => void;
+  isEditingJson?: boolean;
+  setIsEditingJson?: () => void;
+  isValid?: boolean;
 }) {
   const { zoom } = useViewport();
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -53,7 +63,7 @@ export function BaseNode({
   }, [currentContentType, displayedContentType]);
 
   return (
-    <div>
+    <div className="group">
       <div
         className={`flex h-[150px] w-[200px] cursor-pointer items-center justify-center rounded-lg border border-gray-300 bg-black p-4 text-center shadow transition-opacity duration-300 ${
           isVisible ? "opacity-100" : "opacity-0"
@@ -65,7 +75,9 @@ export function BaseNode({
       >
         {onDelete && (
           <div
-            className={`absolute top-1 right-[10px] transition-opacity ${getContentType(zoom) === "title" ? "opacity-0" : "opacity-100"}`}
+            className={`absolute top-1 right-[10px] opacity-0 transition-opacity group-hover:opacity-100 ${
+              getContentType(zoom) === "title" ? "pointer-events-none" : ""
+            }`}
           >
             <code className="cursor-pointer text-xs text-zinc-500 hover:underline" onClick={onDelete}>
               delete
@@ -82,6 +94,7 @@ export function BaseNode({
             }[displayedContentType]
           }
         </div>
+        {!isValid && <code className="absolute right-2 bottom-1 text-sm text-red-400">!</code>}
         {handleRight && <Handle type="source" position={Position.Right} />}
       </div>
       <Modal
@@ -102,7 +115,19 @@ export function BaseNode({
           <ModalHeader className="hidden">
             <ModalTitle>title</ModalTitle>
           </ModalHeader>
-          {modal}
+          <div>
+            {!isEditingJson && !!setHelp && (
+              <div className="absolute top-6 right-6 flex gap-4">
+                <code className="cursor-pointer font-mono text-sm text-zinc-500 underline" onClick={setIsEditingJson}>
+                  json
+                </code>
+                <code className="cursor-pointer font-mono text-sm text-zinc-500 underline" onClick={setHelp}>
+                  {isHelping ? "hide" : "help"}
+                </code>
+              </div>
+            )}
+            {modal}
+          </div>
         </ModalContent>
       </Modal>
     </div>

@@ -17,7 +17,7 @@ export const layoutManyAction: LayoutFunction<ActionNodeParams> = (
 
   if (actions.length === 0) {
     const containerNode = {
-      id: nodeId,
+      id: params.action.id,
       type: "manyNode",
       position: { x: context.startX, y: context.startY },
       data: params,

@@ -1,5 +1,6 @@
 import { Schema } from "effect"
 import { Amount } from "./assets.js"
+import { Coin, Uint64 } from "./cosmwasm.js"
 import { BasisPoints } from "./numbers.js"
 
 export const FixedSwapAdjustment = Schema.Literal("fixed")
@@ -75,7 +76,77 @@ export const SwapAction = Schema.Struct({
 
 export type SwapAction = Schema.Schema.Type<typeof SwapAction>
 
-export const ActionsExcludingMany = Schema.Union(SwapAction)
+export const InnerMany = Schema.Array(Schema.Union(SwapAction))
+
+export const InnerManyAction = Schema.Struct({
+    id: Schema.NonEmptyTrimmedString,
+    many: InnerMany
+})
+export const BlockSchedule = Schema.Struct({
+    blocks: Schema.Struct({
+        interval: Schema.Positive.pipe(
+            Schema.annotations({
+                message: () => ({
+                    message: "Please provide a valid block interval",
+                    override: true
+                })
+            })
+        ),
+        previous: Schema.optional(Schema.NullOr(Schema.Positive))
+    })
+})
+
+export const TimeSchedule = Schema.Struct({
+    time: Schema.Struct({
+        interval: Schema.Positive.pipe(
+            Schema.annotations({
+                message: () => ({
+                    message: "Please provide a valid time interval",
+                    override: true
+                })
+            })
+        ),
+        previous: Schema.optional(Schema.NullOr(Uint64))
+    })
+})
+
+export const CronSchedule = Schema.Struct({
+    cron: Schema.Struct({
+        expr: Schema.NonEmptyTrimmedString.pipe(
+            Schema.annotations({
+                message: () => ({
+                    message: "Please provide a valid cron expression",
+                    override: true
+                })
+            })
+        ),
+        previous: Schema.optional(Schema.NullOr(Uint64))
+    })
+})
+
+export const Cadence = Schema.Union(
+    BlockSchedule,
+    TimeSchedule,
+    CronSchedule
+)
+
+export const Schedule = Schema.Struct({
+    cadence: Cadence,
+    action: Schema.optional(Schema.Union(SwapAction, InnerManyAction)),
+    execution_rebate: Schema.mutable(Schema.Array(Coin)),
+    scheduler: Schema.NonEmptyTrimmedString
+})
+
+export type Schedule = Schema.Schema.Type<typeof Schedule>
+
+export const ScheduleAction = Schema.Struct({
+    id: Schema.NonEmptyTrimmedString,
+    schedule: Schedule
+})
+
+export type ScheduleAction = Schema.Schema.Type<typeof ScheduleAction>
+
+export const ActionsExcludingMany = Schema.Union(SwapAction, ScheduleAction)
 
 export type ActionsExcludingMany = Schema.Schema.Type<
     typeof ActionsExcludingMany
@@ -90,7 +161,12 @@ export const ManyAction = Schema.Struct({
 
 export type ManyAction = Schema.Schema.Type<typeof ManyAction>
 
-export const Action = Schema.Union(SwapAction, ManyAction)
+export const ActionsExcludingSchedule = Schema.Union(
+    SwapAction,
+    ManyAction
+)
+
+export const Action = Schema.Union(SwapAction, ManyAction, ScheduleAction)
 
 export type Action = Schema.Schema.Type<typeof Action>
 

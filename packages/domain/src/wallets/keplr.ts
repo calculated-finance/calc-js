@@ -66,8 +66,8 @@ export class KeplrService extends Effect.Service<KeplrService>()("KeplrService",
 
         if (storedConnection.status === "connected") {
             yield* Effect.gen(function*() {
-                if (typeof storedConnection.chain! === "string") {
-                    const chain = SUPPORTED_CHAINS_BY_ID[storedConnection.chain]
+                if (typeof storedConnection.chain !== "string") {
+                    const chain = SUPPORTED_CHAINS_BY_ID[storedConnection.chain.id]
 
                     if (chain.type === "evm") {
                         const provider = evmProviders.get("Keplr")?.provider
@@ -105,8 +105,7 @@ export class KeplrService extends Effect.Service<KeplrService>()("KeplrService",
                 connectionRef.changes,
                 (providers, connection) => {
                     const hasEvmProvider = providers.has("Keplr")
-                    const hasCosmosProvider = !!(window as any).keplr
-
+                    const hasCosmosProvider = !!window.keplr
                     return {
                         ...KEPLR_WALLET,
                         supported_chains: SUPPORTED_CHAINS.filter((chain) =>
@@ -189,6 +188,15 @@ export class KeplrService extends Effect.Service<KeplrService>()("KeplrService",
     }),
     dependencies: [EIP1193Providers.Default, StorageService.Default]
 }) {}
+
+// const getCosmosSigner = (chain: Chain) =>
+//     Effect.tryPromise(() => {
+//         if (!window.keplr) {
+//             throw new WalletNotInstalledError({ walletType: "Keplr" })
+//         }
+
+//         return window.keplr.getOfflineSignerAuto(`${chain.id}`)
+//     })
 
 const setupEvmEventListeners = (
     provider: EIP1193Provider,
@@ -294,7 +302,7 @@ const connectEvm = (
     setupEvmEventListeners(provider, connectionRef)
 
     const { name } = yield* Effect.tryPromise({
-        try: () => (window as any).keplr.getKey(`eip155:${chain.id}`) as Promise<{ name: string }>,
+        try: () => window.keplr?.getKey(`eip155:${chain.id}`) as Promise<{ name: string }>,
         catch: () => ({ name: "Keplr" })
     })
 
@@ -317,8 +325,8 @@ const connectCosmos = (
 
     const tryEnable = Effect.tryPromise({
         try: async () => {
-            await (window as any).keplr.enable(chain.id)
-            return (window as any).keplr.getKey(chain.id)
+            await window.keplr?.enable(`${chain.id}`)
+            return window.keplr?.getKey(`${chain.id}`)
         },
         catch: (error: any) => {
             console.error("Failed to enable Keplr for chain:", chain.id, error)
@@ -326,7 +334,7 @@ const connectCosmos = (
         }
     })
 
-    const { bech32Address, name } = yield* Effect.retry(tryEnable, {
+    const key = yield* Effect.retry(tryEnable, {
         while: (error) => error instanceof Error,
         schedule: Schedule.exponential("2 seconds")
     }).pipe(
@@ -338,14 +346,21 @@ const connectCosmos = (
         )
     )
 
-    setupCosmosEventListeners(connectionRef)
+    if (key) {
+        setupCosmosEventListeners(connectionRef)
 
-    yield* SubscriptionRef.set(connectionRef, {
-        status: "connected" as const,
-        chain,
-        address: bech32Address,
-        label: name
-    })
+        yield* SubscriptionRef.set(connectionRef, {
+            status: "connected" as const,
+            chain,
+            address: key.bech32Address,
+            label: key.name
+        })
+    } else {
+        yield* SubscriptionRef.update(connectionRef, (currentConnection) => ({
+            ...currentConnection,
+            chain: "unsupported" as const
+        }))
+    }
 })
 
 const addEvmChain = (
@@ -450,8 +465,8 @@ const switchToCosmosChainKeplr = (
 
     const tryEnable = Effect.tryPromise({
         try: async () => {
-            await (window as any).keplr.enable(chain.id)
-            return (window as any).keplr.getKey(chain.id)
+            await window.keplr?.enable(`${chain.id}`)
+            return window.keplr?.getKey(`${chain.id}`)
         },
         catch: (error: any) => {
             console.error("Failed to enable Keplr for chain:", chain.id, error)
@@ -459,7 +474,7 @@ const switchToCosmosChainKeplr = (
         }
     })
 
-    const { bech32Address, name } = yield* Effect.retry(tryEnable, {
+    const key = yield* Effect.retry(tryEnable, {
         while: (error) => error instanceof Error,
         schedule: Schedule.exponential("2 seconds")
     }).pipe(
@@ -472,10 +487,12 @@ const switchToCosmosChainKeplr = (
         })
     )
 
-    yield* SubscriptionRef.set(connectionRef, {
-        status: "connected" as const,
-        chain,
-        address: bech32Address,
-        label: name
-    })
+    if (key) {
+        yield* SubscriptionRef.set(connectionRef, {
+            status: "connected" as const,
+            chain,
+            address: key.bech32Address,
+            label: key.name
+        })
+    }
 })

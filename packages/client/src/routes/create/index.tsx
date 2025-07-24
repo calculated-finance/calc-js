@@ -9,7 +9,6 @@ import {
   ReactFlowProvider,
   useEdgesState,
   useNodesState,
-  useReactFlow,
   ViewportPortal,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
@@ -93,8 +92,6 @@ export default function CreateStrategy() {
     [generateId],
   );
 
-  const { fitView } = useReactFlow();
-
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
@@ -115,7 +112,6 @@ export default function CreateStrategy() {
 
   useEffect(() => {
     layoutNodes();
-    fitView();
   }, [layoutNodes, strategy]);
 
   const [isDisconnecting, setIsDisconnecting] = useState<string>();
@@ -204,7 +200,6 @@ export default function CreateStrategy() {
     );
   }
 
-  const [isStarting, setIsStarting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
   const { setOpenId } = useNodeModalStore();
@@ -292,7 +287,6 @@ export default function CreateStrategy() {
                             <Code
                               onClick={() => {
                                 setIsDeleting(false);
-                                setIsStarting(false);
                                 setStrategy(s);
                               }}
                               className={`${isSelected ? "" : "cursor-pointer hover:underline"}`}
@@ -307,7 +301,6 @@ export default function CreateStrategy() {
                                   {": "}
                                   <code
                                     onClick={() => {
-                                      fitView();
                                       setStartingStrategy(s);
                                     }}
                                     className="cursor-pointer text-green-300 hover:underline"

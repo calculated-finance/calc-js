@@ -21,7 +21,6 @@ export function AddAction({
       id: actionId,
       ...action,
     };
-    console.log("Adding action:", newAction);
     onAdd(newAction as any);
     setOpenId(actionId);
   };

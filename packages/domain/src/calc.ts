@@ -76,11 +76,9 @@ export const SwapAction = Schema.Struct({
 
 export type SwapAction = Schema.Schema.Type<typeof SwapAction>
 
-export const InnerMany = Schema.Array(Schema.Union(SwapAction))
-
 export const InnerManyAction = Schema.Struct({
     id: Schema.NonEmptyTrimmedString,
-    many: InnerMany
+    many: Schema.Array(Schema.Union(SwapAction))
 })
 export const BlockSchedule = Schema.Struct({
     blocks: Schema.Struct({
@@ -132,9 +130,23 @@ export const Cadence = Schema.Union(
     CronSchedule
 )
 
-export const Schedule = Schema.Struct({
+export const InnerSchedule = Schema.Struct({
     cadence: Cadence,
     action: Schema.optional(Schema.Union(SwapAction, InnerManyAction)),
+    execution_rebate: Schema.mutable(Schema.Array(Coin)),
+    scheduler: Schema.NonEmptyTrimmedString
+})
+
+export type InnerSchedule = Schema.Schema.Type<typeof InnerSchedule>
+
+export const InnerScheduleAction = Schema.Struct({
+    id: Schema.NonEmptyTrimmedString,
+    schedule: InnerSchedule
+})
+
+export const Schedule = Schema.Struct({
+    cadence: Cadence,
+    action: Schema.optional(Schema.Union(SwapAction, InnerManyAction, InnerScheduleAction)),
     execution_rebate: Schema.mutable(Schema.Array(Coin)),
     scheduler: Schema.NonEmptyTrimmedString
 })

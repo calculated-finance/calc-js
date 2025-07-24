@@ -2,9 +2,7 @@ import { Action, Many, ManyAction } from "@template/domain/src/calc";
 import "@xyflow/react/dist/style.css";
 import { Effect, Schema } from "effect";
 import { useState } from "react";
-import { v4 } from "uuid";
 import { BaseNode } from "../../components/create/base-node";
-import { useNodeModalStore } from "../../hooks/use-node-modal-store";
 import { type ActionNodeParams, type CustomNodeData } from "../../lib/layout/layout";
 import { AddAction } from "./add-action";
 import { JsonEditor } from "./json-editor";
@@ -16,21 +14,11 @@ export function ManyNode({
     remove,
   },
 }: CustomNodeData<ActionNodeParams<ManyAction>>) {
-  const { setOpenId } = useNodeModalStore();
-
-  const addAction = (action: Omit<Action, "id">) => {
-    const actionId = v4();
+  const addAction = (action: Action) => {
     update({
       id,
-      many: [
-        ...many,
-        {
-          id: actionId,
-          ...action,
-        } as any,
-      ],
+      many: [...many, action as any],
     });
-    setOpenId(actionId);
   };
 
   const [isHelpOpen, setIsHelpOpen] = useState(false);

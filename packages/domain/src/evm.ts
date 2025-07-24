@@ -1,4 +1,5 @@
-import { Effect, SubscriptionRef } from "effect"
+import { Effect, Schedule, SubscriptionRef } from "effect"
+import { ChainNotAddedError, ConnectionRejectedError, RpcError } from "./wallets/index.js"
 
 declare global {
     interface WindowEventMap {
@@ -53,3 +54,59 @@ export class EIP1193Providers extends Effect.Service<EIP1193Providers>()("EIP119
         return ref
     })
 }) {}
+
+export const fetchAccounts = (provider: EIP1193Provider) =>
+    Effect.tryPromise({
+        try: () => provider.request({ method: "eth_requestAccounts" }),
+        catch: (error: any) =>
+            "code" in error && error.code === 4001
+                ? new ConnectionRejectedError({ walletType: "MetaMask", reason: "User rejected connection request" })
+                : new RpcError({ walletType: "MetaMask", message: error.message })
+    }).pipe(
+        Effect.map((accounts) => accounts as Array<string>),
+        Effect.catchTag(
+            "RpcError",
+            Effect.retry({
+                times: 3,
+                schedule: Schedule.exponential("1 seconds")
+            })
+        ),
+        Effect.catchTag("ConnectionRejectedError", (error) => Effect.fail(error))
+    )
+
+export const switchChain = (provider: EIP1193Provider, chainId: string) =>
+    Effect.tryPromise({
+        try: () => provider.request({ method: "wallet_switchEthereumChain", params: [{ chainId }] }),
+        catch: (error: any) =>
+            "code" in error && error.code === 4902
+                ? new ChainNotAddedError({ walletType: "MetaMask", chainId })
+                : new RpcError({ walletType: "MetaMask", message: error.message })
+    }).pipe(
+        Effect.catchTag(
+            "RpcError",
+            Effect.retry({
+                times: 3,
+                schedule: Schedule.exponential("1 seconds")
+            })
+        )
+    )
+
+export const addChain = (provider: EIP1193Provider, chainId: string) =>
+    Effect.tryPromise({
+        try: () => provider.request({ method: "wallet_addEthereumChain", params: [{ chainId }] }),
+        catch: (error: any) =>
+            "code" in error && (error.code === 4001 || error.code === 4100) ?
+                new ConnectionRejectedError({
+                    walletType: "MetaMask",
+                    reason: error.message
+                }) :
+                new RpcError({ walletType: "MetaMask", message: error.message })
+    }).pipe(
+        Effect.catchTag(
+            "RpcError",
+            Effect.retry({
+                times: 3,
+                schedule: Schedule.exponential("1 seconds")
+            })
+        )
+    )

@@ -1,8 +1,28 @@
 import { Data, Effect, Schema, Stream } from "effect"
 import type { ChainId } from "../chains.js"
-import { Chain, ChainType } from "../chains.js"
+import { Chain } from "../chains.js"
 import { KeplrService } from "./keplr.js"
 import { MetaMaskService } from "./metamask.js"
+
+export const Connection = Schema.Union(
+    Schema.Struct({
+        status: Schema.Literal("disconnecting")
+    }),
+    Schema.Struct({
+        status: Schema.Literal("disconnected")
+    }),
+    Schema.Struct({
+        status: Schema.Literal("connecting")
+    }),
+    Schema.Struct({
+        status: Schema.Literal("connected"),
+        chain: Schema.Union(Chain, Schema.Literal("switching_chain", "adding_chain", "unsupported")),
+        address: Schema.NonEmptyTrimmedString,
+        label: Schema.NonEmptyTrimmedString
+    })
+)
+
+export type Connection = Schema.Schema.Type<typeof Connection>
 
 export const WalletType = Schema.Literal(
     "MetaMask",
@@ -15,35 +35,12 @@ export type WalletType = Schema.Schema.Type<typeof WalletType>
 export const Wallet = Schema.Struct({
     type: WalletType,
     supportedChains: Schema.Array(Chain),
-    icon: Schema.optional(Schema.NonEmptyTrimmedString)
+    icon: Schema.optional(Schema.NonEmptyTrimmedString),
+    color: Schema.NonEmptyTrimmedString,
+    connection: Connection
 })
 
 export type Wallet = Schema.Schema.Type<typeof Wallet>
-
-export const Account = Schema.Struct({
-    address: Schema.NonEmptyTrimmedString,
-    chainType: ChainType
-})
-
-export type Account = Schema.Schema.Type<typeof Account>
-
-export const Connection = Schema.Union(
-    Schema.Struct({
-        status: Schema.Literal("disconnected")
-    }),
-    Schema.Struct({
-        status: Schema.Literal("connecting"),
-        wallet: WalletType
-    }),
-    Schema.Struct({
-        status: Schema.Literal("connected"),
-        wallet: Wallet,
-        chain: Schema.Union(Chain, Schema.Literal("switching_chain", "adding_chain", "unsupported")),
-        account: Account
-    })
-)
-
-export type Connection = Schema.Schema.Type<typeof Connection>
 
 export class WalletNotInstalledError extends Data.TaggedError("WalletNotInstalledError")<{
     walletType: string
@@ -93,7 +90,7 @@ export class WalletService extends Effect.Service<WalletService>()("WalletServic
             wallets: Stream.zipLatestWith(
                 metaMaskService.wallet,
                 keplrService.wallet,
-                (...wallets) => wallets.filter((wallet) => !!wallet)
+                (...wallets) => wallets
             ),
 
             connect: (wallet: Wallet, chainId?: ChainId) =>
@@ -109,14 +106,6 @@ export class WalletService extends Effect.Service<WalletService>()("WalletServic
                             yield* Effect.fail(new WalletNotInstalledError({ walletType: wallet.type }))
                     }
                 }),
-
-            connection: Stream.debounce(
-                Stream.zipLatest(
-                    metaMaskService.connection,
-                    keplrService.connection
-                ),
-                200
-            ),
 
             switchChain: (wallet: Wallet, chainId: ChainId) =>
                 Effect.gen(function*() {

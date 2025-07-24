@@ -104,7 +104,6 @@ export function BaseNode({
         }}
       >
         <ModalContent
-          className="h-fit w-fit overflow-auto rounded-xl border bg-black p-10"
           drawerProps={{
             className: "px-6 pt-2 pb-10 border-none",
           }}

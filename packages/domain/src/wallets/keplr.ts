@@ -1,5 +1,5 @@
 import type { Window as KeplrWindow } from "@keplr-wallet/types"
-import { Effect, Option, Schedule, Stream, SubscriptionRef } from "effect"
+import { Effect, Schedule, Stream, SubscriptionRef } from "effect"
 import { BINANCE_SMART_CHAIN, type Chain, type ChainId, COSMOS_HUB, ETHEREUM, RUJIRA_STAGENET } from "../chains.js"
 import type { EIP1193Provider } from "../evm.js"
 import { EIP1193Providers } from "../evm.js"
@@ -46,7 +46,11 @@ export const SUPPORTED_CHAINS_BY_ID: Record<ChainId, Chain> = SUPPORTED_CHAINS.r
 const KEPLR_WALLET: Wallet = {
     type: "Keplr" as const,
     supportedChains: SUPPORTED_CHAINS,
-    icon: "images/keplr.png"
+    icon: "images/keplr.png",
+    color: "#355fe8",
+    connection: {
+        status: "disconnected" as const
+    }
 }
 
 export class KeplrService extends Effect.Service<KeplrService>()("KeplrService", {
@@ -96,23 +100,21 @@ export class KeplrService extends Effect.Service<KeplrService>()("KeplrService",
         }
 
         return {
-            wallet: Stream.filterMap(
+            wallet: Stream.zipLatestWith(
                 providersRef.changes,
-                (providers) => {
+                connectionRef.changes,
+                (providers, connection) => {
                     const hasEvmProvider = providers.has("Keplr")
                     const hasCosmosProvider = !!(window as any).keplr
 
-                    if (!hasEvmProvider && !hasCosmosProvider) {
-                        return Option.none()
-                    }
-
-                    return Option.some({
+                    return {
                         ...KEPLR_WALLET,
-                        supportedChains: SUPPORTED_CHAINS.filter((chain) =>
+                        supported_chains: SUPPORTED_CHAINS.filter((chain) =>
                             chain.type === "evm" && hasEvmProvider ||
                             chain.type === "cosmos" && hasCosmosProvider
-                        )
-                    })
+                        ),
+                        connection
+                    }
                 }
             ),
 
@@ -131,8 +133,7 @@ export class KeplrService extends Effect.Service<KeplrService>()("KeplrService",
                     }
 
                     yield* SubscriptionRef.set(connectionRef, {
-                        status: "connecting" as const,
-                        wallet: KEPLR_WALLET.type
+                        status: "connecting" as const
                     })
 
                     if (chain?.type === "evm") {
@@ -141,8 +142,6 @@ export class KeplrService extends Effect.Service<KeplrService>()("KeplrService",
                         yield* connectCosmos(connectionRef, chain || RUJIRA_STAGENET)
                     }
                 }),
-
-            connection: connectionRef.changes,
 
             switchChain: (chainId: ChainId) =>
                 Effect.gen(function*() {
@@ -175,6 +174,8 @@ export class KeplrService extends Effect.Service<KeplrService>()("KeplrService",
 
             disconnect: () =>
                 Effect.gen(function*() {
+                    yield* SubscriptionRef.set(connectionRef, { status: "disconnecting" as const })
+
                     const provider = (yield* providersRef.get).get("Keplr")?.provider
 
                     if (provider) {
@@ -203,7 +204,7 @@ const setupEvmEventListeners = (
                 (state) => {
                     if (state.status === "connected" && typeof state.chain !== "string") {
                         if (state.chain.type !== "evm") {
-                            Effect.runPromise(connectEvm(provider, connectionRef, chainId as ChainId))
+                            Effect.runPromise(connectEvm(provider, connectionRef, Number(chainId)))
                         }
                     }
                     return state
@@ -221,7 +222,7 @@ const setupEvmEventListeners = (
                 if (state.status === "connected") {
                     return {
                         ...state,
-                        account: { ...state.account, address: accounts[0] }
+                        address: accounts[0]
                     }
                 }
 
@@ -292,11 +293,16 @@ const connectEvm = (
 
     setupEvmEventListeners(provider, connectionRef)
 
+    const { name } = yield* Effect.tryPromise({
+        try: () => (window as any).keplr.getKey(`eip155:${chain.id}`) as Promise<{ name: string }>,
+        catch: () => ({ name: "Keplr" })
+    })
+
     yield* SubscriptionRef.update(connectionRef, () => ({
         status: "connected" as const,
-        wallet: KEPLR_WALLET,
-        account: { address: accounts[0], chainType: "evm" as const },
-        chain
+        address: accounts[0],
+        chain,
+        label: name
     }))
 })
 
@@ -320,7 +326,7 @@ const connectCosmos = (
         }
     })
 
-    const { bech32Address } = yield* Effect.retry(tryEnable, {
+    const { bech32Address, name } = yield* Effect.retry(tryEnable, {
         while: (error) => error instanceof Error,
         schedule: Schedule.exponential("2 seconds")
     }).pipe(
@@ -336,12 +342,9 @@ const connectCosmos = (
 
     yield* SubscriptionRef.set(connectionRef, {
         status: "connected" as const,
-        wallet: KEPLR_WALLET,
         chain,
-        account: {
-            address: bech32Address,
-            chainType: "cosmos" as const
-        }
+        address: bech32Address,
+        label: name
     })
 })
 
@@ -360,7 +363,7 @@ const addEvmChain = (
             provider.request({
                 method: "wallet_addEthereumChain",
                 params: [{
-                    chainId: chain.id,
+                    chainId: `0x${chain.id.toString(16)}`,
                     rpcUrls: chain.rpcUrls,
                     chainName: chain.displayName,
                     nativeCurrency: chain.nativeCurrency
@@ -403,10 +406,9 @@ const switchToEvmChainKeplr = (
         try: () =>
             provider.request({
                 method: "wallet_switchEthereumChain",
-                params: [{ chainId }]
+                params: [{ chainId: `0x${chainId.toString(16)}` }]
             }),
         catch: (error: any) => {
-            console.error("Failed to switch chain in Keplr:", error)
             return "code" in error || error.code == 4902
                 ? new ChainNotAddedError({ walletType: "Keplr", chainId })
                 : new RpcError({ walletType: "Keplr", message: error.message })
@@ -457,7 +459,7 @@ const switchToCosmosChainKeplr = (
         }
     })
 
-    const { bech32Address } = yield* Effect.retry(tryEnable, {
+    const { bech32Address, name } = yield* Effect.retry(tryEnable, {
         while: (error) => error instanceof Error,
         schedule: Schedule.exponential("2 seconds")
     }).pipe(
@@ -472,11 +474,8 @@ const switchToCosmosChainKeplr = (
 
     yield* SubscriptionRef.set(connectionRef, {
         status: "connected" as const,
-        wallet: KEPLR_WALLET,
         chain,
-        account: {
-            address: bech32Address,
-            chainType: "cosmos" as const
-        }
+        address: bech32Address,
+        label: name
     })
 })

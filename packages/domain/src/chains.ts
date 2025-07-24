@@ -28,7 +28,7 @@ export type ChainId = Schema.Schema.Type<typeof ChainId>
 
 export const ETHEREUM: Chain = {
     type: "evm",
-    id: "0x1",
+    id: 1,
     displayName: "Ethereum",
     color: "#627EEA",
     rpcUrls: ["https://ethereum-rpc.publicnode.com"],
@@ -41,7 +41,7 @@ export const ETHEREUM: Chain = {
 
 export const BINANCE_SMART_CHAIN: Chain = {
     type: "evm",
-    id: "0x38",
+    id: 56,
     displayName: "Binance Smart Chain",
     color: "#F3BA2E",
     rpcUrls: ["https://bsc-rpc.publicnode.com"],

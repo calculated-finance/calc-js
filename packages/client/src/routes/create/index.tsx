@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Strategy } from "@template/domain/src/calc";
-import { Connection, type Wallet } from "@template/domain/src/wallets";
+import { type Wallet } from "@template/domain/src/wallets";
 import {
   Background,
   BackgroundVariant,
@@ -18,9 +18,11 @@ import { v4 } from "uuid";
 import { Code } from "../../components/create/code";
 import { ManyNode } from "../../components/create/many-node";
 import { ScheduleNode } from "../../components/create/schedule-node";
+import { StartStrategyForm } from "../../components/create/start-strategy-form";
 import { StrategyNode } from "../../components/create/strategy-node";
 import { SwapNode } from "../../components/create/swap-node";
 import { Dialog, DialogContent } from "../../components/ui/dialog";
+import { Modal, ModalContent } from "../../components/ui/modal";
 import { useNodeModalStore } from "../../hooks/use-node-modal-store";
 import { useNodeVisibilityStore } from "../../hooks/use-node-visibility";
 import { useStrategyStore } from "../../hooks/use-strategy-store";
@@ -37,12 +39,15 @@ export const Route = createFileRoute("/create/")({
 
 function ConnectWallet({ wallet, connect }: { wallet: Wallet; connect: () => void }) {
   return (
-    <div
-      className="flex h-[120px] w-[120px] cursor-pointer items-center justify-center rounded-lg border border-zinc-400 bg-black transition-colors hover:bg-zinc-900"
+    <code
+      className="cursor-pointer text-xl hover:underline"
+      style={{
+        color: wallet.color,
+      }}
       onClick={connect}
     >
-      <img src={wallet.icon} alt={wallet.type} className="h-1/2 w-1/2 rounded-xl object-cover" />
-    </div>
+      {wallet.type}
+    </code>
   );
 }
 
@@ -67,14 +72,14 @@ export default function CreateStrategy() {
   }, [strategies]);
 
   const [isShowingWallets, setIsShowingWallets] = useState(false);
-  const [switchingChainsConnection, setSwitchingChainsConnection] = useState<Connection>();
+  const [switchingChainsWallet, setSwitchingChainsWallet] = useState<Wallet>();
 
-  const { wallets, connect, connections, switchChain, disconnect } = useWallets();
+  const { wallets, connect, switchChain, disconnect } = useWallets();
   const { isVisible, setVisible: setFlowVisible } = useNodeVisibilityStore();
 
   useEffect(() => {
-    setFlowVisible(!isShowingWallets && !switchingChainsConnection);
-  }, [isShowingWallets, switchingChainsConnection]);
+    setFlowVisible(!isShowingWallets && !switchingChainsWallet);
+  }, [isShowingWallets, switchingChainsWallet]);
 
   const generateId = useCallback(() => `node-${++nodeIdCounter}`, []);
 
@@ -115,20 +120,22 @@ export default function CreateStrategy() {
 
   const [isDisconnecting, setIsDisconnecting] = useState<string>();
 
-  function ConnectionItem({ connection }: { connection: Connection }) {
+  function ConnectionItem({ wallet }: { wallet: Wallet }) {
     return (
       <div className="flex flex-col gap-2">
-        {connection?.status === "connecting" ? (
-          <code>Connecting...</code>
+        {wallet.connection?.status === "connecting" ? (
+          <code>Connecting {wallet.type}...</code>
+        ) : wallet.connection?.status === "disconnecting" ? (
+          <code>Disconnecting {wallet.type}...</code>
         ) : (
-          connection?.status === "connected" && (
+          wallet.connection?.status === "connected" && (
             <code className="text-right text-lg">
-              {isDisconnecting == connection.account.address ? (
+              {isDisconnecting == wallet.connection.address ? (
                 <code className="text-lg">
                   Are you sure?{" "}
                   <code
                     onClick={() => {
-                      disconnect(connection.wallet);
+                      disconnect(wallet);
                       setIsDisconnecting(undefined);
                     }}
                     className="cursor-pointer text-lg text-red-300 hover:underline"
@@ -146,11 +153,14 @@ export default function CreateStrategy() {
               ) : (
                 <>
                   <code className="text-right text-lg">
-                    ({connection.wallet.type}) {connection.account.address.substring(0, 5)}...
-                    {connection.account.address.substring(connection.account.address.length - 7)}:{" "}
+                    {wallet.connection.label} ({wallet.connection.address.substring(0, 5)}...
+                    {wallet.connection.address.substring(wallet.connection.address.length - 7)}
+                    ):{" "}
                   </code>
                   <code
-                    onClick={() => setIsDisconnecting(connection.account.address)}
+                    onClick={() =>
+                      wallet.connection.status === "connected" && setIsDisconnecting(wallet.connection.address)
+                    }
                     className="cursor-pointer text-lg text-red-300 hover:underline"
                   >
                     Disconnect
@@ -160,31 +170,31 @@ export default function CreateStrategy() {
             </code>
           )
         )}
-        {connection?.status === "connected" &&
-          (typeof connection.chain !== "string" ? (
+        {wallet.connection?.status === "connected" &&
+          (typeof wallet.connection.chain !== "string" ? (
             <code
               style={{
-                color: connection.chain.color,
+                color: wallet.connection.chain.color,
               }}
               className="text-right text-lg"
             >
-              <code>{connection.chain.displayName}: </code>
+              <code>{wallet.connection.chain.displayName}: </code>
               <code
-                onClick={() => setSwitchingChainsConnection(connection)}
+                onClick={() => setSwitchingChainsWallet(wallet)}
                 className="cursor-pointer text-green-300 hover:underline"
               >
                 Switch
               </code>
             </code>
-          ) : connection.chain === "switching_chain" ? (
+          ) : wallet.connection.chain === "switching_chain" ? (
             <code className="text-right text-lg">Switching Chain...</code>
-          ) : connection.chain === "adding_chain" ? (
+          ) : wallet.connection.chain === "adding_chain" ? (
             <code className="text-right text-lg">Adding Chain...</code>
           ) : (
-            connection.chain === "unsupported" && (
+            wallet.connection.chain === "unsupported" && (
               <code
                 className="cursor-pointer text-right text-lg hover:underline"
-                onClick={() => setSwitchingChainsConnection(connection)}
+                onClick={() => setSwitchingChainsWallet(wallet)}
               >
                 Unsupported Chain
               </code>
@@ -198,6 +208,11 @@ export default function CreateStrategy() {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const { setOpenId } = useNodeModalStore();
+
+  const [startingStrategy, setStartingStrategy] = useState<Strategy>();
+
+  const connectedWallets = useMemo(() => wallets.filter((w) => w.connection.status === "connected"), [wallets]);
+  const disconnectedWallets = useMemo(() => wallets.filter((w) => w.connection.status === "disconnected"), [wallets]);
 
   return (
     <div className="flex h-screen w-screen">
@@ -222,14 +237,14 @@ export default function CreateStrategy() {
         fitViewOptions={{
           padding: 50,
           maxZoom: 2,
-          minZoom: 1,
+          minZoom: 0.5,
         }}
         maxZoom={2}
         minZoom={0.2}
         className="h-screen w-screen"
       >
         <Background id={`1`} gap={20} variant={BackgroundVariant.Dots} />
-        {!isShowingWallets && !switchingChainsConnection && (
+        {!isShowingWallets && !switchingChainsWallet && (
           <Panel position="top-left" className="flex flex-col items-start gap-4">
             <div className="flex items-start gap-6 pt-1 pl-2">
               <code className="cursor-pointer text-lg text-zinc-200 underline">Drafts</code>
@@ -258,7 +273,7 @@ export default function CreateStrategy() {
             </div>
           </Panel>
         )}
-        {!isShowingWallets && !switchingChainsConnection && (
+        {!isShowingWallets && !switchingChainsWallet && (
           <Panel position="bottom-left">
             {strategyFilter === "draft" && (
               <div className="flex flex-col items-start gap-4 pb-4 pl-2">
@@ -291,7 +306,10 @@ export default function CreateStrategy() {
                                 <>
                                   {": "}
                                   <code
-                                    onClick={() => setIsStarting(!isStarting)}
+                                    onClick={() => {
+                                      fitView();
+                                      setStartingStrategy(s);
+                                    }}
                                     className="cursor-pointer text-green-300 hover:underline"
                                   >
                                     Start
@@ -338,47 +356,42 @@ export default function CreateStrategy() {
             )}
           </Panel>
         )}
-        {!isShowingWallets && !switchingChainsConnection && (
+        {!switchingChainsWallet && (
           <Panel position="top-right">
             <div className="flex flex-col items-end gap-8 pt-1 pr-1">
-              {connections
-                .filter((c) => c.status === "connected")
-                .map((connection, i) => (
-                  <ConnectionItem key={i} connection={connection} />
+              {wallets
+                .filter(({ connection: { status } }) => status !== "disconnected")
+                .map((wallet, i) => (
+                  <ConnectionItem key={i} wallet={wallet} />
                 ))}
-              <code
-                onClick={() => setIsShowingWallets(!isShowingWallets)}
-                className="cursor-pointer text-lg hover:underline"
-              >
-                Connect
-              </code>
+              {!isShowingWallets && wallets.length - connectedWallets.length > 0 ? (
+                <code
+                  onClick={() => setIsShowingWallets(!isShowingWallets)}
+                  className="cursor-pointer text-lg hover:underline"
+                >
+                  Connect
+                </code>
+              ) : (
+                <div className="flex flex-col items-end gap-4">
+                  {disconnectedWallets.map((wallet) => (
+                    <ConnectWallet
+                      key={wallet.type}
+                      wallet={wallet}
+                      connect={() => {
+                        connect(wallet);
+                        setIsShowingWallets(false);
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </Panel>
         )}
         <ViewportPortal>
-          <Dialog open={isShowingWallets} onOpenChange={setIsShowingWallets}>
-            <DialogContent
-              className="flex items-center justify-center border-none bg-transparent"
-              overlayClassName="bg-transparent"
-              showCloseButton={false}
-            >
-              <div className="flex flex-wrap justify-center gap-14">
-                {wallets.map((wallet) => (
-                  <ConnectWallet
-                    key={wallet.type}
-                    wallet={wallet}
-                    connect={() => {
-                      connect(wallet);
-                      setIsShowingWallets(false);
-                    }}
-                  />
-                ))}
-              </div>
-            </DialogContent>
-          </Dialog>
           <Dialog
-            open={!!switchingChainsConnection}
-            onOpenChange={(open) => (open ? null : setSwitchingChainsConnection(undefined))}
+            open={!!switchingChainsWallet}
+            onOpenChange={(open) => (open ? null : setSwitchingChainsWallet(undefined))}
           >
             <DialogContent
               className="flex items-center justify-center border-none bg-transparent"
@@ -386,15 +399,15 @@ export default function CreateStrategy() {
               showCloseButton={false}
             >
               <div className="flex flex-wrap justify-center gap-14">
-                {switchingChainsConnection?.status === "connected" &&
-                  switchingChainsConnection.wallet.supportedChains.map((chain) => (
+                {switchingChainsWallet?.connection.status === "connected" &&
+                  switchingChainsWallet.supportedChains.map((chain) => (
                     <code
                       key={chain.id}
                       style={{ color: chain.color }}
                       className="cursor-pointer text-lg hover:underline"
                       onClick={() => {
-                        switchChain(switchingChainsConnection.wallet, chain.id);
-                        setSwitchingChainsConnection(undefined);
+                        switchChain(switchingChainsWallet, chain.id);
+                        setSwitchingChainsWallet(undefined);
                       }}
                     >
                       {chain.displayName}
@@ -403,6 +416,11 @@ export default function CreateStrategy() {
               </div>
             </DialogContent>
           </Dialog>
+          <Modal open={!!startingStrategy} onOpenChange={(open) => (open ? null : setStartingStrategy(undefined))}>
+            <ModalContent showCloseButton={false}>
+              {startingStrategy && <StartStrategyForm strategy={startingStrategy} update={update} />}
+            </ModalContent>
+          </Modal>
         </ViewportPortal>
       </ReactFlow>
     </div>

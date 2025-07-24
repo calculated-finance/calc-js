@@ -1,4 +1,4 @@
-import { Effect, Option, Schedule, Stream, SubscriptionRef } from "effect"
+import { Effect, Schedule, Stream, SubscriptionRef } from "effect"
 import { BINANCE_SMART_CHAIN, type Chain, type ChainId, ETHEREUM } from "../chains.js"
 import type { EIP1193Provider } from "../evm.js"
 import { EIP1193Providers } from "../evm.js"
@@ -39,7 +39,11 @@ export const SUPPORTED_CHAINS_BY_ID: Record<string, Chain> = SUPPORTED_CHAINS.re
 const METAMASK_WALLET: Wallet = {
     type: "MetaMask" as const,
     supportedChains: SUPPORTED_CHAINS,
-    icon: "images/metamask.svg"
+    icon: "images/metamask.svg",
+    color: "#f46f35",
+    connection: {
+        status: "disconnected" as const
+    }
 }
 
 export class MetaMaskService extends Effect.Service<MetaMaskService>()("MetaMaskService", {
@@ -73,12 +77,9 @@ export class MetaMaskService extends Effect.Service<MetaMaskService>()("MetaMask
 
                         yield* SubscriptionRef.set(connectionRef, {
                             status: "connected" as const,
-                            account: {
-                                address: accounts[0],
-                                chainType: "evm" as const
-                            },
-                            wallet: METAMASK_WALLET,
-                            chain: SUPPORTED_CHAINS_BY_ID[chainId] || "unsupported"
+                            address: accounts[0],
+                            chain: SUPPORTED_CHAINS_BY_ID[Number(chainId)] || "unsupported",
+                            label: "MetaMask"
                         })
 
                         setupEventListeners(provider, connectionRef)
@@ -105,13 +106,10 @@ export class MetaMaskService extends Effect.Service<MetaMaskService>()("MetaMask
         }
 
         return {
-            wallet: Stream.filterMap(
-                providersRef.changes,
-                (providers) =>
-                    providers.has("MetaMask")
-                        ? Option.some(METAMASK_WALLET)
-                        : Option.none()
-            ),
+            wallet: Stream.map(connectionRef.changes, (connection) => ({
+                ...METAMASK_WALLET,
+                connection
+            })),
 
             connect: (chainId?: ChainId) =>
                 Effect.gen(function*() {
@@ -129,14 +127,11 @@ export class MetaMaskService extends Effect.Service<MetaMaskService>()("MetaMask
                     }
 
                     yield* SubscriptionRef.set(connectionRef, {
-                        status: "connecting" as const,
-                        wallet: METAMASK_WALLET.type
+                        status: "connecting" as const
                     })
 
                     yield* connectEvm(provider, connectionRef, chainId)
                 }),
-
-            connection: connectionRef.changes,
 
             switchChain: (chainId: ChainId) =>
                 Effect.gen(function*() {
@@ -164,6 +159,8 @@ export class MetaMaskService extends Effect.Service<MetaMaskService>()("MetaMask
 
             disconnect: () =>
                 Effect.gen(function*() {
+                    yield* SubscriptionRef.set(connectionRef, { status: "disconnecting" as const })
+
                     const provider = (yield* providersRef.get).get("MetaMask")?.provider
 
                     if (provider) {
@@ -189,10 +186,12 @@ const setupEventListeners = (
         Effect.runSync(
             SubscriptionRef.update(
                 connectionRef,
-                (state) =>
-                    state.status === "connected"
-                        ? { ...state, chain: SUPPORTED_CHAINS_BY_ID[chainId] || "unsupported" }
+                (state) => {
+                    console.log("Chain changed to:", chainId)
+                    return state.status === "connected"
+                        ? { ...state, chain: SUPPORTED_CHAINS_BY_ID[Number(chainId)] || "unsupported" }
                         : state
+                }
             )
         )
     })
@@ -206,7 +205,7 @@ const setupEventListeners = (
                 if (state.status === "connected") {
                     return {
                         ...state,
-                        account: { ...state.account, address: accounts[0] }
+                        address: accounts[0]
                     }
                 }
 
@@ -262,9 +261,9 @@ const connectEvm = (
 
     yield* SubscriptionRef.update(connectionRef, () => ({
         status: "connected" as const,
-        wallet: METAMASK_WALLET,
-        account: { address: accounts[0], chainType: "evm" as const },
-        chain
+        address: accounts[0],
+        chain,
+        label: "MetaMask"
     }))
 })
 
@@ -283,7 +282,7 @@ const addEvmChain = (
             provider.request({
                 method: "wallet_addEthereumChain",
                 params: [{
-                    chainId: chain.id,
+                    chainId: `0x${chain.id.toString(16)}`,
                     rpcUrls: chain.rpcUrls,
                     chainName: chain.displayName,
                     nativeCurrency: chain.nativeCurrency
@@ -326,7 +325,7 @@ const switchChainMetaMask = (
         try: () =>
             provider.request({
                 method: "wallet_switchEthereumChain",
-                params: [{ chainId }]
+                params: [{ chainId: `0x${chainId.toString(16)}` }]
             }),
         catch: (error: any) =>
             "code" in error || error.code == 4902

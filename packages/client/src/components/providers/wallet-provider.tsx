@@ -1,5 +1,5 @@
-import type { ChainId } from "@template/domain/src/chains";
-import { Wallet, WalletService } from "@template/domain/src/wallets/index";
+import type { Chain, ChainId } from "@template/domain/src/chains";
+import { TransactionData, Wallet, WalletService } from "@template/domain/src/wallets/index";
 import { Effect, ManagedRuntime, Stream } from "effect";
 import React, { useEffect } from "react";
 import { useMemoMap } from "../../hooks/use-memo-map";
@@ -13,6 +13,7 @@ type WalletProviderState = {
   connect: (wallet: Wallet) => Promise<void>;
   switchChain: (wallet: Wallet, chainId: ChainId) => Promise<void>;
   disconnect: (wallet: Wallet) => void;
+  simulateTransaction: (wallet: Wallet, chain: Chain, data: TransactionData) => Promise<number>;
 };
 
 const initialState: WalletProviderState = {
@@ -25,6 +26,9 @@ const initialState: WalletProviderState = {
   },
   disconnect: () => {
     throw new Error("Disconnect function not provided yet");
+  },
+  simulateTransaction: () => {
+    throw new Error("Simulate transaction function not provided yet");
   },
 };
 
@@ -42,13 +46,14 @@ export const WalletProvider = ({ children }: WalletProviderProps) => {
         const walletsFiber = yield* Effect.fork(
           Stream.runForEach(walletService.wallets, (wallets) =>
             Effect.sync(() => {
-              setState((prev) => ({
-                ...prev,
+              setState(() => ({
                 wallets,
                 connect: (wallet: Wallet) => Effect.runPromise(walletService.connect(wallet)),
                 switchChain: (wallet: Wallet, chainId: ChainId) =>
                   Effect.runPromise(walletService.switchChain(wallet, chainId)),
                 disconnect: (wallet: Wallet) => Effect.runPromise(walletService.disconnect(wallet)),
+                simulateTransaction: (wallet: Wallet, chain: Chain, data: TransactionData) =>
+                  Effect.runPromise(walletService.simulateTransaction(wallet, chain, data)),
               }));
             }),
           ),

@@ -42,6 +42,22 @@ export const Wallet = Schema.Struct({
 
 export type Wallet = Schema.Schema.Type<typeof Wallet>
 
+export const CosmosTransactionMsgs = Schema.Array(Schema.Struct({
+    typeUrl: Schema.NonEmptyTrimmedString,
+    value: Schema.Unknown
+}))
+
+export type CosmosTransactionMsgs = Schema.Schema.Type<typeof CosmosTransactionMsgs>
+
+export const TransactionData = Schema.Union(
+    Schema.Struct({
+        type: Schema.Literal("cosmos"),
+        msgs: CosmosTransactionMsgs
+    })
+)
+
+export type TransactionData = Schema.Schema.Type<typeof TransactionData>
+
 export class WalletNotInstalledError extends Data.TaggedError("WalletNotInstalledError")<{
     walletType: string
 }> {}
@@ -87,10 +103,9 @@ export class WalletService extends Effect.Service<WalletService>()("WalletServic
         const keplrService = yield* KeplrService
 
         return {
-            wallets: Stream.zipLatestWith(
+            wallets: Stream.zipLatestAll(
                 metaMaskService.wallet,
-                keplrService.wallet,
-                (...wallets) => wallets
+                keplrService.wallet
             ),
 
             connect: (wallet: Wallet, chainId?: ChainId) =>
@@ -129,6 +144,28 @@ export class WalletService extends Effect.Service<WalletService>()("WalletServic
                             break
                         case "Keplr":
                             yield* keplrService.disconnect()
+                            break
+                        default:
+                            return yield* Effect.fail(new WalletNotInstalledError({ walletType: wallet.type }))
+                    }
+                }),
+
+            simulateTransaction: (wallet: Wallet, chain: Chain, data: TransactionData) =>
+                Effect.gen(function*() {
+                    switch (wallet.type) {
+                        case "Keplr":
+                            return yield* keplrService.simulateTransaction(chain, data)
+                            break
+                        default:
+                            return yield* Effect.fail(new WalletNotInstalledError({ walletType: wallet.type }))
+                    }
+                }),
+
+            signTransaction: (wallet: Wallet, chain: Chain, data: TransactionData) =>
+                Effect.gen(function*() {
+                    switch (wallet.type) {
+                        case "Keplr":
+                            yield* keplrService.signTransaction(chain, data)
                             break
                         default:
                             return yield* Effect.fail(new WalletNotInstalledError({ walletType: wallet.type }))

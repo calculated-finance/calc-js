@@ -1,10 +1,11 @@
+import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate"
 import type { Window as KeplrWindow } from "@keplr-wallet/types"
 import { Effect, Schedule, Stream, SubscriptionRef } from "effect"
 import { BINANCE_SMART_CHAIN, type Chain, type ChainId, COSMOS_HUB, ETHEREUM, RUJIRA_STAGENET } from "../chains.js"
 import type { EIP1193Provider } from "../evm.js"
 import { EIP1193Providers } from "../evm.js"
 import { StorageService } from "../storage.js"
-import type { Connection, Wallet } from "./index.js"
+import type { Connection, CosmosTransactionMsgs, TransactionData, Wallet } from "./index.js"
 import {
     AccountsNotAvailableError,
     ChainNotAddedError,
@@ -53,150 +54,239 @@ const KEPLR_WALLET: Wallet = {
     }
 }
 
-export class KeplrService extends Effect.Service<KeplrService>()("KeplrService", {
-    effect: Effect.gen(function*() {
-        const providersRef = yield* EIP1193Providers
-        const evmProviders = yield* providersRef.get
-        const storage = yield* StorageService
+export class KeplrService extends Effect.Service<KeplrService>()(
+    "KeplrService",
+    {
+        effect: Effect.gen(function*() {
+            const providersRef = yield* EIP1193Providers
+            const evmProviders = yield* providersRef.get
+            const storage = yield* StorageService
 
-        const connectionData = yield* storage.get(KEPLR_CONNECTION_KEY)
-        const storedConnection = connectionData ? JSON.parse(connectionData) : { status: "disconnected" }
+            const connectionData = yield* storage.get(KEPLR_CONNECTION_KEY)
+            const storedConnection = connectionData
+                ? JSON.parse(connectionData)
+                : { status: "disconnected" }
 
-        const connectionRef = yield* SubscriptionRef.make<Connection>(storedConnection)
+            const connectionRef = yield* SubscriptionRef.make<Connection>(storedConnection)
 
-        if (storedConnection.status === "connected") {
-            yield* Effect.gen(function*() {
-                if (typeof storedConnection.chain !== "string") {
-                    const chain = SUPPORTED_CHAINS_BY_ID[storedConnection.chain.id]
+            if (storedConnection.status === "connected") {
+                yield* Effect.gen(function*() {
+                    if (typeof storedConnection.chain !== "string") {
+                        const chain = SUPPORTED_CHAINS_BY_ID[storedConnection.chain.id]
 
-                    if (chain.type === "evm") {
-                        const provider = evmProviders.get("Keplr")?.provider
+                        if (chain.type === "evm") {
+                            const provider = evmProviders.get("Keplr")?.provider
 
-                        if (provider) {
-                            yield* connectEvm(provider, connectionRef, chain.id)
-                        } else {
-                            yield* SubscriptionRef.set(connectionRef, { status: "disconnected" })
+                            if (provider) {
+                                yield* connectEvm(provider, connectionRef, chain.id)
+                            } else {
+                                yield* SubscriptionRef.set(connectionRef, {
+                                    status: "disconnected"
+                                })
+                            }
+                        } else if (chain.type === "cosmos") {
+                            yield* connectCosmos(connectionRef, chain)
                         }
-                    } else if (chain.type === "cosmos") {
-                        yield* connectCosmos(connectionRef, chain)
                     }
-                }
-            })
-        }
+                })
+            }
 
-        yield* Effect.forkDaemon(
-            Stream.runForEach(
-                connectionRef.changes,
-                (connectionState) =>
+            yield* Effect.forkDaemon(
+                Stream.runForEach(connectionRef.changes, (connectionState) =>
                     connectionState.status === "connected"
                         ? storage.set(KEPLR_CONNECTION_KEY, JSON.stringify(connectionState))
-                        : storage.remove(KEPLR_CONNECTION_KEY)
+                        : storage.remove(KEPLR_CONNECTION_KEY))
             )
-        )
 
-        if (storedConnection.status === "connected") {
-            const provider = evmProviders.get("Keplr")?.provider
-            if (provider) setupEvmEventListeners(provider, connectionRef)
-        }
+            if (storedConnection.status === "connected") {
+                const provider = evmProviders.get("Keplr")?.provider
+                if (provider) setupEvmEventListeners(provider, connectionRef)
+            }
 
-        return {
-            wallet: Stream.zipLatestWith(
-                providersRef.changes,
-                connectionRef.changes,
-                (providers, connection) => {
-                    const hasEvmProvider = providers.has("Keplr")
-                    const hasCosmosProvider = !!window.keplr
-                    return {
-                        ...KEPLR_WALLET,
-                        supported_chains: SUPPORTED_CHAINS.filter((chain) =>
-                            chain.type === "evm" && hasEvmProvider ||
-                            chain.type === "cosmos" && hasCosmosProvider
-                        ),
-                        connection
-                    }
-                }
-            ),
-
-            connect: (chainId?: ChainId) =>
-                Effect.gen(function*() {
-                    const chain = chainId !== undefined ? SUPPORTED_CHAINS_BY_ID[chainId] : undefined
-
-                    if (chainId && !chain) {
-                        return yield* Effect.fail(new ChainNotSupportedError({ walletType: "Keplr", chainId }))
-                    }
-
-                    const provider = (yield* providersRef.get).get("Keplr")?.provider
-
-                    if (!provider) {
-                        return yield* Effect.fail(new WalletNotInstalledError({ walletType: "Keplr" }))
-                    }
-
-                    yield* SubscriptionRef.set(connectionRef, {
-                        status: "connecting" as const
-                    })
-
-                    if (chain?.type === "evm") {
-                        yield* connectEvm(provider, connectionRef, chainId)
-                    } else {
-                        yield* connectCosmos(connectionRef, chain || RUJIRA_STAGENET)
-                    }
-                }),
-
-            switchChain: (chainId: ChainId) =>
-                Effect.gen(function*() {
-                    const chain = SUPPORTED_CHAINS_BY_ID[chainId]
-
-                    if (!chain) {
-                        return yield* Effect.fail(new ChainNotSupportedError({ walletType: "Keplr", chainId }))
-                    }
-
-                    const connection = yield* connectionRef.get
-
-                    if (connection.status === "connected" && typeof connection.chain !== "string") {
-                        if (connection.chain.id === chainId) {
-                            return yield* Effect.succeed(connection)
+            return {
+                wallet: Stream.zipLatestWith(
+                    providersRef.changes,
+                    connectionRef.changes,
+                    (providers, connection) => {
+                        const hasEvmProvider = providers.has("Keplr")
+                        const hasCosmosProvider = !!window.keplr
+                        return {
+                            ...KEPLR_WALLET,
+                            supportedChains: SUPPORTED_CHAINS.filter(
+                                (chain) =>
+                                    (chain.type === "evm" && hasEvmProvider) ||
+                                    (chain.type === "cosmos" && hasCosmosProvider)
+                            ),
+                            connection
                         }
                     }
+                ),
 
-                    if (chain.type === "evm") {
+                connect: (chainId?: ChainId) =>
+                    Effect.gen(function*() {
+                        const chain = chainId !== undefined
+                            ? SUPPORTED_CHAINS_BY_ID[chainId]
+                            : undefined
+
+                        if (chainId && !chain) {
+                            return yield* Effect.fail(
+                                new ChainNotSupportedError({ walletType: "Keplr", chainId })
+                            )
+                        }
+
                         const provider = (yield* providersRef.get).get("Keplr")?.provider
 
                         if (!provider) {
-                            return yield* Effect.fail(new WalletNotInstalledError({ walletType: "Keplr" }))
+                            return yield* Effect.fail(
+                                new WalletNotInstalledError({ walletType: "Keplr" })
+                            )
                         }
 
-                        yield* connectEvm(provider, connectionRef, chainId)
-                    } else {
-                        yield* switchToCosmosChainKeplr(connectionRef, chain)
-                    }
-                }),
+                        yield* SubscriptionRef.set(connectionRef, {
+                            status: "connecting" as const
+                        })
 
-            disconnect: () =>
-                Effect.gen(function*() {
-                    yield* SubscriptionRef.set(connectionRef, { status: "disconnecting" as const })
+                        if (chain?.type === "evm") {
+                            yield* connectEvm(provider, connectionRef, chainId)
+                        } else {
+                            yield* connectCosmos(connectionRef, chain || RUJIRA_STAGENET)
+                        }
+                    }),
 
-                    const provider = (yield* providersRef.get).get("Keplr")?.provider
+                switchChain: (chainId: ChainId) =>
+                    Effect.gen(function*() {
+                        const chain = SUPPORTED_CHAINS_BY_ID[chainId]
 
-                    if (provider) {
-                        provider.removeAllListeners("chainChanged")
-                        provider.removeAllListeners("accountsChanged")
-                    }
+                        if (!chain) {
+                            return yield* Effect.fail(
+                                new ChainNotSupportedError({ walletType: "Keplr", chainId })
+                            )
+                        }
 
-                    yield* SubscriptionRef.set(connectionRef, { status: "disconnected" as const })
-                })
-        }
-    }),
-    dependencies: [EIP1193Providers.Default, StorageService.Default]
-}) {}
+                        const connection = yield* connectionRef.get
 
-// const getCosmosSigner = (chain: Chain) =>
-//     Effect.tryPromise(() => {
-//         if (!window.keplr) {
-//             throw new WalletNotInstalledError({ walletType: "Keplr" })
-//         }
+                        if (
+                            connection.status === "connected" &&
+                            typeof connection.chain !== "string"
+                        ) {
+                            if (connection.chain.id === chainId) {
+                                return yield* Effect.succeed(connection)
+                            }
+                        }
 
-//         return window.keplr.getOfflineSignerAuto(`${chain.id}`)
-//     })
+                        if (chain.type === "evm") {
+                            const provider = (yield* providersRef.get).get("Keplr")?.provider
+
+                            if (!provider) {
+                                return yield* Effect.fail(
+                                    new WalletNotInstalledError({ walletType: "Keplr" })
+                                )
+                            }
+
+                            yield* connectEvm(provider, connectionRef, chainId)
+                        } else {
+                            yield* switchToCosmosChainKeplr(connectionRef, chain)
+                        }
+                    }),
+
+                disconnect: () =>
+                    Effect.gen(function*() {
+                        yield* SubscriptionRef.set(connectionRef, {
+                            status: "disconnecting" as const
+                        })
+
+                        const provider = (yield* providersRef.get).get("Keplr")?.provider
+
+                        if (provider) {
+                            provider.removeAllListeners("chainChanged")
+                            provider.removeAllListeners("accountsChanged")
+                        }
+
+                        yield* SubscriptionRef.set(connectionRef, {
+                            status: "disconnected" as const
+                        })
+                    }),
+
+                simulateTransaction: (chain: Chain, data: TransactionData) =>
+                    Effect.gen(function*() {
+                        if (data.type === "cosmos") {
+                            return yield* simulateCosmosTransaction(chain.id, data.msgs)
+                        }
+
+                        return yield* Effect.fail(
+                            new ChainNotSupportedError({
+                                walletType: "Keplr",
+                                chainId: chain.id
+                            })
+                        )
+                    }),
+
+                signTransaction: (chain: Chain, data: TransactionData) =>
+                    Effect.gen(function*() {
+                        if (data.type === "cosmos") {
+                            yield* executeCosmosTransaction(chain.id, data.msgs)
+                        }
+
+                        yield* Effect.fail(
+                            new ChainNotSupportedError({
+                                walletType: "Keplr",
+                                chainId: chain.id
+                            })
+                        )
+                    })
+            }
+        }),
+        dependencies: [EIP1193Providers.Default, StorageService.Default]
+    }
+) {}
+
+export const simulateCosmosTransaction = (
+    chainId: ChainId,
+    data: CosmosTransactionMsgs
+) => Effect.gen(function*() {
+    const signer = yield* Effect.tryPromise(
+        () =>
+            window.keplr?.getOfflineSignerAuto(`${chainId}`) ||
+            Promise.reject(new WalletNotInstalledError({ walletType: "Keplr" }))
+    )
+
+    const client = yield* Effect.tryPromise(() =>
+        SigningCosmWasmClient.connectWithSigner(
+            SUPPORTED_CHAINS_BY_ID[chainId].rpcUrls[0],
+            signer
+        )
+    )
+
+    const accounts = yield* Effect.tryPromise(() => signer.getAccounts())
+
+    if (!accounts || accounts.length === 0) {
+        return yield* Effect.fail(new AccountsNotAvailableError({ walletType: "Keplr" }))
+    }
+
+    return yield* Effect.tryPromise(() => client.simulate(accounts[0].address, data, "auto"))
+})
+
+export const executeCosmosTransaction = (
+    chainId: ChainId,
+    data: CosmosTransactionMsgs
+) => Effect.gen(function*() {
+    const signer = yield* Effect.tryPromise(
+        () =>
+            window.keplr?.getOfflineSignerAuto(`${chainId}`) ||
+            Promise.reject(new WalletNotInstalledError({ walletType: "Keplr" }))
+    )
+
+    const client = yield* Effect.tryPromise(() =>
+        SigningCosmWasmClient.connectWithSigner(
+            SUPPORTED_CHAINS_BY_ID[chainId].rpcUrls[0],
+            signer
+        )
+    )
+
+    const accounts = yield* Effect.tryPromise(() => signer.getAccounts())
+
+    yield* Effect.tryPromise(() => client.signAndBroadcast(accounts[0].address, data, "auto"))
+})
 
 const setupEvmEventListeners = (
     provider: EIP1193Provider,
@@ -207,17 +297,16 @@ const setupEvmEventListeners = (
 
     provider.on("chainChanged", (chainId: string) => {
         Effect.runSync(
-            SubscriptionRef.update(
-                connectionRef,
-                (state) => {
-                    if (state.status === "connected" && typeof state.chain !== "string") {
-                        if (state.chain.type !== "evm") {
-                            Effect.runPromise(connectEvm(provider, connectionRef, Number(chainId)))
-                        }
+            SubscriptionRef.update(connectionRef, (state) => {
+                if (state.status === "connected" && typeof state.chain !== "string") {
+                    if (state.chain.type !== "evm") {
+                        Effect.runPromise(
+                            connectEvm(provider, connectionRef, Number(chainId))
+                        )
                     }
-                    return state
                 }
-            )
+                return state
+            })
         )
     })
 
@@ -266,7 +355,10 @@ const connectEvm = (
         try: () => provider.request({ method: "eth_requestAccounts" }),
         catch: (error: any) =>
             "code" in error && error.code === 4001
-                ? new ConnectionRejectedError({ walletType: "Keplr", reason: "User rejected connection request" })
+                ? new ConnectionRejectedError({
+                    walletType: "Keplr",
+                    reason: "User rejected connection request"
+                })
                 : new RpcError({ walletType: "Keplr", message: error.message })
     })
 
@@ -277,7 +369,9 @@ const connectEvm = (
     })
 
     if (!accounts || accounts.length === 0) {
-        return yield* Effect.fail(new AccountsNotAvailableError({ walletType: "Keplr" }))
+        return yield* Effect.fail(
+            new AccountsNotAvailableError({ walletType: "Keplr" })
+        )
     }
 
     const chainId = yield* Effect.tryPromise({
@@ -377,20 +471,22 @@ const addEvmChain = (
         try: () =>
             provider.request({
                 method: "wallet_addEthereumChain",
-                params: [{
-                    chainId: `0x${chain.id.toString(16)}`,
-                    rpcUrls: chain.rpcUrls,
-                    chainName: chain.displayName,
-                    nativeCurrency: chain.nativeCurrency
-                }]
+                params: [
+                    {
+                        chainId: `0x${chain.id.toString(16)}`,
+                        rpcUrls: chain.rpcUrls,
+                        chainName: chain.displayName,
+                        nativeCurrency: chain.nativeCurrency
+                    }
+                ]
             }),
         catch: (error: any) =>
-            "code" in error && (error.code === 4001 || error.code === 4100) ?
-                new ConnectionRejectedError({
+            "code" in error && (error.code === 4001 || error.code === 4100)
+                ? new ConnectionRejectedError({
                     walletType: "Keplr",
                     reason: error.message
-                }) :
-                new RpcError({ walletType: "Keplr", message: error.message })
+                })
+                : new RpcError({ walletType: "Keplr", message: error.message })
     })
 
     yield* Effect.retry(tryAddChain, {

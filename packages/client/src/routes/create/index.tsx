@@ -71,10 +71,10 @@ export default function CreateStrategy() {
 
   const [strategy, setStrategy] = useState<Strategy>();
 
-  useEffect(() => {
-    if (!strategy || !strategies) setStrategy(undefined);
-    else setStrategy(Object.values(strategies)[0]);
-  }, [strategies]);
+  // useEffect(() => {
+  //   if (!strategy || !strategies) setStrategy(undefined);
+  //   else setStrategy(Object.values(strategies)[0]);
+  // }, [strategies]);
 
   const [isShowingWallets, setIsShowingWallets] = useState(false);
   const [switchingChainsWallet, setSwitchingChainsWallet] = useState<Wallet>();

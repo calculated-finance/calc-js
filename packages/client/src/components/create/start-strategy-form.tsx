@@ -123,30 +123,52 @@ export function StartStrategyForm({ strategy, update }: { strategy: Strategy; up
       >
       {isSigning && (
         <SignTransactionForm
-        chain={RUJIRA_STAGENET}
-        getDataWithSender={(sender) => ({
-          type: "cosmos",
-          msgs: [
-          {
-            typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
-            value: {
-            sender,
-            contract: "",
-            msg: toUtf8(
-              JSON.stringify({
-              instantiate_strategy: {
-                strategy: { ...Effect.runSync(Schema.encode(Strategy)(form.state.values)), owner: sender },
-                label: form.state.values.label,
-                affiliates: [],
-              },
-              })
-            ),
-            funds: Object.values(deposit).map((d) => Effect.runSync(Schema.encode(Amount)(d))),
-            },
-          },
-          ],
-        })}
-        onBack={() => setIsSigning(false)}
+          chain={RUJIRA_STAGENET}
+          getDataWithSender={(sender) => {
+            function removeIds(obj: any): any {
+              if (Array.isArray(obj)) {
+                return obj.map(removeIds);
+              }
+              if (obj && typeof obj === "object") {
+                const { id, ...rest } = obj;
+                return Object.fromEntries(
+                  Object.entries(rest).map(([k, v]) => [k, removeIds(v)])
+                );
+              }
+              return obj;
+            }
+
+            const encodedStrategy = Effect.runSync(Schema.encode(Strategy)(form.state.values));
+            const strategyWithoutIds = removeIds(encodedStrategy); // TODO: Manage this with schema transformations
+
+            return {
+              type: "cosmos",
+              msgs: [
+                {
+                  typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+                  value: {
+                    sender,
+                    // TODO: use config to get the contract address
+                    contract: "sthor1xg6qsvyktr0zyyck3d67mgae0zun4lhwwn3v9pqkl5pk8mvkxsnscenkc0",
+                    msg: toUtf8(
+                      JSON.stringify({
+                        instantiate_strategy: {
+                          strategy: { ...strategyWithoutIds, owner: sender, state: null },
+                          label: form.state.values.label,
+                          affiliates: [],
+                        },
+                      })
+                    ),
+                    funds: Object.values(deposit)
+                      .filter(d => d.amount > 0)
+                      .map((d) => Effect.runSync(Schema.encode(Amount)(d)))
+                      .sort((a, b) => a.denom.localeCompare(b.denom)),
+                  },
+                },
+              ],
+            };
+          }}
+          onBack={() => setIsSigning(false)}
         />
       )}
       </div>

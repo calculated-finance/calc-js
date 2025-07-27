@@ -90,6 +90,10 @@ export class RpcError extends Data.TaggedError("RpcError")<{
     message: string
 }> {}
 
+export class SimulationFailed extends Data.TaggedError("SimulationFailed")<{
+    message: string
+}> {}
+
 export type WalletError =
     | WalletNotInstalledError
     | AccountsNotAvailableError
@@ -155,7 +159,6 @@ export class WalletService extends Effect.Service<WalletService>()("WalletServic
                     switch (wallet.type) {
                         case "Keplr":
                             return yield* keplrService.simulateTransaction(chain, data)
-                            break
                         default:
                             return yield* Effect.fail(new WalletNotInstalledError({ walletType: wallet.type }))
                     }
@@ -165,8 +168,7 @@ export class WalletService extends Effect.Service<WalletService>()("WalletServic
                 Effect.gen(function*() {
                     switch (wallet.type) {
                         case "Keplr":
-                            yield* keplrService.signTransaction(chain, data)
-                            break
+                            return yield* keplrService.signTransaction(chain, data)
                         default:
                             return yield* Effect.fail(new WalletNotInstalledError({ walletType: wallet.type }))
                     }

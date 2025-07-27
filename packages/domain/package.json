@@ -30,7 +30,8 @@
     "@cosmjs/stargate": "^0.34.0",
     "@effect/platform": "latest",
     "@effect/sql": "latest",
-    "effect": "latest"
+    "effect": "latest",
+    "uuid": "^11.1.0"
   },
   "effect": {
     "generateExports": {

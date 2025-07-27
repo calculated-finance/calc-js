@@ -1,5 +1,7 @@
-import { Schema } from "effect"
+import { CosmWasmClient } from "@cosmjs/cosmwasm-stargate"
+import { Effect, Schema } from "effect"
 import { Amount } from "./assets.js"
+import { type ChainId, CHAINS_BY_ID } from "./chains.js"
 import { Coin, Uint64 } from "./cosmwasm.js"
 import { BasisPoints } from "./numbers.js"
 
@@ -96,14 +98,10 @@ export const BlockSchedule = Schema.Struct({
 
 export const TimeSchedule = Schema.Struct({
     time: Schema.Struct({
-        interval: Schema.optional(Schema.Positive.pipe(
-            Schema.annotations({
-                message: () => ({
-                    message: "Please provide a valid time interval",
-                    override: true
-                })
-            })
-        )),
+        duration: Schema.Struct({
+            nanos: Schema.optional(Schema.Number),
+            secs: Schema.Positive
+        }),
         previous: Schema.optional(Schema.NullOr(Uint64))
     })
 })
@@ -144,9 +142,11 @@ export const InnerScheduleAction = Schema.Struct({
     schedule: InnerSchedule
 })
 
+export const SchedulableAction = Schema.Union(SwapAction, InnerManyAction, InnerScheduleAction)
+
 export const Schedule = Schema.Struct({
     cadence: Cadence,
-    action: Schema.optional(Schema.Union(SwapAction, InnerManyAction, InnerScheduleAction)),
+    action: Schema.optional(SchedulableAction),
     execution_rebate: Schema.mutable(Schema.Array(Coin)),
     scheduler: Schema.NonEmptyTrimmedString
 })
@@ -184,8 +184,12 @@ export const Action = Schema.Union(SwapAction, ManyAction, ScheduleAction)
 
 export type Action = Schema.Schema.Type<typeof Action>
 
+export const StrategyId = Schema.Union(Schema.NonEmptyTrimmedString, Schema.Positive)
+
+export type StrategyId = Schema.Schema.Type<typeof StrategyId>
+
 export const Strategy = Schema.Struct({
-    id: Schema.NonEmptyTrimmedString,
+    id: StrategyId,
     action: Schema.optional(Action),
     address: Schema.optional(Schema.NonEmptyTrimmedString),
     owner: Schema.optional(Schema.NonEmptyString.pipe(
@@ -208,3 +212,51 @@ export const Strategy = Schema.Struct({
 })
 
 export type Strategy = Schema.Schema.Type<typeof Strategy>
+
+export const StrategyHandle = Schema.Union(
+    Schema.Struct({
+        id: StrategyId,
+        owner: Schema.NonEmptyTrimmedString,
+        label: Schema.NonEmptyTrimmedString,
+        status: Schema.Literal("draft")
+    }),
+    Schema.Struct({
+        id: StrategyId,
+        contract_address: Schema.NonEmptyTrimmedString,
+        owner: Schema.NonEmptyTrimmedString,
+        label: Schema.NonEmptyTrimmedString,
+        status: Schema.Literal("active", "paused", "archived")
+    })
+)
+
+export type StrategyHandle = Schema.Schema.Type<typeof StrategyHandle>
+
+export class CalcService extends Effect.Service<CalcService>()("CalcService", {
+    succeed: {
+        strategyHandles: (
+            chainId: ChainId,
+            owner: string | undefined,
+            status: "active" | "paused" | "archived" | undefined
+        ) => Effect.gen(function*() {
+            const chain = CHAINS_BY_ID[chainId]
+
+            if (chain.type !== "cosmos") {
+                throw new Error(`Chain type ${chain.displayName} is not supported for strategies`)
+            }
+
+            const client = yield* Effect.tryPromise(() => CosmWasmClient.connect(chain.rpcUrls[0]))
+
+            const strategyHandles = yield* Effect.tryPromise(() =>
+                // TODO: use config to get the contract address
+                client.queryContractSmart("sthor1xg6qsvyktr0zyyck3d67mgae0zun4lhwwn3v9pqkl5pk8mvkxsnscenkc0", {
+                    strategies: {
+                        owner,
+                        status
+                    }
+                })
+            )
+
+            return strategyHandles as ReadonlyArray<StrategyHandle>
+        })
+    }
+}) {}

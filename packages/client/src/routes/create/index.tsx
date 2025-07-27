@@ -21,9 +21,10 @@ import { StartStrategyForm } from "../../components/create/start-strategy-form";
 import { StrategyNode } from "../../components/create/strategy-node";
 import { SwapNode } from "../../components/create/swap-node";
 import { Dialog, DialogContent } from "../../components/ui/dialog";
-import { Modal, ModalContent } from "../../components/ui/modal";
+import { Modal, ModalContent, ModalHeader, ModalTitle } from "../../components/ui/modal";
 import { useNodeModalStore } from "../../hooks/use-node-modal-store";
 import { useNodeVisibilityStore } from "../../hooks/use-node-visibility";
+import { useStrategies } from "../../hooks/use-strategies";
 import { useStrategyStore } from "../../hooks/use-strategy-store";
 import { useWallets } from "../../hooks/use-wallets";
 import { layoutStrategy } from "../../lib/layout/layout-strategy";
@@ -62,12 +63,17 @@ let nodeIdCounter = 0;
 export default function CreateStrategy() {
   const [strategyFilter, setStrategyFilter] = useState<"draft" | "active" | "paused" | "archived">("draft");
 
-  const { add, update, deleteStrategy, strategies } = useStrategyStore();
+  const { add, update, deleteStrategy } = useStrategyStore();
+
+  const { data: strategies } = useStrategies(strategyFilter);
+
+  console.log({strategies})
+
   const [strategy, setStrategy] = useState<Strategy>();
 
   useEffect(() => {
-    if (!strategy && !strategies) setStrategy(undefined);
-    else setStrategy(strategy && strategies[strategy.id] ? strategies[strategy.id] : Object.values(strategies)[0]);
+    if (!strategy || !strategies) setStrategy(undefined);
+    else setStrategy(Object.values(strategies)[0]);
   }, [strategies]);
 
   const [isShowingWallets, setIsShowingWallets] = useState(false);
@@ -242,10 +248,10 @@ export default function CreateStrategy() {
         {!isShowingWallets && !switchingChainsWallet && (
           <Panel position="top-left" className="flex flex-col items-start gap-4">
             <div className="flex items-start gap-6 pt-1 pl-2">
-              <code className="cursor-pointer text-lg text-zinc-200 underline">Drafts</code>
-              <code className="cursor-pointer text-lg text-zinc-600 hover:underline">Active</code>
-              <code className="cursor-pointer text-lg text-zinc-600 hover:underline">Paused</code>
-              <code className="cursor-pointer text-lg text-zinc-600 hover:underline">Archived</code>
+              <code onClick={() => setStrategyFilter("draft")} className="cursor-pointer text-lg text-zinc-200 underline">Drafts</code>
+              <code onClick={() => setStrategyFilter("active")} className="cursor-pointer text-lg text-zinc-600 hover:underline">Active</code>
+              <code onClick={() => setStrategyFilter("paused")} className="cursor-pointer text-lg text-zinc-600 hover:underline">Paused</code>
+              <code onClick={() => setStrategyFilter("archived")} className="cursor-pointer text-lg text-zinc-600 hover:underline">Archived</code>
             </div>
             <div className="flex flex-col pl-2">
               <code
@@ -273,7 +279,7 @@ export default function CreateStrategy() {
             {strategyFilter === "draft" && (
               <div className="flex flex-col items-start gap-4 pb-4 pl-2">
                 <div className="flex flex-col gap-4">
-                  {Object.values(strategies)
+                  {Object.values(strategies || {})
                     .filter((s) => s.status === "draft")
                     .map((s) => {
                       const isSelected = strategy?.id === s.id;
@@ -410,6 +416,7 @@ export default function CreateStrategy() {
             </DialogContent>
           </Dialog>
           <Modal open={!!startingStrategy} onOpenChange={(open) => (open ? null : setStartingStrategy(undefined))}>
+            <ModalHeader className="hidden"><ModalTitle>title</ModalTitle></ModalHeader>
             <ModalContent showCloseButton={false}>
               {startingStrategy && <StartStrategyForm strategy={startingStrategy} update={update} />}
             </ModalContent>

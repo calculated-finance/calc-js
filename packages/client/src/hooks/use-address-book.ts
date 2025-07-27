@@ -1,14 +1,15 @@
+import type { ChainId } from "@template/domain/src/chains";
 import { useEffect } from "react";
 import { create } from "zustand";
 import { useWallets } from "./use-wallets";
 
 type AddressBookEntry = {
-  chainId: string | number;
+  chainId: ChainId;
   address: string;
   label: string;
 };
 
-type AddressBook = Record<string | number, Record<string, AddressBookEntry>>;
+type AddressBook = Record<ChainId, Record<string, AddressBookEntry>>;
 
 interface AddressBookState {
   addressBook: AddressBook;

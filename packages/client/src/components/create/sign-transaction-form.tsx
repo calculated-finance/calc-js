@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useWallets } from "../../hooks/use-wallets";
 
 export function SignTransactionForm({ chain, getDataWithSender, onBack }: { chain: Chain; getDataWithSender: (sender: String) => TransactionData, onBack: () => void }) {
-  const { wallets, connect, simulateTransaction } = useWallets();
+  const { wallets, connect, simulateTransaction, signTransaction } = useWallets();
 
   const viableConnections = useMemo(
     () =>
@@ -29,7 +29,7 @@ export function SignTransactionForm({ chain, getDataWithSender, onBack }: { chai
 
   useEffect(() => {
     if (!sender && Object.values(viableConnections).length > 0) {
-      setSender(viableConnections[0]);
+      setSender(Object.values(viableConnections)[0]);
     }
   }, [viableConnections]);
 
@@ -38,7 +38,7 @@ export function SignTransactionForm({ chain, getDataWithSender, onBack }: { chai
   useEffect(() => {
       if (!sender || sender.connection.status !== "connected") return;
       const data = getDataWithSender(sender.connection.address);
-      
+
       simulateTransaction(sender, chain, data).then(result => {
           setSimulationResult(`Expected gas: ${result}`);
       }).catch(error => {
@@ -59,30 +59,43 @@ export function SignTransactionForm({ chain, getDataWithSender, onBack }: { chai
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-2">
-        <code>select_wallet</code>
+        <code className="text-sm text-zinc-400">signing_wallet</code>
         {Object.values(viableConnections).map((wallet) =>
           wallet.connection.status === "connected" ? (
             <code key={wallet.connection.label}>{wallet.connection.label}</code>
           ) : null,
         )}
       </div>
-      <div className="flex flex-col gap-2">
-        <code>connect_wallet</code>
-        {viableWallets.map((wallet) => (
-          <button
-            key={wallet.type}
-            className="rounded bg-zinc-900 p-2 hover:bg-zinc-800"
+      {viableWallets.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <code className="text-sm text-zinc-400">connect_wallet</code>
+          {viableWallets.map((wallet) => (
+            <button
+              key={wallet.type}
+              className="rounded bg-zinc-900 p-2 hover:bg-zinc-800"
             onClick={() => connect(wallet)}
           >
             {wallet.type}
           </button>
         ))}
-      </div>
-      <div>
-        <code>simulation_result</code>
+      </div>)}
+      <div className="flex flex-col gap-2">
+        <code className="text-sm text-zinc-400">simulation_result</code>
         <code>{simulationResult}</code>
       </div>
-      <div className="flex w-full justify-end"><code onClick={onBack} className="cursor-pointer text-lg text-red-300 hover:underline">Back</code></div>
+      <div className="flex w-full gap-8 justify-end"><code onClick={onBack} className="cursor-pointer text-lg text-red-300 hover:underline">Back</code>
+      {!!sender && !!simulationResult &&  (
+          <code onClick={() => {
+            if (sender.connection.status !== "connected") return;
+            signTransaction(sender, chain, getDataWithSender(sender.connection.address)).then(() => {
+              alert("Transaction signed successfully!");
+            }).catch(error => {
+              console.log(error);
+              alert(`Failed to sign transaction: ${error.message}`);
+            });
+          }} className="cursor-pointer text-lg text-green-300 hover:underline">Execute</code>
+      )}
+      </div>
     </div>
   );
 }

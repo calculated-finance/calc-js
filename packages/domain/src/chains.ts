@@ -19,7 +19,9 @@ export const Chain = Schema.Struct({
         name: Schema.NonEmptyTrimmedString,
         symbol: Schema.NonEmptyTrimmedString,
         decimals: Schema.Positive.pipe(Schema.clamp(6, 18))
-    })
+    }),
+    managerContract: Schema.optional(Schema.NonEmptyTrimmedString),
+    schedulerContract: Schema.optional(Schema.NonEmptyTrimmedString)
 })
 
 export type Chain = Schema.Schema.Type<typeof Chain>
@@ -75,5 +77,22 @@ export const RUJIRA_STAGENET: Chain = {
         name: "Rune",
         symbol: "RUNE",
         decimals: 8
-    }
+    },
+    managerContract: "sthor1xg6qsvyktr0zyyck3d67mgae0zun4lhwwn3v9pqkl5pk8mvkxsnscenkc0",
+    schedulerContract: "sthor1x3hfzl0v43upegeszz8cjygljgex9jtygpx4l44nkxudxjsukn3setrkl6"
 }
+
+export const CHAINS = [
+    ETHEREUM,
+    BINANCE_SMART_CHAIN,
+    COSMOS_HUB,
+    RUJIRA_STAGENET
+]
+
+export const CHAINS_BY_ID: Record<ChainId, Chain> = CHAINS.reduce(
+    (acc, chain) => ({
+        ...acc,
+        [chain.id]: chain
+    }),
+    {} as Record<ChainId, Chain>
+)

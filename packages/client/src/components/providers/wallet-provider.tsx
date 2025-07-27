@@ -14,6 +14,7 @@ type WalletProviderState = {
   switchChain: (wallet: Wallet, chainId: ChainId) => Promise<void>;
   disconnect: (wallet: Wallet) => void;
   simulateTransaction: (wallet: Wallet, chain: Chain, data: TransactionData) => Promise<number>;
+  signTransaction: (wallet: Wallet, chain: Chain, data: TransactionData) => Promise<void>;
 };
 
 const initialState: WalletProviderState = {
@@ -29,6 +30,9 @@ const initialState: WalletProviderState = {
   },
   simulateTransaction: () => {
     throw new Error("Simulate transaction function not provided yet");
+  },
+  signTransaction: () => {
+    throw new Error("Sign transaction function not provided yet");
   },
 };
 
@@ -54,6 +58,8 @@ export const WalletProvider = ({ children }: WalletProviderProps) => {
                 disconnect: (wallet: Wallet) => Effect.runPromise(walletService.disconnect(wallet)),
                 simulateTransaction: (wallet: Wallet, chain: Chain, data: TransactionData) =>
                   Effect.runPromise(walletService.simulateTransaction(wallet, chain, data)),
+                signTransaction: (wallet: Wallet, chain: Chain, data: TransactionData) =>
+                  Effect.runPromise(walletService.signTransaction(wallet, chain, data)),
               }));
             }),
           ),

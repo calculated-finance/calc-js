@@ -3,7 +3,7 @@ import { Schedule, ScheduleAction } from "@template/domain/src/calc";
 import "@xyflow/react/dist/style.css";
 import cronstrue from "cronstrue";
 import { Effect, Schema } from "effect";
-import hd from "humanize-duration";
+import duration from "humanize-duration";
 import { useState } from "react";
 import { BaseNode } from "../../components/create/base-node";
 import { type ActionNodeParams, type CustomNodeData } from "../../lib/layout/layout";
@@ -23,17 +23,18 @@ export function ScheduleNode({
 
   const summary =
     "time" in schedule.cadence
-      ? `Every ${hd(schedule.cadence.time.interval || 0, { largest: 2, round: true })}`
+      ? `Every ${duration(schedule.cadence.time.duration.secs || 0, { largest: 2, round: true })}`
       : "blocks" in schedule.cadence
-        ? `Every ${schedule.cadence.blocks.interval} BLOCKS`
+        ? `Every ${schedule.cadence.blocks.interval} blocks`
         : "cron" in schedule.cadence
           ? cronstrue.toString(schedule.cadence.cron.expr)
           : "";
 
   const form = useForm({
-    defaultValues: schedule,
+    defaultValues: Effect.runSync(Schema.encode(Schedule)(schedule)),
     validators: {
       onChange: ({ value }) => {
+        const schedule = Effect.runSync(Schema.decode(Schedule)(value));
         const validationResult = Schema.standardSchemaV1(Schedule)["~standard"].validate(value);
 
         if ("issues" in validationResult) {
@@ -53,7 +54,7 @@ export function ScheduleNode({
 
         update({
           id,
-          schedule: value as any,
+          schedule,
         });
       },
     },
@@ -88,7 +89,7 @@ export function ScheduleNode({
                       id,
                       schedule: {
                         ...schedule,
-                        cadence: { time: { interval: 1000 * 60 * 30 } },
+                        cadence: { time: { duration:{secs: 1000 * 60 * 30, nanos:0} } },
                       },
                     });
                   }}
@@ -137,63 +138,59 @@ export function ScheduleNode({
               <div className="flex flex-col pt-4">
                 {"time" in schedule.cadence && (
                   <form.Field
-                    name="cadence.time.interval"
-                    children={(field) => (
-                      <div className="flex flex-col gap-2">
-                        <code className="text-sm text-zinc-400">interval</code>
-                        <div className="flex items-center rounded bg-zinc-900">
-                          <Input
-                            placeholder="0"
-                            className="w-full"
-                            type="number"
-                            value={
-                              field.state.value
+                    name="cadence.time.duration"
+                    children={(field) => {
+                      return (
+                        <div className="flex flex-col gap-2">
+                          <code className="text-sm text-zinc-400">duration</code>
+                          <div className="flex items-center rounded bg-zinc-900">
+                            <Input
+                              placeholder="0"
+                              className="w-full"
+                              type="number"
+                              value={field.state.value
                                 ? (
-                                    field.state.value /
-                                    {
-                                      seconds: 1000,
-                                      minutes: 60 * 1000,
-                                      hours: 60 * 60 * 1000,
-                                      days: 24 * 60 * 60 * 1000,
-                                    }[timeUnit]
-                                  ).toFixed(0)
-                                : 0
-                            }
-                            onChange={(e) =>
-                              field.handleChange(
-                                e.target.valueAsNumber *
+                                  field.state.value.secs /
+                                  {
+                                    seconds: 1000,
+                                    minutes: 60 * 1000,
+                                    hours: 60 * 60 * 1000,
+                                    days: 24 * 60 * 60 * 1000,
+                                  }[timeUnit]
+                                ).toFixed(0)
+                                : 0}
+                              onChange={(e) => field.handleChange({
+                                nanos: 0,
+                                secs: e.target.valueAsNumber *
                                   {
                                     seconds: 1000,
                                     minutes: 60 * 1000,
                                     hours: 60 * 60 * 1000,
                                     days: 24 * 60 * 60 * 1000,
                                   }[timeUnit],
-                              )
-                            }
-                            tabIndex={-1}
-                            autoFocus={false}
-                          />
-                          <code
-                            onClick={() =>
-                              setTimeUnit(
+                              })}
+                              tabIndex={-1}
+                              autoFocus={false} />
+                            <code
+                              onClick={() => setTimeUnit(
                                 {
                                   seconds: "minutes" as const,
                                   minutes: "hours" as const,
                                   hours: "days" as const,
                                   days: "seconds" as const,
-                                }[timeUnit],
-                              )
-                            }
-                            className="cursor-pointer pr-3 text-lg text-zinc-400 hover:underline"
-                          >
-                            {timeUnit}
-                          </code>
+                                }[timeUnit]
+                              )}
+                              className="cursor-pointer pr-3 text-lg text-zinc-400 hover:underline"
+                            >
+                              {timeUnit}
+                            </code>
+                          </div>
+                          {!field.state.meta.isValid && (
+                            <p className="font-mono text-sm text-red-500/60">{field.state.meta.errors.join(", ")}</p>
+                          )}
                         </div>
-                        {!field.state.meta.isValid && (
-                          <p className="font-mono text-sm text-red-500/60">{field.state.meta.errors.join(", ")}</p>
-                        )}
-                      </div>
-                    )}
+                      );
+                    }}
                   />
                 )}
                 {"blocks" in schedule.cadence && (
@@ -237,6 +234,7 @@ export function ScheduleNode({
                             autoFocus={false}
                           />
                         </div>
+                        {"cron" in schedule.cadence && <code className="text-sm text-zinc-400 text-right mt-[-5px]">{cronstrue.toString(schedule.cadence.cron.expr)}</code>}
                         {!field.state.meta.isValid && (
                           <p className="font-mono text-sm text-red-500/60">{field.state.meta.errors.join(", ")}</p>
                         )}

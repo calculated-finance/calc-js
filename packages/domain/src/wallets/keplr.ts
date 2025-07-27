@@ -1,4 +1,5 @@
 import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate"
+import { GasPrice } from "@cosmjs/stargate"
 import type { Window as KeplrWindow } from "@keplr-wallet/types"
 import { Effect, Schedule, Stream, SubscriptionRef } from "effect"
 import { BINANCE_SMART_CHAIN, type Chain, type ChainId, COSMOS_HUB, ETHEREUM, RUJIRA_STAGENET } from "../chains.js"
@@ -12,6 +13,7 @@ import {
     ChainNotSupportedError,
     ConnectionRejectedError,
     RpcError,
+    SimulationFailed,
     WalletNotInstalledError
 } from "./index.js"
 
@@ -244,11 +246,13 @@ export const simulateCosmosTransaction = (
     chainId: ChainId,
     data: CosmosTransactionMsgs
 ) => Effect.gen(function*() {
-    const signer = yield* Effect.tryPromise(
-        () =>
+    console.log({ data })
+    const signer = yield* Effect.tryPromise({
+        try: () =>
             window.keplr?.getOfflineSignerAuto(`${chainId}`) ||
-            Promise.reject(new WalletNotInstalledError({ walletType: "Keplr" }))
-    )
+            Promise.reject(new WalletNotInstalledError({ walletType: "Keplr" })),
+        catch: (error: any) => console.log(error)
+    })
 
     const client = yield* Effect.tryPromise(() =>
         SigningCosmWasmClient.connectWithSigner(
@@ -257,13 +261,21 @@ export const simulateCosmosTransaction = (
         )
     )
 
-    const accounts = yield* Effect.tryPromise(() => signer.getAccounts())
+    const accounts = yield* Effect.tryPromise({
+        try: () => signer.getAccounts(),
+        catch: (error: any) => console.log(error)
+    })
 
     if (!accounts || accounts.length === 0) {
         return yield* Effect.fail(new AccountsNotAvailableError({ walletType: "Keplr" }))
     }
 
-    return yield* Effect.tryPromise(() => client.simulate(accounts[0].address, data, "auto"))
+    const result = yield* Effect.tryPromise({
+        try: () => client.simulate(accounts[0].address, data, "auto"),
+        catch: (error: any) => new SimulationFailed({ message: error.message })
+    })
+
+    return result
 })
 
 export const executeCosmosTransaction = (
@@ -279,13 +291,19 @@ export const executeCosmosTransaction = (
     const client = yield* Effect.tryPromise(() =>
         SigningCosmWasmClient.connectWithSigner(
             SUPPORTED_CHAINS_BY_ID[chainId].rpcUrls[0],
-            signer
+            signer,
+            {
+                gasPrice: GasPrice.fromString("0.0rune")
+            }
         )
     )
 
     const accounts = yield* Effect.tryPromise(() => signer.getAccounts())
 
-    yield* Effect.tryPromise(() => client.signAndBroadcast(accounts[0].address, data, "auto"))
+    yield* Effect.tryPromise({
+        try: () => client.signAndBroadcast(accounts[0].address, data, "auto"),
+        catch: (e) => console.log(e)
+    })
 })
 
 const setupEvmEventListeners = (

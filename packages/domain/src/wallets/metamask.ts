@@ -3,7 +3,7 @@ import { BINANCE_SMART_CHAIN, type Chain, type ChainId, ETHEREUM } from "../chai
 import type { EIP1193Provider } from "../evm.js"
 import { EIP1193Providers } from "../evm.js"
 import { StorageService } from "../storage.js"
-import type { Connection, Wallet } from "./index.js"
+import type { Wallet } from "./index.js"
 import {
     AccountsNotAvailableError,
     ChainNotAddedError,

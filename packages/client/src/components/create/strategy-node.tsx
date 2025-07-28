@@ -75,6 +75,7 @@ export function StrategyNode({ data: { strategy, update } }: CustomNodeData<Stra
                   onChange={(e) => field.handleChange(e.target.value)}
                   tabIndex={-1}
                   autoFocus={false}
+                  readOnly={strategy.status !== "draft"}
                 />
               </div>
               {!field.state.meta.isValid && (
@@ -85,16 +86,10 @@ export function StrategyNode({ data: { strategy, update } }: CustomNodeData<Stra
         />
         {!strategy.action && (
           <AddAction
-            onAdd={(action) => {
-              console.log({
-                ...strategy,
-                action,
-              });
-              return update({
-                ...strategy,
-                action,
-              });
-            }}
+            onAdd={(action) => update({
+              ...strategy,
+              action,
+            })}
             isHelpOpen={isHelpOpen}
             helpMessage="Select the root action for this strategy. You can choose a simple action like a execute a swap or set a limit order, however it's often more useful to start with a schedule or a group action."
           />

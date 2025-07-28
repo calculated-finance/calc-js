@@ -1,11 +1,11 @@
 import { create } from "zustand";
 
 type NodeModalStore = {
-  openId: string | null;
-  setOpenId: (id: string | null) => void;
+  openId: string | number | null;
+  setOpenId: (id: string | number | null) => void;
 };
 
 export const useNodeModalStore = create<NodeModalStore>((set) => ({
   openId: null,
-  setOpenId: (id: string | null) => set({ openId: id }),
+  setOpenId: (id: string | number | null) => set({ openId: id }),
 }));

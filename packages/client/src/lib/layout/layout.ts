@@ -9,7 +9,6 @@ export interface LayoutContext {
   startX: number;
   startY: number;
   nodeSpacing: number;
-  generateId: () => string;
 }
 
 export type StrategyNodeParams = {

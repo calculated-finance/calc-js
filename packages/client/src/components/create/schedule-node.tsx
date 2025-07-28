@@ -25,9 +25,9 @@ export function ScheduleNode({
     "time" in schedule.cadence
       ? `Every ${duration(schedule.cadence.time.duration.secs || 0, { largest: 2, round: true })}`
       : "blocks" in schedule.cadence
-        ? `Every ${schedule.cadence.blocks.interval} blocks`
+        ? `Every ${schedule.cadence.blocks.interval === 1 ? "" : schedule.cadence.blocks.interval} block${schedule.cadence.blocks.interval === 1 ? "" : "s"}`
         : "cron" in schedule.cadence
-          ? cronstrue.toString(schedule.cadence.cron.expr)
+          ? cronstrue.toString(schedule.cadence.cron.expr, { throwExceptionOnParseError: false })
           : "";
 
   const form = useForm({
@@ -74,7 +74,7 @@ export function ScheduleNode({
       onDelete={remove}
       title={<code className="rounded bg-zinc-900 px-1 py-[1px] font-mono text-4xl text-zinc-100">WHEN</code>}
       summary={
-        <code className="flex flex-col gap-1.5 text-xl text-zinc-300">{`${"time" in schedule.cadence ? "TIME" : "blocks" in schedule.cadence ? "BLOCKS" : "cron" in schedule.cadence ? "CRON" : ""} SCHEDULE`}</code>
+        <code className="flex flex-col gap-1.5 text-xl text-zinc-300">{`${"time" in schedule.cadence ? "TIME" : "blocks" in schedule.cadence ? "BLOCK" : "cron" in schedule.cadence ? "CRON" : ""} SCHEDULE`}</code>
       }
       details={<code className="text-sm text-zinc-300">{summary}</code>}
       modal={
@@ -89,7 +89,7 @@ export function ScheduleNode({
                       id,
                       schedule: {
                         ...schedule,
-                        cadence: { time: { duration:{secs: 1000 * 60 * 30, nanos:0} } },
+                        cadence: { time: { duration: { secs: 1000 * 60 * 30, nanos: 0 } } },
                       },
                     });
                   }}
@@ -148,38 +148,44 @@ export function ScheduleNode({
                               placeholder="0"
                               className="w-full"
                               type="number"
-                              value={field.state.value
-                                ? (
-                                  field.state.value.secs /
-                                  {
-                                    seconds: 1000,
-                                    minutes: 60 * 1000,
-                                    hours: 60 * 60 * 1000,
-                                    days: 24 * 60 * 60 * 1000,
-                                  }[timeUnit]
-                                ).toFixed(0)
-                                : 0}
-                              onChange={(e) => field.handleChange({
-                                nanos: 0,
-                                secs: e.target.valueAsNumber *
-                                  {
-                                    seconds: 1000,
-                                    minutes: 60 * 1000,
-                                    hours: 60 * 60 * 1000,
-                                    days: 24 * 60 * 60 * 1000,
-                                  }[timeUnit],
-                              })}
+                              value={
+                                field.state.value
+                                  ? field.state.value.secs /
+                                    {
+                                      seconds: 1000,
+                                      minutes: 60 * 1000,
+                                      hours: 60 * 60 * 1000,
+                                      days: 24 * 60 * 60 * 1000,
+                                    }[timeUnit]
+                                  : 0
+                              }
+                              onChange={(e) =>
+                                field.handleChange({
+                                  nanos: 0,
+                                  secs:
+                                    e.target.valueAsNumber *
+                                    {
+                                      seconds: 1000,
+                                      minutes: 60 * 1000,
+                                      hours: 60 * 60 * 1000,
+                                      days: 24 * 60 * 60 * 1000,
+                                    }[timeUnit],
+                                })
+                              }
                               tabIndex={-1}
-                              autoFocus={false} />
+                              autoFocus={false}
+                            />
                             <code
-                              onClick={() => setTimeUnit(
-                                {
-                                  seconds: "minutes" as const,
-                                  minutes: "hours" as const,
-                                  hours: "days" as const,
-                                  days: "seconds" as const,
-                                }[timeUnit]
-                              )}
+                              onClick={() =>
+                                setTimeUnit(
+                                  {
+                                    seconds: "minutes" as const,
+                                    minutes: "hours" as const,
+                                    hours: "days" as const,
+                                    days: "seconds" as const,
+                                  }[timeUnit],
+                                )
+                              }
                               className="cursor-pointer pr-3 text-lg text-zinc-400 hover:underline"
                             >
                               {timeUnit}
@@ -234,7 +240,6 @@ export function ScheduleNode({
                             autoFocus={false}
                           />
                         </div>
-                        {"cron" in schedule.cadence && <code className="text-sm text-zinc-400 text-right mt-[-5px]">{cronstrue.toString(schedule.cadence.cron.expr)}</code>}
                         {!field.state.meta.isValid && (
                           <p className="font-mono text-sm text-red-500/60">{field.state.meta.errors.join(", ")}</p>
                         )}

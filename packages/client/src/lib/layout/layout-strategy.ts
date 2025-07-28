@@ -16,7 +16,7 @@ export const layoutStrategy = (
     return {
       nodes: [
         {
-          id: strategy.id,
+          id: `${strategy.id}`,
           type: "strategyNode",
           position: { x: context.startX, y: context.startY },
           data: {
@@ -30,15 +30,10 @@ export const layoutStrategy = (
     };
   }
 
-  let nodeIdCounter = 0;
-
-  const generateId = () => `node-${++nodeIdCounter}`;
-
   const layoutContext = {
     startX: 300,
     startY: -100,
     nodeSpacing: 50,
-    generateId,
   };
 
   const layout = layoutAction(
@@ -65,7 +60,7 @@ export const layoutStrategy = (
     nodes: [
       ...layout.nodes,
       {
-        id: strategy.id,
+        id: `${strategy.id}`,
         type: "strategyNode",
         position: { x: 0, y: strategyNodeY },
         data: {
@@ -78,7 +73,7 @@ export const layoutStrategy = (
       ...layout.edges,
       {
         id: `${strategy.id}-to-${layout.nodes[0].id}`,
-        source: strategy.id,
+        source: `${strategy.id}`,
         target: layout.nodes[0].id,
         style: { stroke: "#9CCCF0", strokeWidth: 2 },
         type: "smoothstep",

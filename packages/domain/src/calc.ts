@@ -1,7 +1,7 @@
 import { CosmWasmClient } from "@cosmjs/cosmwasm-stargate"
 import { Effect, Schema } from "effect"
 import { Amount } from "./assets.js"
-import { type ChainId, CHAINS_BY_ID } from "./chains.js"
+import { ChainId, CHAINS_BY_ID } from "./chains.js"
 import { Coin, Uint64 } from "./cosmwasm.js"
 import { BasisPoints } from "./numbers.js"
 
@@ -116,7 +116,7 @@ export const CronSchedule = Schema.Struct({
                 })
             })
         ),
-        previous: Schema.optional(Schema.NullOr(Uint64))
+        previous: Schema.optional(Uint64)
     })
 })
 
@@ -191,8 +191,8 @@ export type StrategyId = Schema.Schema.Type<typeof StrategyId>
 export const Strategy = Schema.Struct({
     id: StrategyId,
     action: Schema.optional(Action),
-    address: Schema.optional(Schema.NonEmptyTrimmedString),
-    owner: Schema.optional(Schema.NonEmptyString.pipe(
+    address: Schema.optional(Schema.Trimmed),
+    owner: Schema.optional(Schema.Trimmed.pipe(
         Schema.annotations({
             message: () => ({
                 message: "Please provide a valid owner address",
@@ -213,18 +213,21 @@ export const Strategy = Schema.Struct({
 
 export type Strategy = Schema.Schema.Type<typeof Strategy>
 
+const StrategyHandleCommon = Schema.Struct({
+    id: StrategyId,
+    chainId: ChainId,
+    owner: Schema.NonEmptyTrimmedString,
+    label: Schema.NonEmptyTrimmedString
+})
+
 export const StrategyHandle = Schema.Union(
     Schema.Struct({
-        id: StrategyId,
-        owner: Schema.NonEmptyTrimmedString,
-        label: Schema.NonEmptyTrimmedString,
+        ...StrategyHandleCommon.fields,
         status: Schema.Literal("draft")
     }),
     Schema.Struct({
-        id: StrategyId,
+        ...StrategyHandleCommon.fields,
         contract_address: Schema.NonEmptyTrimmedString,
-        owner: Schema.NonEmptyTrimmedString,
-        label: Schema.NonEmptyTrimmedString,
         status: Schema.Literal("active", "paused", "archived")
     })
 )
@@ -239,16 +242,16 @@ export class CalcService extends Effect.Service<CalcService>()("CalcService", {
             status: "active" | "paused" | "archived" | undefined
         ) => Effect.gen(function*() {
             const chain = CHAINS_BY_ID[chainId]
+            const managerContract = CHAINS_BY_ID[chainId]?.managerContract
 
-            if (chain.type !== "cosmos") {
+            if (chain.type !== "cosmos" || !managerContract) {
                 throw new Error(`Chain type ${chain.displayName} is not supported for strategies`)
             }
 
             const client = yield* Effect.tryPromise(() => CosmWasmClient.connect(chain.rpcUrls[0]))
 
             const strategyHandles = yield* Effect.tryPromise(() =>
-                // TODO: use config to get the contract address
-                client.queryContractSmart("sthor1xg6qsvyktr0zyyck3d67mgae0zun4lhwwn3v9pqkl5pk8mvkxsnscenkc0", {
+                client.queryContractSmart(managerContract, {
                     strategies: {
                         owner,
                         status
@@ -256,7 +259,37 @@ export class CalcService extends Effect.Service<CalcService>()("CalcService", {
                 })
             )
 
-            return strategyHandles as ReadonlyArray<StrategyHandle>
+            return (strategyHandles as Array<Omit<StrategyHandle, "chainId">>).map((handle) => ({
+                ...handle,
+                chainId
+            }))
+        }),
+
+        strategy: (
+            chainId: ChainId,
+            contractAddress: string
+        ) => Effect.gen(function*() {
+            const chain = CHAINS_BY_ID[chainId]
+            const managerContract = CHAINS_BY_ID[chainId]?.managerContract
+
+            if (chain.type !== "cosmos" || !managerContract) {
+                throw new Error(`Chain type ${chain.displayName} is not supported for strategies`)
+            }
+
+            const client = yield* Effect.tryPromise(() => CosmWasmClient.connect(chain.rpcUrls[0]))
+
+            const strategy = yield* Effect.tryPromise({
+                try: () =>
+                    client.queryContractSmart(contractAddress, {
+                        config: {}
+                    }),
+                catch: (error) => {
+                    console.error("Error fetching strategy", error)
+                    throw new Error(`Failed to fetch strategy from contract ${contractAddress}`)
+                }
+            })
+
+            return strategy
         })
     }
 }) {}

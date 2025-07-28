@@ -32,7 +32,6 @@ export const layoutScheduleAction: LayoutFunction<ActionNodeParams> = (
     startX: context.startX + 300,
     startY: context.startY,
     nodeSpacing: 50,
-    generateId: context.generateId,
   };
 
   const layout = layoutAction(

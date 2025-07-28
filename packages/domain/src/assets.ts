@@ -34,13 +34,13 @@ export const HardcodedAssetsProvider = {
             displayName: "ETH",
             significantFigures: 8,
             coinGeckoId: "ethereum",
-            color: "#676D93"
+            color: "#9fa5c9"
         },
         "x/ruji": {
             displayName: "RUJI",
             significantFigures: 8,
             coinGeckoId: "rujira",
-            color: "#B223EF"
+            color: "#ab3ddb"
         }
     })
 }

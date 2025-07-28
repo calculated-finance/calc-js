@@ -33,3 +33,19 @@ export const getDefaultDeposits = (action: Action): Record<string, Amount> => {
 
   return {};
 };
+
+export const getDefaultWithdrawalDenoms = (action: Action, escrowed: string[]): string[] => {
+  if ("many" in action) {
+    return action.many.flatMap((action) => getDefaultWithdrawalDenoms(action, escrowed));
+  }
+
+  if ("schedule" in action && action.schedule.action) {
+    return getDefaultWithdrawalDenoms(action.schedule.action, escrowed);
+  }
+
+  if ("swap" in action) {
+    return escrowed.includes(action.swap.swap_amount.denom) ? [] : [action.swap.swap_amount.denom];
+  }
+
+  return [];
+};

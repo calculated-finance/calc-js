@@ -2,13 +2,10 @@ import { BigDecimal, Schema } from "effect"
 
 export const Uint128 = Schema.BigInt.pipe(Schema.clampBigInt(
     BigInt(0),
-    BigInt("3402823668417103009491288319719694682111")
+    BigInt(340282366841710300949128831971969468211n)
 ))
 
-export const Uint64 = Schema.BigInt.pipe(Schema.clampBigInt(
-    BigInt(0),
-    BigInt("18446744073709551615")
-))
+export const Uint64 = Schema.BigInt
 
 export const Decimal = Schema.BigDecimal.pipe(Schema.clampBigDecimal(
     BigDecimal.fromBigInt(0n),

@@ -123,7 +123,7 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
         </div>
       }
       details={
-        <Code className="text-xs leading-5.5">{`Swap ${formatNumber(action.swap.swap_amount.amount || 0)} ${action.swap.swap_amount.displayName} into at least ${formatNumber(action.swap.minimum_receive_amount.amount || 0)} ${action.swap.minimum_receive_amount.displayName}  with
+        <Code className="text-sm">{`Swap ${formatNumber(action.swap.swap_amount.amount || 0)} ${action.swap.swap_amount.displayName} into at least ${formatNumber(action.swap.minimum_receive_amount.amount || 0)} ${action.swap.minimum_receive_amount.displayName}  with
           a maximum slippage of ${action.swap.maximum_slippage_bps / 100}%`}</Code>
       }
       modal={
@@ -154,7 +154,7 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
                             isHelpOpen ? "px-1 pt-8 pb-2 opacity-100" : "max-h-0 overflow-hidden opacity-0"
                           } `}
                         >
-                          <code className="text-sm text-pretty text-blue-400/80">
+                          <code className="text-sm font-medium text-pretty text-[#9CCCF0]">
                             Enter the amount you want to swap. CALC may try to swap this exact amount, or use it to
                             calculate an adjusted amount if SCALED adjustment is selected.
                           </code>
@@ -206,10 +206,10 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
                       <div className="flex flex-col gap-0">
                         <div
                           className={`transition-all duration-300 ease-in-out ${
-                            isHelpOpen ? "px-1 pt-4 pb-2 opacity-100" : "max-h-0 overflow-hidden opacity-0"
+                            isHelpOpen ? "px-1 pb-2 opacity-100" : "max-h-0 overflow-hidden opacity-0"
                           } `}
                         >
-                          <code className="text-sm text-pretty text-blue-400/80">
+                          <code className="text-sm font-medium text-pretty text-[#9CCCF0]">
                             Enter the minimum amount to receive each swap - basically set a price floor or ceiling. Hit
                             the switch button below to invert the direction.
                           </code>
@@ -305,7 +305,7 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
                               isHelpOpen ? "pt mt-[-5px] px-1 pb-4 opacity-100" : "max-h-0 overflow-hidden opacity-0"
                             } `}
                           >
-                            <code className="text-sm text-pretty text-blue-400/80">
+                            <code className="text-sm font-medium text-pretty text-[#9CCCF0]">
                               Select the possible routes that the swap can take. CALC will use whichever route has the
                               best returns at the time. Not all pairs can be take all routes.
                             </code>
@@ -381,12 +381,10 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
                                 <div className="flex flex-1 flex-col gap-0">
                                   <div
                                     className={`transition-all duration-300 ease-in-out ${
-                                      isHelpOpen
-                                        ? "h-full px-1 pt-4 pb-2 opacity-100"
-                                        : "max-h-0 overflow-hidden opacity-0"
+                                      isHelpOpen ? "h-full px-1 pb-2 opacity-100" : "max-h-0 overflow-hidden opacity-0"
                                     } `}
                                   >
-                                    <code className="text-sm text-pretty text-blue-400/80">
+                                    <code className="text-sm font-medium text-pretty text-[#9CCCF0]">
                                       Enter the maximum slippage % allowed for each swap.
                                     </code>
                                   </div>
@@ -423,10 +421,10 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
                             <div className="flex flex-2 flex-col gap-0">
                               <div
                                 className={`transition-all duration-300 ease-in-out ${
-                                  isHelpOpen ? "h-full px-1 pt-4 pb-2 opacity-100" : "max-h-0 overflow-hidden opacity-0"
+                                  isHelpOpen ? "h-full px-1 pb-2 opacity-100" : "max-h-0 overflow-hidden opacity-0"
                                 } `}
                               >
-                                <code className="text-sm text-pretty text-blue-400/80">
+                                <code className="text-sm font-medium text-pretty text-[#9CCCF0]">
                                   Select the adjustment type for the swap. FIXED will swap the exact amount, while
                                   SCALED will adjust the amount based on the price of the asset.
                                 </code>
@@ -494,7 +492,7 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
                               : "max-h-0 overflow-hidden opacity-0"
                           }`}
                         >
-                          <div className="flex gap-8 pt-8">
+                          <div className="flex gap-8 pt-4">
                             <form.Field
                               name="swap.adjustment.linear_scalar.scalar"
                               children={(field) => (
@@ -504,7 +502,7 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
                                       isHelpOpen ? "px-1 pb-2 opacity-100" : "max-h-0 overflow-hidden opacity-0"
                                     } `}
                                   >
-                                    <code className="text-sm text-pretty text-blue-400/80">
+                                    <code className="text-sm font-medium text-pretty text-[#9CCCF0]">
                                       Enter the scalar value for the swap adjustment. This will adjust the amount
                                       swapped based on the price of the asset. You can see some indication of swap
                                       amounts at different prices below.

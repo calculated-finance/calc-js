@@ -7,8 +7,6 @@ export const layoutManyAction: LayoutFunction<ActionNodeParams> = (
   context: LayoutContext,
   layoutAction: LayoutFunction<ActionNodeParams>,
 ): LayoutResult<ActionNodeParams> => {
-  const nodeId = context.generateId();
-
   if (!("many" in params.action)) {
     throw new Error("Data must contain 'many' property for layoutManyAction");
   }
@@ -101,7 +99,7 @@ export const layoutManyAction: LayoutFunction<ActionNodeParams> = (
   const manyNodeY = context.startY + totalChildrenHeight / 2 - 75;
 
   const containerNode: Node = {
-    id: nodeId,
+    id: params.action.id,
     type: "manyNode",
     position: { x: context.startX, y: manyNodeY },
     data: params,
@@ -113,8 +111,8 @@ export const layoutManyAction: LayoutFunction<ActionNodeParams> = (
     if (childLayout.nodes.length > 0) {
       const childRootId = childLayout.nodes[0].id;
       parentEdges.push({
-        id: `${nodeId}-to-${childRootId}`,
-        source: nodeId,
+        id: `${params.action.id}-to-${childRootId}`,
+        source: params.action.id,
         target: childRootId,
         style: { stroke: "#9CCCF0", strokeWidth: 2 },
         type: "smoothstep",

@@ -26,7 +26,6 @@ export function JsonEditor<T, U>({
         autoFocus={true}
         tabIndex={-1}
         style={{
-          maxWidth: "450px",
           backgroundColor: "#transparent",
           fontFamily: "monospace",
           fontSize: "1rem",

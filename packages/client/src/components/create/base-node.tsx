@@ -20,7 +20,7 @@ export function BaseNode({
   setIsEditingJson,
   isValid = true,
 }: {
-  id: string;
+  id: number | string;
   handleLeft?: boolean;
   handleRight?: boolean;
   title: ReactNode;
@@ -41,8 +41,8 @@ export function BaseNode({
   const { isVisible } = useNodeVisibilityStore();
 
   const getContentType = (zoomLevel: number) => {
-    if (zoomLevel < 0.6) return "title";
-    if (zoomLevel < 1.2) return "summary";
+    if (zoomLevel < 0.5) return "title";
+    if (zoomLevel < 0.75) return "summary";
     return "details";
   };
 
@@ -79,7 +79,14 @@ export function BaseNode({
               getContentType(zoom) === "title" ? "pointer-events-none" : ""
             }`}
           >
-            <code className="cursor-pointer text-xs text-zinc-500 hover:underline" onClick={onDelete}>
+            <code
+              className="cursor-pointer text-xs text-zinc-500 hover:underline"
+              onClick={(e) => {
+                e.stopPropagation();
+                setOpenId(null);
+                onDelete();
+              }}
+            >
               delete
             </code>
           </div>
@@ -116,7 +123,7 @@ export function BaseNode({
           </ModalHeader>
           <div>
             {!isEditingJson && !!setHelp && (
-              <div className="absolute top-6 right-6 flex gap-4">
+              <div className="absolute top-6 right-7.5 flex gap-4">
                 <code className="cursor-pointer font-mono text-sm text-zinc-500 underline" onClick={setIsEditingJson}>
                   json
                 </code>

@@ -10,7 +10,7 @@ export const useChainStrategy = (handle: StrategyHandle | undefined) => {
   const runtime = useMemo(() => ManagedRuntime.make(CalcService.Default, memoMap), [memoMap]);
 
   return useQuery({
-    queryKey: ["strategy", handle?.chainId, handle?.id],
+    queryKey: ["strategy", handle?.chainId, handle?.id, handle?.status],
     enabled: handle && handle.status !== "draft",
     queryFn: ({ signal }) =>
       runtime.runPromise(
@@ -50,10 +50,16 @@ export const useChainStrategy = (handle: StrategyHandle | undefined) => {
             return { id: v4(), ...action };
           }
 
-          return yield* Schema.decode(Strategy)({
+          console.log(addUuidToActions(config.strategy.action));
+
+          const strat = yield* Schema.decode(Strategy)({
             ...handle,
             action: addUuidToActions(config.strategy.action),
           });
+
+          console.log("useChainStrategy", { strat });
+
+          return strat;
         }),
         { signal },
       ),

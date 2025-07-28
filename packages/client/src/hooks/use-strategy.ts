@@ -9,14 +9,27 @@ import { useDraftStrategies } from "./use-draft-strategies";
 
 export const useStrategy = (handle: StrategyHandle | undefined) => {
   const { strategies } = useDraftStrategies(handle?.chainId);
-  const { data: strategy } = useChainStrategy(handle);
+  const { data: strategy, error } = useChainStrategy(handle);
+
+  console.log({ handle, error });
 
   return useQuery({
-    queryKey: ["strategy", handle?.chainId, handle?.id, JSON.stringify(strategies)],
+    queryKey: [
+      "strategy",
+      handle?.chainId,
+      handle?.id,
+      handle?.status,
+      handle?.status === "draft" ? JSON.stringify(strategies) : JSON.stringify(strategy),
+    ],
     enabled: handle?.status === "draft" || !!strategy,
     placeholderData: (previous) =>
       previous !== undefined && previous.id === handle?.id && previous.status === "draft" ? previous : undefined,
     queryFn: () => {
+      console.log({
+        handle,
+        strategy,
+      });
+
       if (!handle) {
         throw new Error("No strategy handle provided");
       }

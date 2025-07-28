@@ -14,12 +14,8 @@ export const useStrategy = (handle: StrategyHandle | undefined) => {
   return useQuery({
     queryKey: ["strategy", handle?.chainId, handle?.id, JSON.stringify(strategies)],
     enabled: handle?.status === "draft" || !!strategy,
-    placeholderData: (previous) => {
-      const canUsePrevious = previous !== undefined && previous.id === handle?.id && previous.status === "draft";
-      console.log({ canUsePrevious, previous });
-
-      return canUsePrevious ? previous : undefined;
-    },
+    placeholderData: (previous) =>
+      previous !== undefined && previous.id === handle?.id && previous.status === "draft" ? previous : undefined,
     queryFn: () => {
       if (!handle) {
         throw new Error("No strategy handle provided");

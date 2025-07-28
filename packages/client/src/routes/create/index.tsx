@@ -436,11 +436,6 @@ export default function CreateStrategy() {
 
   const { fitView } = useReactFlow();
 
-  console.log({
-    strategyHandle,
-    strategy,
-  });
-
   useEffect(() => {
     if (strategyHandle && strategyHandles?.[strategyHandle.id]) {
       return;
@@ -538,6 +533,30 @@ export default function CreateStrategy() {
         {
           <Panel position="top-left" className="flex flex-col gap-2">
             <div className="flex items-start gap-6 pt-1 pl-2">
+              <code
+                onClick={() => setStrategyFilter("draft")}
+                className={`cursor-pointer text-lg hover:underline ${strategyFilter === "draft" ? "text-zinc-200 underline" : "text-zinc-600"}`}
+              >
+                Drafts
+              </code>
+              <code
+                onClick={() => setStrategyFilter("active")}
+                className={`cursor-pointer text-lg hover:underline ${strategyFilter === "active" ? "text-zinc-200 underline" : "text-zinc-600"}`}
+              >
+                Active
+              </code>
+              <code
+                onClick={() => setStrategyFilter("paused")}
+                className={`cursor-pointer text-lg hover:underline ${strategyFilter === "paused" ? "text-zinc-200 underline" : "text-zinc-600"}`}
+              >
+                Paused
+              </code>
+              <code
+                onClick={() => setStrategyFilter("archived")}
+                className={`cursor-pointer text-lg hover:underline ${strategyFilter === "archived" ? "text-zinc-200 underline" : "text-zinc-600"}`}
+              >
+                Archived
+              </code>
               <div className="flex flex-col items-start gap-2">
                 <code
                   onClick={() => setIsSwitchingStrategyChain(true)}
@@ -563,30 +582,6 @@ export default function CreateStrategy() {
                     </code>
                   ))}
               </div>
-              <code
-                onClick={() => setStrategyFilter("draft")}
-                className={`cursor-pointer text-lg hover:underline ${strategyFilter === "draft" ? "text-zinc-200 underline" : "text-zinc-600"}`}
-              >
-                Drafts
-              </code>
-              <code
-                onClick={() => setStrategyFilter("active")}
-                className={`cursor-pointer text-lg hover:underline ${strategyFilter === "active" ? "text-zinc-200 underline" : "text-zinc-600"}`}
-              >
-                Active
-              </code>
-              <code
-                onClick={() => setStrategyFilter("paused")}
-                className={`cursor-pointer text-lg hover:underline ${strategyFilter === "paused" ? "text-zinc-200 underline" : "text-zinc-600"}`}
-              >
-                Paused
-              </code>
-              <code
-                onClick={() => setStrategyFilter("archived")}
-                className={`cursor-pointer text-lg hover:underline ${strategyFilter === "archived" ? "text-zinc-200 underline" : "text-zinc-600"}`}
-              >
-                Archived
-              </code>
             </div>
             {strategyFilter === "draft" && (
               <div className="flex flex-col gap-4 pl-2">

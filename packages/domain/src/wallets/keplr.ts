@@ -106,22 +106,25 @@ export class KeplrService extends Effect.Service<KeplrService>()(
             }
 
             return {
-                wallet: Stream.zipLatestWith(
-                    providersRef.changes,
-                    connectionRef.changes,
-                    (providers, connection) => {
-                        const hasEvmProvider = providers.has("Keplr")
-                        const hasCosmosProvider = !!window.keplr
-                        return {
-                            ...KEPLR_WALLET,
-                            supportedChains: SUPPORTED_CHAINS.filter(
-                                (chain) =>
-                                    (chain.type === "evm" && hasEvmProvider) ||
-                                    (chain.type === "cosmos" && hasCosmosProvider)
-                            ),
-                            connection
+                wallet: Stream.debounce(
+                    Stream.zipLatestWith(
+                        providersRef.changes,
+                        connectionRef.changes,
+                        (providers, connection) => {
+                            const hasEvmProvider = providers.has("Keplr")
+                            const hasCosmosProvider = !!window.keplr
+                            return {
+                                ...KEPLR_WALLET,
+                                supportedChains: SUPPORTED_CHAINS.filter(
+                                    (chain) =>
+                                        (chain.type === "evm" && hasEvmProvider) ||
+                                        (chain.type === "cosmos" && hasCosmosProvider)
+                                ),
+                                connection
+                            }
                         }
-                    }
+                    ),
+                    80
                 ),
 
                 connect: (chainId?: ChainId) =>
@@ -409,6 +412,13 @@ const connectEvm = (
         const newChainId = requestedChainId || SUPPORTED_CHAINS[0].id
         yield* switchToEvmChainKeplr(provider, connectionRef, newChainId)
         chain = SUPPORTED_CHAINS_BY_ID[newChainId]
+    }
+
+    if (!chain) {
+        return yield* SubscriptionRef.update(connectionRef, (currentConnection) => ({
+            ...currentConnection,
+            chain: "unsupported" as const
+        }))
     }
 
     setupEvmEventListeners(provider, connectionRef)

@@ -168,11 +168,10 @@ function ActiveStrategyHandle({
 
   return (
     <>
-      <code key={handle.id} className={`flex gap-2 text-lg ${isSelected ? "text-zinc-200" : "text-zinc-600"}`}>
-        *{" "}
-        <Code onClick={onSelect} className={`${isSelected ? "" : "cursor-pointer hover:underline"}`}>
-          {handle.label}
-          {isSelected && " | "}
+      <code key={handle.id} className={`flex gap-2 text-lg text-zinc-200 ${!isSelected ? "opacity-35" : ""}`}>
+        {isSelected ? "* " : ""}
+        <Code onClick={onSelect} className={`${isSelected ? "" : "ml-[18.5px] cursor-pointer hover:underline"}`}>
+          {`${handle.label}${isSelected ? " |" : ""}`}
         </Code>
         {isSelected && (
           <>
@@ -277,6 +276,16 @@ function ActiveStrategyHandle({
               Archive
             </code>
             {" 📂"}
+            <code> | </code>
+            <code
+              onClick={() => {
+                navigator.clipboard.writeText(handle.contract_address);
+              }}
+              className="cursor-pointer text-zinc-300 hover:underline"
+            >
+              Copy
+            </code>
+            {" 📋"}
           </>
         )}
       </code>

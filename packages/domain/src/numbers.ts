@@ -30,7 +30,7 @@ export const PercentageFromBasisPoints = Schema.transform(
 export const formatNumber = (value: number, options?: Intl.NumberFormatOptions) => {
     // Format the number with sufficient fraction digits, then remove trailing zeros after the decimal point
     const formatted = new Intl.NumberFormat("en-US", {
-        maximumFractionDigits: value > 1_000 ? 0 : value > 1 ? 2 : 4,
+        maximumFractionDigits: value > 1_000 ? 0 : value > 1 ? 2 : value > 0.001 ? 4 : 8,
         minimumFractionDigits: 0,
         ...options
     }).format(value)

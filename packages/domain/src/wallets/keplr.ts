@@ -93,7 +93,7 @@ export class KeplrService extends Effect.Service<KeplrService>()(
                 })
             }
 
-            yield* Effect.forkDaemon(
+            yield* Effect.fork(
                 Stream.runForEach(connectionRef.changes, (connectionState) =>
                     connectionState.status === "connected"
                         ? storage.set(KEPLR_CONNECTION_KEY, JSON.stringify(connectionState))

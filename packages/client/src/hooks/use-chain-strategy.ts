@@ -16,11 +16,11 @@ export const useChainStrategy = (handle: StrategyHandle | undefined) => {
       runtime.runPromise(
         Effect.gen(function* () {
           if (!handle || handle.status === "draft") {
-            throw new Error("Strategy is a draft and cannot be fetched from the chain");
+            throw new Error(`Cannot fetch strategy with handle: ${handle}`);
           }
 
           const CALC = yield* CalcService;
-          const config = yield* CALC.strategy(handle.chainId, handle.contract_address);
+          const config = yield* CALC.getStrategy(handle.chainId, handle.contract_address);
 
           function addUuidToActions(action: any): any {
             if ("many" in action) {
@@ -50,16 +50,10 @@ export const useChainStrategy = (handle: StrategyHandle | undefined) => {
             return { id: v4(), ...action };
           }
 
-          console.log(addUuidToActions(config.strategy.action));
-
-          const strat = yield* Schema.decode(Strategy)({
+          return yield* Schema.decode(Strategy)({
             ...handle,
             action: addUuidToActions(config.strategy.action),
           });
-
-          console.log("useChainStrategy", { strat });
-
-          return strat;
         }),
         { signal },
       ),

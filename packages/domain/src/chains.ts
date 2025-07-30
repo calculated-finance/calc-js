@@ -78,8 +78,8 @@ export const RUJIRA_STAGENET: Chain = {
         symbol: "RUNE",
         decimals: 8
     },
-    managerContract: "sthor1xg6qsvyktr0zyyck3d67mgae0zun4lhwwn3v9pqkl5pk8mvkxsnscenkc0",
-    schedulerContract: "sthor1x3hfzl0v43upegeszz8cjygljgex9jtygpx4l44nkxudxjsukn3setrkl6"
+    managerContract: "sthor1a8ufsnukvnh827d35wyknvn6shyqphu3rac0yl9g64hzukx4hk7q527ln5",
+    schedulerContract: "sthor1s4wcpc6mzfe9rvu3x48t6mvmmupg04n7cfecgx3pxvcl5q3h4y3shqqv8a"
 }
 
 export const CHAINS = [

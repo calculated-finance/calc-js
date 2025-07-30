@@ -26,7 +26,7 @@ export const useChainStrategies = (chainId: ChainId, status: "draft" | "active" 
           const CALC = yield* CalcService;
 
           const strategyHandles = yield* Effect.all(
-            (addresses || []).map(({ address }) => CALC.strategyHandles(chainId, address, status)),
+            (addresses || []).map(({ address }) => CALC.getStrategyHandles(chainId, address, status)),
             { concurrency: "unbounded" },
           );
 

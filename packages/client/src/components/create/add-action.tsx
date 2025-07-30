@@ -1,4 +1,5 @@
 import type { Action } from "@template/domain/src/calc";
+import { RUJIRA_STAGENET } from "@template/domain/src/chains";
 import { v4 } from "uuid";
 import { useAssets } from "../../hooks/use-assets";
 import { useNodeModalStore } from "../../hooks/use-node-modal-store";
@@ -81,7 +82,7 @@ export function AddAction({
                 schedule: {
                   cadence: { cron: { expr: "0 23 12 * * SUN#2" } },
                   execution_rebate: [],
-                  scheduler: "asdsa",
+                  scheduler: RUJIRA_STAGENET.schedulerContract,
                 },
               });
             }}

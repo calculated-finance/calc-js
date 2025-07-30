@@ -84,12 +84,38 @@ export function StrategyNode({ data: { strategy, update } }: CustomNodeData<Stra
             </div>
           )}
         />
+        {strategy.address && (
+          <form.Field
+            name="address"
+            children={(field) => (
+              <div className="flex flex-col gap-2">
+                <code className="text-sm text-zinc-400">address</code>
+                <div className="flex rounded bg-zinc-900">
+                  <Input
+                    placeholder="Strategy Address"
+                    className="w-full"
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    tabIndex={-1}
+                    autoFocus={false}
+                    readOnly={strategy.status !== "draft"}
+                  />
+                </div>
+                {!field.state.meta.isValid && (
+                  <p className="font-mono text-sm text-red-500/60">{field.state.meta.errors.join(", ")}</p>
+                )}
+              </div>
+            )}
+          />
+        )}
         {!strategy.action && (
           <AddAction
-            onAdd={(action) => update({
-              ...strategy,
-              action,
-            })}
+            onAdd={(action) =>
+              update({
+                ...strategy,
+                action,
+              })
+            }
             isHelpOpen={isHelpOpen}
             helpMessage="Select the root action for this strategy. You can choose a simple action like a execute a swap or set a limit order, however it's often more useful to start with a schedule or a group action."
           />

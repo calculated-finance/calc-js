@@ -1,9 +1,15 @@
-import { CosmWasmClient } from "@cosmjs/cosmwasm-stargate"
 import { Effect, Schema } from "effect"
 import { Amount } from "./assets.js"
 import { ChainId, CHAINS_BY_ID } from "./chains.js"
-import { Coin, Uint64 } from "./cosmwasm.js"
+import { Coin, CosmWasm, Uint64 } from "./cosmwasm.js"
 import { BasisPoints } from "./numbers.js"
+
+export const Trigger = Schema.Struct({
+    id: Uint64,
+    owner: Schema.NonEmptyTrimmedString
+})
+
+export type Trigger = Schema.Schema.Type<typeof Trigger>
 
 export const FixedSwapAdjustment = Schema.Literal("fixed")
 
@@ -234,62 +240,138 @@ export const StrategyHandle = Schema.Union(
 
 export type StrategyHandle = Schema.Schema.Type<typeof StrategyHandle>
 
+export class CalcError extends Schema.TaggedError<CalcError>()("CalcError", {
+    cause: Schema.Defect
+}) {}
+
 export class CalcService extends Effect.Service<CalcService>()("CalcService", {
-    succeed: {
-        strategyHandles: (
-            chainId: ChainId,
-            owner: string | undefined,
-            status: "active" | "paused" | "archived" | undefined
-        ) => Effect.gen(function*() {
-            const chain = CHAINS_BY_ID[chainId]
-            const managerContract = CHAINS_BY_ID[chainId]?.managerContract
+    effect: Effect.gen(function*() {
+        const cosmWasm = yield* CosmWasm
 
-            if (chain.type !== "cosmos" || !managerContract) {
-                throw new Error(`Chain type ${chain.displayName} is not supported for strategies`)
-            }
+        return {
+            queryManager: <A>(
+                chainId: ChainId,
+                query: Record<string, any>
+            ): Effect.Effect<A, Error, any> =>
+                Effect.gen(function*() {
+                    const chain = CHAINS_BY_ID[chainId]
 
-            const client = yield* Effect.tryPromise(() => CosmWasmClient.connect(chain.rpcUrls[0]))
+                    if (!chain || chain.type !== "cosmos" || !chain.managerContract) {
+                        return yield* Effect.fail(
+                            new CalcError({ cause: `Chain id ${chainId} does not have a manager contract` })
+                        )
+                    }
 
-            const strategyHandles = yield* Effect.tryPromise(() =>
-                client.queryContractSmart(managerContract, {
-                    strategies: {
-                        owner,
-                        status
+                    return yield* cosmWasm.queryContractSmart(chainId, chain.managerContract!, query)
+                }),
+
+            queryScheduler: <A>(
+                chainId: ChainId,
+                query: Record<string, any>
+            ): Effect.Effect<A, Error, any> =>
+                Effect.gen(function*() {
+                    const chain = CHAINS_BY_ID[chainId]
+
+                    if (!chain || chain.type !== "cosmos" || !chain.schedulerContract) {
+                        return yield* Effect.fail(
+                            new CalcError({ cause: `Chain id ${chainId} does not have a scheduler contract` })
+                        )
+                    }
+
+                    return yield* cosmWasm.queryContractSmart(chainId, chain.schedulerContract!, query)
+                }),
+
+            queryStrategy: <A>(
+                chainId: ChainId,
+                contractAddress: string,
+                query: Record<string, any>
+            ): Effect.Effect<A, Error, any> =>
+                Effect.gen(function*() {
+                    const chain = CHAINS_BY_ID[chainId]
+
+                    if (!chain || chain.type !== "cosmos") {
+                        return yield* Effect.fail(
+                            new CalcError({ cause: `Chain id ${chainId} is not a cosmos chain` })
+                        )
+                    }
+
+                    return yield* cosmWasm.queryContractSmart(chainId, contractAddress, query)
+                }),
+
+            getStrategyHandles: (
+                chainId: ChainId,
+                owner: string | undefined,
+                status: "active" | "paused" | "archived" | undefined
+            ) => Effect.gen(function*() {
+                const client = cosmWasm.clients.get(chainId)
+
+                if (!client) {
+                    return yield* Effect.fail(
+                        new Error(`CosmWasm client for chain ${chainId} is not available`)
+                    )
+                }
+
+                const chain = CHAINS_BY_ID[chainId]
+                const managerContract = chain?.managerContract
+
+                if (chain.type !== "cosmos" || !managerContract) {
+                    return yield* Effect.fail(
+                        new Error(`Chain type ${chain.displayName} is not supported for strategies`)
+                    )
+                }
+
+                const strategyHandles = yield* Effect.tryPromise({
+                    try: () =>
+                        client.queryContractSmart(managerContract, {
+                            strategies: {
+                                owner,
+                                status
+                            }
+                        }),
+                    catch: (cause) => {
+                        console.error("Error fetching strategy handles", cause)
+                        return new Error(`Failed to fetch strategy handles for chain ${chainId}`)
                     }
                 })
-            )
 
-            return (strategyHandles as Array<Omit<StrategyHandle, "chainId">>).map((handle) => ({
-                ...handle,
-                chainId
-            }))
-        }),
+                return (strategyHandles as Array<Omit<StrategyHandle, "chainId">>).map((handle) => ({
+                    ...handle,
+                    chainId
+                }))
+            }),
 
-        strategy: (
-            chainId: ChainId,
-            contractAddress: string
-        ) => Effect.gen(function*() {
-            const chain = CHAINS_BY_ID[chainId]
-            const managerContract = CHAINS_BY_ID[chainId]?.managerContract
+            getStrategy: (
+                chainId: ChainId,
+                contractAddress: string
+            ) => Effect.gen(function*() {
+                const client = cosmWasm.clients.get(chainId)
 
-            if (chain.type !== "cosmos" || !managerContract) {
-                throw new Error(`Chain type ${chain.displayName} is not supported for strategies`)
-            }
-
-            const client = yield* Effect.tryPromise(() => CosmWasmClient.connect(chain.rpcUrls[0]))
-
-            const strategy = yield* Effect.tryPromise({
-                try: () =>
-                    client.queryContractSmart(contractAddress, {
-                        config: {}
-                    }),
-                catch: (error) => {
-                    console.error("Error fetching strategy", error)
-                    throw new Error(`Failed to fetch strategy from contract ${contractAddress}`)
+                if (!client) {
+                    return yield* Effect.fail(
+                        new Error(`CosmWasm client for chain ${chainId} is not available`)
+                    )
                 }
-            })
 
-            return strategy
-        })
-    }
+                const chain = CHAINS_BY_ID[chainId]
+                const managerContract = CHAINS_BY_ID[chainId]?.managerContract
+
+                if (chain.type !== "cosmos" || !managerContract) {
+                    throw new Error(`Chain type ${chain.displayName} is not supported for strategies`)
+                }
+
+                const strategy = yield* Effect.tryPromise({
+                    try: () =>
+                        client.queryContractSmart(contractAddress, {
+                            config: {}
+                        }),
+                    catch: (error) => {
+                        console.error("Error fetching strategy", error)
+                        throw new Error(`Failed to fetch strategy from contract ${contractAddress}`)
+                    }
+                })
+
+                return strategy
+            })
+        }
+    })
 }) {}

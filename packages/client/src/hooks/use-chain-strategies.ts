@@ -16,6 +16,9 @@ export const useChainStrategies = (chainId: ChainId, status: "draft" | "active" 
   return useQuery({
     queryKey: ["strategies", chainId, status, addresses.map((a) => a.address)],
     enabled: status !== "draft",
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
     queryFn: ({ signal }) =>
       runtime.runPromise(
         Effect.gen(function* () {
@@ -40,8 +43,5 @@ export const useChainStrategies = (chainId: ChainId, status: "draft" | "active" 
         }),
         { signal },
       ),
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-    refetchOnMount: false,
   });
 };

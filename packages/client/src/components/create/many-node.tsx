@@ -4,6 +4,7 @@ import { Effect, Schema } from "effect";
 import { useState } from "react";
 import { BaseNode } from "../../components/create/base-node";
 import { type ActionNodeParams, type CustomNodeData } from "../../lib/layout/layout";
+import { getDefaultDeposits } from "../../lib/strategy";
 import { AddAction } from "./add-action";
 import { JsonEditor } from "./json-editor";
 
@@ -51,6 +52,7 @@ export function ManyNode({
                 }
                 return addAction(action);
               }}
+              denoms={Object.values(getDefaultDeposits({ id: id, many })).map((d) => d.denom)}
               isHelpOpen={isHelpOpen}
               helpMessage="Select an action to add to this group. Actions will all be executed in the same transaction, in the order they are added to the group. You can add and remove actions at any stage."
             />

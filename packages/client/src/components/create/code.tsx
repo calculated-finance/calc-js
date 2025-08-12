@@ -74,7 +74,7 @@ export function Code({
   children,
   ...props
 }: React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & PropsWithChildren) {
-  const assets = useAssets();
+  const { assets } = useAssets();
 
   if (typeof children === "string") {
     return <code {...props}>{highlightAssetsAndNumbers(children, assets)}</code>;

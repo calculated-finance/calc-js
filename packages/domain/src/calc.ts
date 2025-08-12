@@ -1,7 +1,7 @@
 import { Effect, Schema } from "effect"
 import { Amount } from "./assets.js"
 import { ChainId, CHAINS_BY_ID } from "./chains.js"
-import { Coin, CosmWasm, Uint64 } from "./cosmwasm.js"
+import { Coin, CosmWasm, Uint128, Uint64 } from "./cosmwasm.js"
 import { BasisPoints } from "./numbers.js"
 
 export const Trigger = Schema.Struct({
@@ -49,7 +49,7 @@ export const ThorchainRoute = Schema.Struct({
     thorchain: Schema.Struct({
         affiliate_bps: Schema.optional(Schema.NullOr(Schema.Number)),
         affiliate_code: Schema.optional(Schema.NullOr(Schema.Trimmed)),
-        latest_swap: Schema.optional(StreamingSwap),
+        latest_swap: Schema.optional(Schema.NullOr(StreamingSwap)),
         max_streaming_quantity: Schema.optional(Schema.NullOr(Schema.Number)),
         streaming_interval: Schema.optional(Schema.NullOr(Schema.Number))
     })
@@ -84,10 +84,50 @@ export const SwapAction = Schema.Struct({
 
 export type SwapAction = Schema.Schema.Type<typeof SwapAction>
 
+export const Recipient = Schema.Union(
+    Schema.Struct({
+        bank: Schema.Struct({
+            address: Schema.Trimmed
+        })
+    }),
+    Schema.Struct({
+        contract: Schema.Struct({
+            address: Schema.Trimmed,
+            msg: Schema.Trimmed
+        })
+    }),
+    Schema.Struct({
+        deposit: Schema.Struct({
+            memo: Schema.Trimmed
+        })
+    })
+)
+
+export const Destination = Schema.Struct({
+    label: Schema.optional(Schema.NullOr(Schema.NonEmptyTrimmedString)),
+    shares: Uint128,
+    recipient: Recipient
+})
+
+export const Distribute = Schema.Struct({
+    denoms: Schema.Array(Schema.NonEmptyTrimmedString),
+    destinations: Schema.Array(Destination)
+})
+
+export type Distribute = Schema.Schema.Type<typeof Distribute>
+
+export const DistributeAction = Schema.Struct({
+    id: Schema.NonEmptyTrimmedString,
+    distribute: Distribute
+})
+
+export type DistributeAction = Schema.Schema.Type<typeof DistributeAction>
+
 export const InnerManyAction = Schema.Struct({
     id: Schema.NonEmptyTrimmedString,
-    many: Schema.Array(Schema.Union(SwapAction))
+    many: Schema.Array(Schema.Union(SwapAction, DistributeAction))
 })
+
 export const BlockSchedule = Schema.Struct({
     blocks: Schema.Struct({
         interval: Schema.Positive.pipe(
@@ -135,10 +175,17 @@ export const Cadence = Schema.Union(
 )
 
 export const InnerSchedule = Schema.Struct({
+    action: Schema.optional(Schema.Union(SwapAction, InnerManyAction, DistributeAction)),
     cadence: Cadence,
-    action: Schema.optional(Schema.Union(SwapAction, InnerManyAction)),
+    contract_address: Schema.NonEmptyTrimmedString,
+    msg: Schema.optional(Schema.NullOr(Schema.String)),
     execution_rebate: Schema.mutable(Schema.Array(Coin)),
-    scheduler: Schema.NonEmptyTrimmedString
+    scheduler: Schema.NonEmptyTrimmedString,
+    executors: Schema.Array(Schema.NonEmptyTrimmedString),
+    jitter: Schema.optional(Schema.NullOr(Schema.Struct({
+        nanos: Schema.optional(Schema.Number),
+        secs: Schema.Positive
+    })))
 })
 
 export type InnerSchedule = Schema.Schema.Type<typeof InnerSchedule>
@@ -148,13 +195,20 @@ export const InnerScheduleAction = Schema.Struct({
     schedule: InnerSchedule
 })
 
-export const SchedulableAction = Schema.Union(SwapAction, InnerManyAction, InnerScheduleAction)
+export const SchedulableAction = Schema.Union(SwapAction, InnerManyAction, InnerScheduleAction, DistributeAction)
 
 export const Schedule = Schema.Struct({
+    action: Schema.optional(Schema.Union(SwapAction, InnerManyAction)),
     cadence: Cadence,
-    action: Schema.optional(SchedulableAction),
+    contract_address: Schema.NonEmptyTrimmedString,
+    msg: Schema.optional(Schema.NullOr(Schema.String)),
     execution_rebate: Schema.mutable(Schema.Array(Coin)),
-    scheduler: Schema.NonEmptyTrimmedString
+    scheduler: Schema.NonEmptyTrimmedString,
+    executors: Schema.Array(Schema.NonEmptyTrimmedString),
+    jitter: Schema.optional(Schema.NullOr(Schema.Struct({
+        nanos: Schema.optional(Schema.Number),
+        secs: Schema.Positive
+    })))
 })
 
 export type Schedule = Schema.Schema.Type<typeof Schedule>
@@ -166,7 +220,7 @@ export const ScheduleAction = Schema.Struct({
 
 export type ScheduleAction = Schema.Schema.Type<typeof ScheduleAction>
 
-export const ActionsExcludingMany = Schema.Union(SwapAction, ScheduleAction, InnerManyAction)
+export const ActionsExcludingMany = Schema.Union(SwapAction, ScheduleAction, InnerManyAction, DistributeAction)
 
 export type ActionsExcludingMany = Schema.Schema.Type<
     typeof ActionsExcludingMany
@@ -186,7 +240,7 @@ export const ActionsExcludingSchedule = Schema.Union(
     ManyAction
 )
 
-export const Action = Schema.Union(SwapAction, ManyAction, ScheduleAction)
+export const Action = Schema.Union(SwapAction, ManyAction, ScheduleAction, DistributeAction)
 
 export type Action = Schema.Schema.Type<typeof Action>
 
@@ -196,6 +250,7 @@ export type StrategyId = Schema.Schema.Type<typeof StrategyId>
 
 export const Strategy = Schema.Struct({
     id: StrategyId,
+    chainId: ChainId,
     action: Schema.optional(Action),
     address: Schema.optional(Schema.Trimmed),
     owner: Schema.optional(Schema.Trimmed.pipe(
@@ -312,7 +367,7 @@ export class CalcService extends Effect.Service<CalcService>()("CalcService", {
                 }
 
                 const chain = CHAINS_BY_ID[chainId]
-                const managerContract = chain?.managerContract
+                const managerContract = "managerContract" in chain ? chain.managerContract : undefined
 
                 if (chain.type !== "cosmos" || !managerContract) {
                     return yield* Effect.fail(
@@ -353,10 +408,12 @@ export class CalcService extends Effect.Service<CalcService>()("CalcService", {
                 }
 
                 const chain = CHAINS_BY_ID[chainId]
-                const managerContract = CHAINS_BY_ID[chainId]?.managerContract
+                const managerContract = "managerContract" in chain ? chain.managerContract : undefined
 
                 if (chain.type !== "cosmos" || !managerContract) {
-                    throw new Error(`Chain type ${chain.displayName} is not supported for strategies`)
+                    return yield* Effect.fail(
+                        new Error(`Chain type ${chain.displayName} is not supported for strategies`)
+                    )
                 }
 
                 const strategy = yield* Effect.tryPromise({
@@ -370,8 +427,11 @@ export class CalcService extends Effect.Service<CalcService>()("CalcService", {
                     }
                 })
 
+                console.log("Fetched strategy:", strategy)
+
                 return strategy
             })
         }
-    })
+    }),
+    dependencies: [CosmWasm.Default]
 }) {}

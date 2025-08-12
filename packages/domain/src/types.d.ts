@@ -1,9 +1,8 @@
 export type Addr = string
-export type StrategyStatus = "active" | "paused" | "archived"
-export type ArrayOf_StrategyHandle = Array<StrategyHandle>
+export type StrategyStatus = "active" | "paused"
+export type ArrayOf_Strategy = Array<Strategy>
 
-export interface StrategyHandle {
-    affiliates: Array<Affiliate>
+export interface Strategy {
     contract_address: Addr
     created_at: number
     id: number
@@ -12,20 +11,13 @@ export interface StrategyHandle {
     status: StrategyStatus
     updated_at: number
 }
-export interface Affiliate {
-    address: Addr
-    bps: number
-    label: string
-}
 
 export interface ManagerInstantiateMsg {
     fee_collector: Addr
     strategy_code_id: number
 }
 export type ManagerQueryMsg =
-    | {
-        config: object
-    }
+    | ("config" | "count")
     | {
         strategy: {
             address: Addr
@@ -39,54 +31,65 @@ export type ManagerQueryMsg =
             status?: StrategyStatus | null
         }
     }
+export type Uint64 = string
 export type ManagerExecuteMsg =
     | {
-        instantiate_strategy: {
+        instantiate: {
             affiliates: Array<Affiliate>
             label: string
-            strategy: StrategyFor_Json
+            nodes: Array<Node>
+            owner?: Addr | null
         }
     }
     | {
-        execute_strategy: {
+        execute: {
             contract_address: Addr
         }
     }
     | {
-        update_strategy_status: {
+        update_status: {
             contract_address: Addr
             status: StrategyStatus
         }
     }
     | {
-        update_strategy: {
+        update: {
             contract_address: Addr
-            update: StrategyFor_Json
+            nodes: Array<Node>
         }
     }
-export type ManyAction = { many: Array<Action> }
-export type ConditionalAction = {
-    conditional: Conditional
-}
-export type SwapAction = {
-    swap: Swap
-}
-export type LimitOrderAction = {
-    limit_order: LimitOrder
-}
-export type DistributeAction = {
-    distribute: Distribution
-}
-export type ScheduleAction = {
-    schedule: Schedule
-}
+    | {
+        update_label: {
+            contract_address: Addr
+            label: string
+        }
+    }
+export type Node =
+    | {
+        action: {
+            action: Action
+            index: number
+            next?: number | null
+        }
+    }
+    | {
+        condition: {
+            condition: Condition
+            index: number
+            on_failure?: number | null
+            on_success?: number | null
+        }
+    }
 export type Action =
-    | SwapAction
-    | LimitOrderAction
-    | DistributeAction
-    | ScheduleAction
-    | ConditionalAction
-    | ManyAction
+    | {
+        swap: Swap
+    }
+    | {
+        limit_order: FinLimitOrder
+    }
+    | {
+        distribute: Distribution
+    }
 export type SwapAmountAdjustment =
     | "fixed"
     | {
@@ -124,7 +127,7 @@ export type SwapRoute =
         thorchain: ThorchainRoute
     }
 export type Side = "base" | "quote"
-export type OrderPriceStrategy =
+export type PriceStrategy =
     | {
         fixed: Decimal
     }
@@ -132,7 +135,7 @@ export type OrderPriceStrategy =
         offset: {
             direction: Direction
             offset: Offset
-            tolerance: Offset
+            tolerance?: Offset | null
         }
     }
 export type Direction = "above" | "below"
@@ -160,17 +163,65 @@ export type Recipient =
             memo: string
         }
     }
-    | {
-        strategy: {
-            contract_address: Addr
-        }
-    }
 /**
  * Binary is a wrapper around Vec<u8> to add base64 de/serialization with serde. It also adds some helper methods to help encode inline.
  *
  * This is only needed as serde-json-{core,wasm} has a horrible encoding for Vec<u8>. See also <https://github.com/CosmWasm/cosmwasm/blob/main/docs/MESSAGE_TYPES.md>.
  */
 export type Binary = string
+export type Condition =
+    | {
+        timestamp_elapsed: Timestamp
+    }
+    | {
+        blocks_completed: number
+    }
+    | {
+        schedule: Schedule
+    }
+    | {
+        can_swap: Swap
+    }
+    | {
+        fin_limit_order_filled: {
+            owner?: Addr | null
+            pair_address: Addr
+            price: Decimal
+            side: Side
+        }
+    }
+    | {
+        balance_available: {
+            address?: Addr | null
+            amount: Coin
+        }
+    }
+    | {
+        strategy_status: {
+            contract_address: Addr
+            manager_contract: Addr
+            status: StrategyStatus
+        }
+    }
+    | {
+        oracle_price: {
+            asset: string
+            direction: Direction
+            price: Decimal
+        }
+    }
+/**
+ * A point in time in nanosecond precision.
+ *
+ * This type can represent times from 1970-01-01T00:00:00Z to 2554-07-21T23:34:33Z.
+ *
+ * ## Examples
+ *
+ * ``` # use cosmwasm_std::Timestamp; let ts = Timestamp::from_nanos(1_000_000_202); assert_eq!(ts.nanos(), 1_000_000_202); assert_eq!(ts.seconds(), 1); assert_eq!(ts.subsec_nanos(), 202);
+ *
+ * let ts = ts.plus_seconds(2); assert_eq!(ts.nanos(), 3_000_000_202); assert_eq!(ts.seconds(), 3); assert_eq!(ts.subsec_nanos(), 202); ```
+ */
+export type Timestamp = Uint64
 export type Cadence =
     | {
         blocks: {
@@ -195,89 +246,14 @@ export type Cadence =
             pair_address: Addr
             previous?: Decimal | null
             side: Side
-            strategy: OrderPriceStrategy
+            strategy: PriceStrategy
         }
     }
-/**
- * A point in time in nanosecond precision.
- *
- * This type can represent times from 1970-01-01T00:00:00Z to 2554-07-21T23:34:33Z.
- *
- * ## Examples
- *
- * ``` # use cosmwasm_std::Timestamp; let ts = Timestamp::from_nanos(1_000_000_202); assert_eq!(ts.nanos(), 1_000_000_202); assert_eq!(ts.seconds(), 1); assert_eq!(ts.subsec_nanos(), 202);
- *
- * let ts = ts.plus_seconds(2); assert_eq!(ts.nanos(), 3_000_000_202); assert_eq!(ts.seconds(), 3); assert_eq!(ts.subsec_nanos(), 202); ```
- */
-export type Timestamp = Uint64
-/**
- * A thin wrapper around u64 that is using strings for JSON encoding/decoding, such that the full u64 range can be used for clients that convert JSON numbers to floats, like JavaScript and jq.
- *
- * # Examples
- *
- * Use `from` to create instances of this and `u64` to get the value out:
- *
- * ``` # use cosmwasm_std::Uint64; let a = Uint64::from(42u64); assert_eq!(a.u64(), 42);
- *
- * let b = Uint64::from(70u32); assert_eq!(b.u64(), 70); ```
- */
-export type Uint64 = string
-export type Condition =
-    | {
-        timestamp_elapsed: Timestamp
-    }
-    | {
-        blocks_completed: number
-    }
-    | {
-        can_swap: Swap
-    }
-    | {
-        limit_order_filled: {
-            owner: Addr
-            pair_address: Addr
-            price: Decimal
-            side: Side
-        }
-    }
-    | {
-        balance_available: {
-            address: Addr
-            amount: Coin
-        }
-    }
-    | {
-        strategy_balance_available: {
-            amount: Coin
-        }
-    }
-    | {
-        strategy_status: {
-            contract_address: Addr
-            manager_contract: Addr
-            status: StrategyStatus
-        }
-    }
-    | {
-        oracle_price: {
-            asset: string
-            direction: Direction
-            rate: Decimal
-        }
-    }
-    | {
-        not: Condition
-    }
-    | {
-        composite: CompositeCondition
-    }
-export type Threshold = "all" | "any"
-export type Json = null
 
-export interface StrategyFor_Json {
-    action: Action
-    owner: Addr
-    state: Json
+export interface Affiliate {
+    address: Addr
+    bps: number
+    label: string
 }
 export interface Swap {
     adjustment: SwapAmountAdjustment
@@ -307,13 +283,13 @@ export interface StreamingSwap {
     streaming_swap_blocks: number
     swap_amount: Coin
 }
-export interface LimitOrder {
+export interface FinLimitOrder {
+    bid_amount?: Uint128 | null
     bid_denom: string
     current_order?: StaleOrder | null
-    max_bid_amount?: Uint128 | null
     pair_address: Addr
     side: Side
-    strategy: OrderPriceStrategy
+    strategy: PriceStrategy
 }
 export interface StaleOrder {
     price: Decimal
@@ -328,22 +304,17 @@ export interface Destination {
     shares: Uint128
 }
 export interface Schedule {
-    action: Action
     cadence: Cadence
     execution_rebate: Array<Coin>
-    scheduler: Addr
+    executors: Array<Addr>
+    jitter?: Duration | null
+    manager_address: Addr
+    next?: Cadence | null
+    scheduler_address: Addr
 }
 export interface Duration {
     nanos: number
     secs: number
-}
-export interface Conditional {
-    action: Action
-    condition: Condition
-}
-export interface CompositeCondition {
-    conditions: Array<Condition>
-    threshold: Threshold
 }
 
 export interface ManagerConfig {
@@ -355,22 +326,16 @@ export type ArrayOf_Trigger = Array<Trigger>
 
 export interface Trigger {
     condition: Condition
+    contract_address: Addr
     execution_rebate: Array<Coin>
-    id: number
-    owner: Addr
+    executors: Array<Addr>
+    id: Uint64
+    jitter?: Duration | null
+    msg: Binary
 }
 
-export interface SchedulerInstantiateMsg {
-    manager: Addr
-}
+export type SchedulerInstantiateMsg = object
 export type SchedulerQueryMsg =
-    | {
-        owned: {
-            limit?: number | null
-            owner: Addr
-            start_after?: number | null
-        }
-    }
     | {
         filtered: {
             filter: ConditionFilter
@@ -378,7 +343,7 @@ export type SchedulerQueryMsg =
         }
     }
     | {
-        can_execute: number
+        can_execute: Uint64
     }
 export type ConditionFilter =
     | {
@@ -401,16 +366,30 @@ export type ConditionFilter =
              * @maxItems 2
              */
             price_range?: [Decimal, Decimal] | null
-            start_after?: number | null
         }
     }
+export type Threshold = "all" | "any"
+
+export interface CompositeCondition {
+    conditions: Array<Condition>
+    threshold: Threshold
+}
 export type SchedulerExecuteMsg =
     | {
-        create: Condition
+        create: CreateTriggerMsg
     }
     | {
-        execute: Array<number>
+        execute: Array<Uint64>
     }
+
+export interface CreateTriggerMsg {
+    condition: Condition
+    contract_address: Addr
+    executors: Array<Addr>
+    jitter?: Duration | null
+    msg: Binary
+}
+
 export type Boolean = boolean
 
 export interface Statistics {
@@ -419,55 +398,35 @@ export interface Statistics {
 }
 
 export interface StrategyInstantiateMsg {
-    action: Action
-    owner: Addr
-    state: Indexed
-}
-
-export interface Indexed {
+    affiliates: Array<Affiliate>
     contract_address: Addr
-}
-export type StrategyQueryMsg =
-    | {
-        config: object
-    }
-    | {
-        statistics: object
-    }
-    | {
-        balances: Array<string>
-    }
-export type StrategyExecuteMsg =
-    | ("execute" | "commit" | "clear")
-    | {
-        withdraw: Array<string>
-    }
-    | {
-        update: StrategyFor_Indexed
-    }
-    | {
-        update_status: StrategyStatus
-    }
-
-export interface StrategyFor_Indexed {
-    action: Action
+    nodes: Array<Node>
     owner: Addr
-    state: Indexed
 }
 
+export type StrategyQueryMsg = "config" | "balances"
+export type StrategyExecuteMsg =
+    | ("execute" | "cancel")
+    | {
+        init: Array<Node>
+    }
+    | {
+        withdraw: Array<Coin>
+    }
+    | {
+        update: Array<Node>
+    }
+    | {
+        process: {
+            operation: StrategyOperation
+            previous?: number | null
+        }
+    }
+export type StrategyOperation = "execute" | "cancel"
 export type ArrayOf_Coin = Array<Coin>
 
 export interface StrategyConfig {
-    escrowed: Array<string>
     manager: Addr
-    strategy: StrategyFor_Committed
-}
-export interface StrategyFor_Committed {
-    action: Action
+    nodes: Array<Node>
     owner: Addr
-    state: Committed
-}
-
-export interface Committed {
-    contract_address: Addr
 }

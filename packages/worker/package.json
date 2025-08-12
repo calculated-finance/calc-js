@@ -21,12 +21,12 @@
   "dependencies": {
     "@cosmjs/cosmwasm-stargate": "^0.34.0",
     "@cosmjs/crypto": "^0.34.0",
+    "@cosmjs/encoding": "^0.34.0",
     "@cosmjs/proto-signing": "^0.34.0",
     "@cosmjs/stargate": "^0.34.0",
     "@effect/platform": "latest",
     "@effect/platform-node": "latest",
-    "@template/domain": "workspace:^",
-    "effect": "latest"
+    "@template/domain": "workspace:^"
   },
   "effect": {
     "generateExports": {

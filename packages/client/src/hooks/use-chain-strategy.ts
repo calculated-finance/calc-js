@@ -12,6 +12,11 @@ export const useChainStrategy = (handle: StrategyHandle | undefined) => {
   return useQuery({
     queryKey: ["strategy", handle?.chainId, handle?.id, handle?.status],
     enabled: handle && handle.status !== "draft",
+    refetchInterval: false,
+    retry: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
     queryFn: ({ signal }) =>
       runtime.runPromise(
         Effect.gen(function* () {
@@ -52,13 +57,11 @@ export const useChainStrategy = (handle: StrategyHandle | undefined) => {
 
           return yield* Schema.decode(Strategy)({
             ...handle,
+            address: handle.contract_address,
             action: addUuidToActions(config.strategy.action),
           });
         }),
         { signal },
       ),
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: false,
-    refetchOnMount: false,
   });
 };

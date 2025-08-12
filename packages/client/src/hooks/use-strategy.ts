@@ -14,10 +14,7 @@ export const useStrategy = (handle: StrategyHandle | undefined) => {
   return useQuery({
     queryKey: [
       "strategy",
-      handle?.chainId,
-      handle?.id,
-      handle?.status,
-      handle?.status === "draft" ? JSON.stringify(strategies) : JSON.stringify(strategy),
+      handle?.status === "draft" ? handle.id : handle?.contract_address,
     ],
     enabled: handle?.status === "draft" || !!strategy,
     placeholderData: (previous) =>

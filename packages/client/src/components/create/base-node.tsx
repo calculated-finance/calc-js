@@ -19,6 +19,7 @@ export function BaseNode({
   isEditingJson,
   setIsEditingJson,
   isValid = true,
+  width = 200,
 }: {
   id: number | string;
   handleLeft?: boolean;
@@ -33,6 +34,7 @@ export function BaseNode({
   isEditingJson?: boolean;
   setIsEditingJson?: () => void;
   isValid?: boolean;
+  width?: number;
 }) {
   const { zoom } = useViewport();
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -65,7 +67,7 @@ export function BaseNode({
   return (
     <div className="group">
       <div
-        className={`flex h-[150px] w-[200px] cursor-pointer items-center justify-center rounded-lg border border-gray-300 bg-black p-4 text-center shadow transition-opacity duration-300 ${
+        className={`flex h-[150px] w-[${width}px] cursor-pointer items-center justify-center rounded-lg border border-gray-300 bg-black p-4 text-center shadow transition-opacity duration-300 ${
           isVisible ? "opacity-100" : "opacity-0"
         } `}
         onClick={(e: React.MouseEvent) => {
@@ -112,7 +114,7 @@ export function BaseNode({
       >
         <ModalContent
           drawerProps={{
-            className: "px-6 pt-2 pb-10 border-none",
+            className: `px-6 pt-2 pb-10 border-none`,
           }}
           dialogProps={{
             showCloseButton: false,

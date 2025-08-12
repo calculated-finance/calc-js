@@ -1,8 +1,10 @@
-import { Data, Effect, Schema, Stream } from "effect"
-import type { ChainId } from "../chains.js"
+import type { DeliverTxResponse } from "@cosmjs/stargate"
+import { Context, Data, Effect, Layer, Schema, Stream } from "effect"
+import type { ChainId, ChainType } from "../chains.js"
 import { Chain } from "../chains.js"
-import { KeplrService } from "./keplr.js"
+import { createKeplrSigningClient, KeplrService } from "./keplr.js"
 import { MetaMaskService } from "./metamask.js"
+import { createMnemonicSigningClient } from "./mnemonic.js"
 
 export const Connection = Schema.Union(
     Schema.Struct({
@@ -56,10 +58,53 @@ export const TransactionData = Schema.Union(
     })
 )
 
+export const CosmosChainId = Schema.Literal(
+    "cosmoshub-4", // Cosmos Hub
+    "thorchain-stagenet-2" // Rujira Stagenet
+)
+
+export const EvmChainId = Schema.Literal(
+    1, // Ethereum Mainnet
+    56 // Binance Smart Chain
+)
+
+export const Transaction = Schema.Union(
+    Schema.Struct({
+        type: Schema.Literal("cosmos"),
+        chainId: CosmosChainId,
+        signer: Schema.NonEmptyTrimmedString,
+        memo: Schema.optional(Schema.NonEmptyTrimmedString),
+        data: CosmosTransactionMsgs
+    }),
+    Schema.Struct({
+        type: Schema.Literal("evm"),
+        chainId: EvmChainId,
+        signer: Schema.NonEmptyTrimmedString,
+        memo: Schema.optional(Schema.NonEmptyTrimmedString),
+        data: Schema.Unknown
+    })
+)
+
+export type Transaction = Schema.Schema.Type<typeof Transaction>
+
+export type TransactionSimulationResult = { type: "cosmos"; result: number }
+
+export type TransactionSubmissionResult = { type: "cosmos"; result: DeliverTxResponse } | {
+    type: "evm"
+    result: string
+}
+
+export type ISigningClient = Context.Tag.Service<SigningClient>
+
 export type TransactionData = Schema.Schema.Type<typeof TransactionData>
 
-export class WalletNotInstalledError extends Data.TaggedError("WalletNotInstalledError")<{
-    walletType: string
+export class ClientNotAvailableError extends Data.TaggedError("ClientNotAvailableError")<{
+    cause: string
+}> {}
+
+export class ChainTypeMismatchError extends Data.TaggedError("ChainTypeMismatchError")<{
+    required: ChainType
+    actual: ChainType
 }> {}
 
 export class ChainNotSupportedError extends Data.TaggedError("ChainNotSupportedError")<{
@@ -72,8 +117,12 @@ export class ChainNotAddedError extends Data.TaggedError("ChainNotAddedError")<{
     chainId: ChainId
 }> {}
 
+export class SignerNotAvailableError extends Data.TaggedError("SignerNotAvailableError")<{
+    cause: string
+}> {}
+
 export class AccountsNotAvailableError extends Data.TaggedError("AccountsNotAvailableError")<{
-    walletType: string
+    cause: string
 }> {}
 
 export class ChainNotAvailableError extends Data.TaggedError("ChainNotAvailableError")<{
@@ -90,12 +139,16 @@ export class RpcError extends Data.TaggedError("RpcError")<{
     message: string
 }> {}
 
-export class SimulationFailed extends Data.TaggedError("SimulationFailed")<{
-    message: string
+export class TransactionSimulationFailed extends Data.TaggedError("SimulationFailed")<{
+    cause: string
+}> {}
+
+export class TransactionSubmissionFailed extends Data.TaggedError("TransactionSubmissionFailed")<{
+    cause: string
 }> {}
 
 export type WalletError =
-    | WalletNotInstalledError
+    | ClientNotAvailableError
     | AccountsNotAvailableError
     | ConnectionRejectedError
     | ChainNotAvailableError
@@ -122,7 +175,7 @@ export class WalletService extends Effect.Service<WalletService>()("WalletServic
                             yield* keplrService.connect(chainId)
                             break
                         default:
-                            yield* Effect.fail(new WalletNotInstalledError({ walletType: wallet.type }))
+                            yield* Effect.fail(new ClientNotAvailableError({ cause: wallet.type }))
                     }
                 }),
 
@@ -136,7 +189,7 @@ export class WalletService extends Effect.Service<WalletService>()("WalletServic
                             yield* keplrService.switchChain(chainId)
                             break
                         default:
-                            return yield* Effect.fail(new WalletNotInstalledError({ walletType: wallet.type }))
+                            yield* Effect.fail(new ClientNotAvailableError({ cause: wallet.type }))
                     }
                 }),
 
@@ -150,7 +203,7 @@ export class WalletService extends Effect.Service<WalletService>()("WalletServic
                             yield* keplrService.disconnect()
                             break
                         default:
-                            return yield* Effect.fail(new WalletNotInstalledError({ walletType: wallet.type }))
+                            yield* Effect.fail(new ClientNotAvailableError({ cause: wallet.type }))
                     }
                 }),
 
@@ -160,7 +213,7 @@ export class WalletService extends Effect.Service<WalletService>()("WalletServic
                         case "Keplr":
                             return yield* keplrService.simulateTransaction(chain, data)
                         default:
-                            return yield* Effect.fail(new WalletNotInstalledError({ walletType: wallet.type }))
+                            return yield* Effect.fail(new ClientNotAvailableError({ cause: wallet.type }))
                     }
                 }),
 
@@ -170,10 +223,23 @@ export class WalletService extends Effect.Service<WalletService>()("WalletServic
                         case "Keplr":
                             return yield* keplrService.signTransaction(chain, data)
                         default:
-                            return yield* Effect.fail(new WalletNotInstalledError({ walletType: wallet.type }))
+                            return yield* Effect.fail(new ClientNotAvailableError({ cause: wallet.type }))
                     }
                 })
         }
     }),
     dependencies: [MetaMaskService.Default, KeplrService.Default]
 }) {}
+
+export class SigningClient extends Context.Tag("SigningClient")<SigningClient, {
+    simulateTransaction: (
+        transaction: Transaction
+    ) => Effect.Effect<TransactionSimulationResult, TransactionSimulationFailed>
+    signAndSubmitTransaction: (
+        transaction: Transaction
+    ) => Effect.Effect<TransactionSubmissionResult, TransactionSubmissionFailed>
+}>() {
+    static fromEnv = Layer.effect(this, createMnemonicSigningClient())
+
+    static fromKeplr = (chainId: ChainId) => Layer.effect(this, createKeplrSigningClient(chainId))
+}

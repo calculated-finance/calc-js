@@ -1,7 +1,7 @@
 import { toUtf8 } from "@cosmjs/encoding";
 import { useForm } from "@tanstack/react-form";
 import { Amount } from "@template/domain/src/assets";
-import { Strategy } from "@template/domain/src/calc";
+import { Strategy, StrategyId } from "@template/domain/src/calc";
 import { RUJIRA_STAGENET } from "@template/domain/src/chains";
 import "@xyflow/react/dist/style.css";
 import { Effect, Schema } from "effect";
@@ -10,7 +10,15 @@ import { getDefaultDeposits } from "../../lib/strategy";
 import { Input } from "../ui/input";
 import { SignTransactionForm } from "./sign-transaction-form";
 
-export function StartStrategyForm({ strategy, update }: { strategy: Strategy; update: (value: Strategy) => void }) {
+export function StartStrategyForm({
+  strategy,
+  update,
+  deleteStrategy,
+}: {
+  strategy: Strategy;
+  update: (value: Strategy) => void;
+  deleteStrategy: (id: StrategyId) => void;
+}) {
   const form = useForm({
     defaultValues: strategy,
     validators: {
@@ -177,6 +185,9 @@ export function StartStrategyForm({ strategy, update }: { strategy: Strategy; up
             }}
             callToAction="Start Strategy"
             onBack={() => setIsSigning(false)}
+            onSuccess={() => {
+              deleteStrategy(strategy.id);
+            }}
           />
         )}
       </div>

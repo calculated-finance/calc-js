@@ -6,15 +6,19 @@ import { useNodeModalStore } from "../../hooks/use-node-modal-store";
 
 export function AddAction({
   onAdd,
+  disabledActions,
+  denoms,
   isHelpOpen,
   helpMessage,
 }: {
   onAdd: (action: Action) => void;
+  disabledActions?: string[];
+  denoms?: string[];
   isHelpOpen?: boolean;
   helpMessage?: string;
 }) {
   const { setOpenId } = useNodeModalStore();
-  const assets = useAssets();
+  const { assets } = useAssets();
 
   const addAction = (action: Omit<Action, "id">) => {
     const actionId = v4();
@@ -73,20 +77,42 @@ export function AddAction({
           <code>|</code>
           <code className="cursor-pointer text-green-300 hover:underline">Limit Order</code>
           <code>|</code>
-          <code className="cursor-pointer text-blue-300 hover:underline">Distribute</code>
+          <code
+            onClick={
+              disabledActions?.includes("distribute")
+                ? () => {}
+                : () => {
+                    addAction({
+                      distribute: {
+                        denoms: denoms || [],
+                        destinations: [],
+                      },
+                    });
+                  }
+            }
+            className="cursor-pointer text-blue-300 hover:underline"
+          >
+            Distribute
+          </code>
         </div>
         <div className="flex justify-around pt-4">
           <code
-            onClick={() => {
-              addAction({
-                schedule: {
-                  cadence: { cron: { expr: "0 23 12 * * SUN#2" } },
-                  execution_rebate: [],
-                  scheduler: RUJIRA_STAGENET.schedulerContract,
-                },
-              });
-            }}
-            className="cursor-pointer text-yellow-300 hover:underline"
+            onClick={
+              disabledActions?.includes("schedule")
+                ? () => {}
+                : () => {
+                    addAction({
+                      schedule: {
+                        cadence: { cron: { expr: "0 23 12 * * SUN#2" } },
+                        execution_rebate: [],
+                        scheduler: RUJIRA_STAGENET.schedulerContract,
+                        contract_address: RUJIRA_STAGENET.managerContract,
+                        executors: [],
+                      },
+                    });
+                  }
+            }
+            className={`cursor-pointer text-yellow-300 hover:underline ${disabledActions?.includes("schedule") ? "cursor-not-allowed opacity-50" : ""}`}
           >
             Schedule
           </code>

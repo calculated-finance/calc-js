@@ -23,7 +23,7 @@ export function ScheduleNode({
 
   const summary =
     "time" in schedule.cadence
-      ? `Every ${duration(schedule.cadence.time.duration.secs || 0, { largest: 2, round: true })}`
+      ? `Every ${duration(schedule.cadence.time.duration.secs * 1000 || 0, { largest: 2, round: true })}`
       : "blocks" in schedule.cadence
         ? `Every ${schedule.cadence.blocks.interval === 1 ? "" : schedule.cadence.blocks.interval} block${schedule.cadence.blocks.interval === 1 ? "" : "s"}`
         : "cron" in schedule.cadence
@@ -34,7 +34,6 @@ export function ScheduleNode({
     defaultValues: Effect.runSync(Schema.encode(Schedule)(schedule)),
     validators: {
       onChange: ({ value }) => {
-        const schedule = Effect.runSync(Schema.decode(Schedule)(value));
         const validationResult = Schema.standardSchemaV1(Schedule)["~standard"].validate(value);
 
         if ("issues" in validationResult) {
@@ -54,13 +53,13 @@ export function ScheduleNode({
 
         update({
           id,
-          schedule,
+          schedule: Schema.decodeSync(Schedule)(value),
         });
       },
     },
   });
 
-  const [timeUnit, setTimeUnit] = useState<"seconds" | "minutes" | "hours" | "days">("minutes");
+  const [timeUnit, setTimeUnit] = useState<"seconds" | "minutes" | "hours" | "days">("seconds");
 
   return (
     <BaseNode
@@ -89,7 +88,7 @@ export function ScheduleNode({
                       id,
                       schedule: {
                         ...schedule,
-                        cadence: { time: { duration: { secs: 1000 * 60 * 30, nanos: 0 } } },
+                        cadence: { time: { duration: { secs: 30, nanos: 0 } } },
                       },
                     });
                   }}
@@ -138,7 +137,7 @@ export function ScheduleNode({
               <div className="flex flex-col pt-4">
                 {"time" in schedule.cadence && (
                   <form.Field
-                    name="cadence.time.duration"
+                    name="cadence.time.duration.secs"
                     children={(field) => {
                       return (
                         <div className="flex flex-col gap-2">
@@ -150,27 +149,25 @@ export function ScheduleNode({
                               type="number"
                               value={
                                 field.state.value
-                                  ? field.state.value.secs /
+                                  ? field.state.value /
                                     {
-                                      seconds: 1000,
-                                      minutes: 60 * 1000,
-                                      hours: 60 * 60 * 1000,
-                                      days: 24 * 60 * 60 * 1000,
+                                      seconds: 1,
+                                      minutes: 60,
+                                      hours: 60 * 60,
+                                      days: 24 * 60 * 60,
                                     }[timeUnit]
                                   : 0
                               }
                               onChange={(e) =>
-                                field.handleChange({
-                                  nanos: 0,
-                                  secs:
-                                    e.target.valueAsNumber *
+                                field.handleChange(
+                                  e.target.valueAsNumber *
                                     {
-                                      seconds: 1000,
-                                      minutes: 60 * 1000,
-                                      hours: 60 * 60 * 1000,
-                                      days: 24 * 60 * 60 * 1000,
+                                      seconds: 1,
+                                      minutes: 60,
+                                      hours: 60 * 60,
+                                      days: 24 * 60 * 60,
                                     }[timeUnit],
-                                })
+                                )
                               }
                               tabIndex={-1}
                               autoFocus={false}
@@ -265,6 +262,7 @@ export function ScheduleNode({
                     },
                   });
                 }}
+                disabledActions={["schedule"]}
                 isHelpOpen={isHelpOpen}
                 helpMessage="Select an action to execute when the schedule is triggered. The action will never execute before the schedule is due."
               />

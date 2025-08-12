@@ -1,9 +1,11 @@
 import { useForm } from "@tanstack/react-form";
 import { Strategy } from "@template/domain/src/calc";
+import { formatNumber } from "@template/domain/src/numbers";
 import "@xyflow/react/dist/style.css";
-import { Schema } from "effect";
+import { Effect, Schema } from "effect";
 import { useState } from "react";
 import { BaseNode } from "../../components/create/base-node";
+import { useStrategyBalances } from "../../hooks/use-strategy-balances";
 import { type CustomNodeData, type StrategyNodeParams } from "../../lib/layout/layout";
 import { Input } from "../ui/input";
 import { AddAction } from "./add-action";
@@ -11,12 +13,13 @@ import { Code } from "./code";
 
 export function StrategyNode({ data: { strategy, update } }: CustomNodeData<StrategyNodeParams>) {
   const form = useForm({
-    defaultValues: strategy,
+    defaultValues: Effect.runSync(Schema.encode(Strategy)(strategy)),
     validators: {
       onChange: ({ value }) => {
         const validationResult = Schema.standardSchemaV1(Strategy)["~standard"].validate(value);
 
         if ("issues" in validationResult) {
+          console.log(validationResult.issues);
           return {
             fields: validationResult.issues?.reduce(
               (acc, issue) =>
@@ -31,10 +34,12 @@ export function StrategyNode({ data: { strategy, update } }: CustomNodeData<Stra
           };
         }
 
-        update(value);
+        update(Schema.decodeSync(Strategy)(value));
       },
     },
   });
+
+  const { data: balances } = useStrategyBalances(strategy);
 
   const [isHelpOpen, setIsHelpOpen] = useState(false);
 
@@ -54,6 +59,7 @@ export function StrategyNode({ data: { strategy, update } }: CustomNodeData<Stra
                   onChange={(e) => field.handleChange(e.target.value)}
                   tabIndex={-1}
                   autoFocus={false}
+                  readOnly={strategy.status !== "draft"}
                 />
               </div>
               {!field.state.meta.isValid && (
@@ -75,7 +81,6 @@ export function StrategyNode({ data: { strategy, update } }: CustomNodeData<Stra
                   onChange={(e) => field.handleChange(e.target.value)}
                   tabIndex={-1}
                   autoFocus={false}
-                  readOnly={strategy.status !== "draft"}
                 />
               </div>
               {!field.state.meta.isValid && (
@@ -107,6 +112,20 @@ export function StrategyNode({ data: { strategy, update } }: CustomNodeData<Stra
               </div>
             )}
           />
+        )}
+        {!!balances && (
+          <div className="flex flex-col gap-2">
+            <code className="text-sm text-zinc-400">balances</code>
+            {balances.length > 1 ? (
+              <code className="flex flex-wrap gap-2 text-lg">
+                <Code>
+                  {balances.map((b) => `${formatNumber(b.amount)} ${b.displayName?.toUpperCase()}`).join(" | ")}
+                </Code>
+              </code>
+            ) : (
+              <Code>[]</Code>
+            )}
+          </div>
         )}
         {!strategy.action && (
           <AddAction

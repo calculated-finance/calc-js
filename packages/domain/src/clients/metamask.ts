@@ -8,9 +8,9 @@ import {
     AccountsNotAvailableError,
     ChainNotAddedError,
     ChainNotSupportedError,
+    ClientNotAvailableError,
     ConnectionRejectedError,
-    RpcError,
-    WalletNotInstalledError
+    RpcError
 } from "./index.js"
 
 const METAMASK_CONNECTION_KEY = "calc_metamask_connection"
@@ -116,7 +116,7 @@ export class MetaMaskService extends Effect.Service<MetaMaskService>()("MetaMask
                     const provider = (yield* providersRef.get).get("MetaMask")?.provider
 
                     if (!provider) {
-                        return yield* Effect.fail(new WalletNotInstalledError({ walletType: "MetaMask" }))
+                        return yield* Effect.fail(new ClientNotAvailableError({ cause: "MetaMask" }))
                     }
 
                     if (chainId) {
@@ -146,7 +146,7 @@ export class MetaMaskService extends Effect.Service<MetaMaskService>()("MetaMask
                     const provider = (yield* providersRef.get).get("MetaMask")?.provider
 
                     if (!provider) {
-                        return yield* Effect.fail(new WalletNotInstalledError({ walletType: "MetaMask" }))
+                        return yield* Effect.fail(new ClientNotAvailableError({ cause: "MetaMask" }))
                     }
 
                     const chain = SUPPORTED_CHAINS_BY_ID[chainId]
@@ -235,7 +235,7 @@ const connectEvm = (
     })
 
     if (!accounts || accounts.length === 0) {
-        return yield* Effect.fail(new AccountsNotAvailableError({ walletType: "MetaMask" }))
+        return yield* Effect.fail(new AccountsNotAvailableError({ cause: "MetaMask" }))
     }
 
     const chainId = yield* Effect.tryPromise({

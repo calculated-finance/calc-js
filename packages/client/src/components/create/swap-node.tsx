@@ -44,7 +44,7 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
   const [isSelectingSwapDenom, setIsSelectingSwapDenom] = useState(false);
   const [isSelectingReceiveDenom, setIsSelectingReceiveDenom] = useState(false);
 
-  const assets = useAssets();
+  const { assets } = useAssets();
 
   const isSelectingAnyAsset = isSelectingSwapDenom || isSelectingReceiveDenom;
 

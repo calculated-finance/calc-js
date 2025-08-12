@@ -99,6 +99,8 @@ export const Amount = Schema.transformOrFail(
 
 export type Amount = Schema.Schema.Type<typeof Amount>
 
+export type AmountDecoded = Schema.Schema.Type<typeof Amount.Encoded>
+
 export const assetList = Effect.provideService(
     Effect.gen(function*() {
         const assetsProvider = yield* AssetsProvider

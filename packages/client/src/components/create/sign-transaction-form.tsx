@@ -8,11 +8,13 @@ export function SignTransactionForm({
   getDataWithSender,
   callToAction,
   onBack,
+  onSuccess,
 }: {
   chain: Chain;
   getDataWithSender: (sender: String) => TransactionData;
   callToAction?: string;
   onBack?: () => void;
+  onSuccess?: () => void;
 }) {
   const { wallets, connect, simulateTransaction, signTransaction } = useWallets();
 
@@ -70,6 +72,8 @@ export function SignTransactionForm({
 
   const [isExecuting, setIsExecuting] = useState(false);
 
+  const [error, setError] = useState<string>();
+
   return (
     <div className="flex min-w-100 flex-col gap-4">
       {viableConnections && viableConnections.length > 0 && (
@@ -125,10 +129,11 @@ export function SignTransactionForm({
                     signTransaction(sender, chain, getDataWithSender(sender.connection.address))
                       .then(() => {
                         setIsExecuting(false);
+                        onSuccess?.();
                       })
                       .catch((error) => {
-                        console.log(error);
                         setIsExecuting(false);
+                        setError(`Transaction failed: ${error.message}`);
                       });
                   }}
                   className="cursor-pointer text-lg text-green-300 hover:underline"
@@ -139,6 +144,11 @@ export function SignTransactionForm({
             ) : (
               <code className="text-lg text-zinc-500">Checking transaction...</code>
             ))}
+        </div>
+      )}
+      {error && (
+        <div className="flex flex-col gap-2">
+          <code className="text-sm text-red-500/80">{error}</code>
         </div>
       )}
     </div>

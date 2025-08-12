@@ -18,6 +18,7 @@ import "@xyflow/react/dist/style.css";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { v4 } from "uuid";
 import { Code } from "../../components/create/code";
+import { DistributeNode } from "../../components/create/distribute-node";
 import { ManyNode } from "../../components/create/many-node";
 import { ScheduleNode } from "../../components/create/schedule-node";
 import { SignTransactionForm } from "../../components/create/sign-transaction-form";
@@ -139,7 +140,7 @@ function DraftStrategyHandle({
           <ModalTitle>title</ModalTitle>
         </ModalHeader>
         <ModalContent showCloseButton={false}>
-          {strategy && <StartStrategyForm strategy={strategy} update={update} />}
+          {strategy && <StartStrategyForm strategy={strategy} update={update} deleteStrategy={deleteStrategy} />}
         </ModalContent>
       </Modal>
     </>
@@ -315,6 +316,7 @@ const nodeTypes = {
   swapNode: SwapNode,
   manyNode: ManyNode,
   strategyNode: StrategyNode,
+  distributeNode: DistributeNode,
   loadingStrategies: ({ data: { status } }: { data: { status: "draft" | "active" | "paused" | "archived" } }) => (
     <code className="text-lg text-zinc-500">Fetching {status} strategies...</code>
   ),
@@ -440,7 +442,7 @@ export default function CreateStrategy() {
   const { data: strategyHandles, isLoading: isLoadingStrategies } = useStrategies(chain.id, strategyFilter);
   const [strategyHandle, setStrategyHandle] = useState<StrategyHandle>();
 
-  const { add, update } = useDraftStrategies(chain.id);
+  const { add, update, deleteStrategy } = useDraftStrategies(chain.id);
   const { data: strategy, isPending: isPendingStrategy } = useStrategy(strategyHandle);
 
   const { fitView } = useReactFlow();
@@ -596,10 +598,16 @@ export default function CreateStrategy() {
               <div className="flex flex-col gap-4 pl-2">
                 <code
                   onClick={() => {
+                    const connectedChainWallet = wallets.find(
+                      (w) => w.supportedChains.some((c) => c.id === chain.id) && w.connection.status === "connected",
+                    );
                     const handle = {
                       id: `${v4()}`,
                       chainId: chain.id,
-                      owner: "",
+                      owner:
+                        connectedChainWallet?.connection.status === "connected"
+                          ? connectedChainWallet.connection.address
+                          : "",
                       label: "New Strategy",
                       status: "draft" as const,
                     };
@@ -678,7 +686,9 @@ export default function CreateStrategy() {
               <ModalTitle>title</ModalTitle>
             </ModalHeader>
             <ModalContent showCloseButton={false}>
-              {startingStrategy && <StartStrategyForm strategy={startingStrategy} update={update} />}
+              {startingStrategy && (
+                <StartStrategyForm strategy={startingStrategy} update={update} deleteStrategy={deleteStrategy} />
+              )}
             </ModalContent>
           </Modal>
         </ViewportPortal>

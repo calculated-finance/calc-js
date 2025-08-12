@@ -27,13 +27,22 @@ export const PercentageFromBasisPoints = Schema.transform(
         override: true
     })
 }))
-export const formatNumber = (value: number, options?: Intl.NumberFormatOptions) => {
-    // Format the number with sufficient fraction digits, then remove trailing zeros after the decimal point
-    const formatted = new Intl.NumberFormat("en-US", {
-        maximumFractionDigits: value > 1_000 ? 0 : value > 1 ? 2 : value > 0.001 ? 4 : 8,
+
+export const formatNumber = (value: number, options?: Intl.NumberFormatOptions) =>
+    (new Intl.NumberFormat("en-US", {
+        maximumFractionDigits: value > 1000
+            ? 0
+            : value > 1
+            ? 2
+            : value > 0.001
+            ? 4
+            : value > 0.0001
+            ? 5
+            : value > 0.00001
+            ? 6
+            : value > 0.000001
+            ? 7
+            : 8,
         minimumFractionDigits: 0,
         ...options
-    }).format(value)
-    // Remove trailing zeros after decimal and possible lingering decimal point
-    return formatted.replace(/(\.\d*?[1-9])0+$/g, "$1").replace(/\.0+$/, "").replace(/(\.\d*[1-9])0+$/, "$1")
-}
+    }).format(value)).replace(/(\.\d*?[1-9])0+$/g, "$1").replace(/\.0+$/, "").replace(/(\.\d*[1-9])0+$/, "$1")

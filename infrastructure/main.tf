@@ -1,6 +1,3 @@
-# CALC Production Infrastructure
-# Main Terraform configuration that ties all modules together
-
 terraform {
   required_version = ">= 1.0"
 
@@ -11,15 +8,14 @@ terraform {
     }
   }
 
-  # Add backend configuration for state management
-  # backend "s3" {
-  #   bucket = "calc-terraform-state"
-  #   key    = "prod/terraform.tfstate"
-  #   region = "ap-southeast-1"
-  # }
+  backend "s3" {
+    key            = "terraform.tfstate"
+    region         = "ap-southeast-1"
+    dynamodb_table = "terraform-state-locks"
+    encrypt        = true
+  }
 }
 
-# Configure AWS Provider
 provider "aws" {
   region = var.aws_region
 
@@ -32,34 +28,30 @@ provider "aws" {
   }
 }
 
-# VPC Module
 module "vpc" {
-  source = "../../modules/vpc"
+  source = "./modules/vpc"
 
   project_name = var.project_name
   environment  = var.environment
   vpc_cidr     = var.vpc_cidr
 }
 
-# Secrets Module
 module "secrets" {
-  source = "../../modules/secrets"
+  source = "./modules/secrets"
 
   project_name = var.project_name
   environment  = var.environment
 }
 
-# ECR Module
 module "ecr" {
-  source = "../../modules/ecr"
+  source = "./modules/ecr"
 
   project_name = var.project_name
   environment  = var.environment
 }
 
-# ECS Module
 module "ecs" {
-  source = "../../modules/ecs"
+  source = "./modules/ecs"
 
   project_name      = var.project_name
   environment       = var.environment

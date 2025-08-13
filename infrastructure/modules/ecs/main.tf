@@ -61,7 +61,7 @@ resource "aws_iam_role_policy" "execution_secrets_policy" {
           "secretsmanager:GetSecretValue"
         ]
         Resource = [
-          "arn:aws:secretsmanager:${var.aws_region}:*:secret:${var.project_name}-worker-secrets*"
+          "arn:aws:secretsmanager:${var.aws_region}:*:secret:${var.project_name}-worker-secret*"
         ]
       }
     ]
@@ -107,7 +107,7 @@ resource "aws_iam_role_policy" "secrets_policy" {
           "secretsmanager:DescribeSecret"
         ]
         Resource = [
-          "arn:aws:secretsmanager:${var.aws_region}:*:secret:${var.project_name}-worker-secrets*"
+          "arn:aws:secretsmanager:${var.aws_region}:*:secret:${var.project_name}-worker-secret*"
         ]
       }
     ]

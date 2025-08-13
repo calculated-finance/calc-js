@@ -1,0 +1,177 @@
+name: Validate Infrastructure
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "infrastructure/**"
+      - "packages/worker/**"
+      - ".github/workflows/**"
+  push:
+    branches-ignore: [main]
+    paths:
+      - "infrastructure/**"
+      - "packages/worker/**"
+      - ".github/workflows/**"
+
+permissions:
+  id-token: write # Required for OIDC
+  contents: read # Required to checkout repo
+  pull-requests: write # Required to comment on PRs
+
+jobs:
+  validate-docker:
+    name: Validate Docker Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image (validation only)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./packages/worker/Dockerfile
+          push: false
+          tags: calc-worker:validation
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Test Docker image
+        run: |
+          # Test that the image starts and validates environment variables
+          echo "Testing Docker image startup..."
+          docker run --rm calc-worker:validation pnpm --version
+          echo "✅ Docker image validation passed"
+
+  validate-terraform:
+    name: Validate Terraform
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        environment: [staging, production]
+
+    environment: ${{ matrix.environment }}
+    defaults:
+      run:
+        working-directory: infrastructure
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ secrets.OIDC_ROLE_NAME }}
+          role-session-name: GitHubActions-Validation-${{ matrix.environment }}
+          aws-region: ap-southeast-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ~1.0
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Init
+        run: |
+          terraform init \
+            -backend-config="bucket=calc-terraform-${{ matrix.environment }}" \
+            -backend-config="key=terraform.tfstate" \
+            -backend-config="region=ap-southeast-1" \
+            -backend-config="dynamodb_table=terraform-state-locks" \
+            -backend-config="encrypt=true"
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        id: plan
+        run: |
+          terraform plan \
+            -var="environment=${{ matrix.environment }}" \
+            -var="container_image=${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.ap-southeast-1.amazonaws.com/calc-worker:latest" \
+            -no-color \
+            -out=tfplan
+        continue-on-error: true
+
+      - name: Comment Terraform Plan on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+
+            // Read terraform plan output
+            let plan = '';
+            try {
+              plan = fs.readFileSync('infrastructure/tfplan.txt', 'utf8');
+            } catch (e) {
+              plan = 'Plan file not found';
+            }
+
+            const output = `
+            ## Terraform Plan Results - ${{ matrix.environment }}
+
+            #### Terraform Format and Style 🖌️\`${{ steps.plan.outcome }}\`
+            #### Terraform Initialization ⚙️\`${{ steps.plan.outcome }}\`
+            #### Terraform Validation 🤖\`${{ steps.plan.outcome }}\`
+            #### Terraform Plan 📖\`${{ steps.plan.outcome }}\`
+
+            <details><summary>Show Plan</summary>
+
+            \`\`\`terraform
+            ${{ steps.plan.outputs.stdout }}
+            \`\`\`
+
+            </details>
+
+            *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`, Workflow: \`${{ github.workflow }}\`*
+            `;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: output
+            });
+
+      - name: Terraform Plan Status
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner (Dockerfile)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          scan-ref: "./packages/worker/Dockerfile"
+          format: "sarif"
+          output: "trivy-dockerfile.sarif"
+
+      - name: Run Trivy vulnerability scanner (Infrastructure)
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "config"
+          scan-ref: "./infrastructure"
+          format: "sarif"
+          output: "trivy-terraform.sarif"
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: "."

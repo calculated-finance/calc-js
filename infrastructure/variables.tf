@@ -7,7 +7,7 @@ variable "project_name" {
 variable "environment" {
   description = "Environment (dev, staging, prod)"
   type        = string
-  default     = "prod"
+  default     = "staging"
 }
 
 variable "aws_region" {
@@ -25,8 +25,7 @@ variable "vpc_cidr" {
 variable "container_image" {
   description = "Docker image URI for the worker containers"
   type        = string
-  # This will be provided by GitHub Actions or updated manually
-  default = "placeholder-image-uri"
+  default     = "placeholder-image-uri"
 }
 
 variable "task_cpu" {

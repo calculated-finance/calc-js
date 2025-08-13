@@ -68,26 +68,6 @@ runs:
 
         echo "IMAGE_URI=$FULL_IMAGE_URI" >> $GITHUB_ENV
 
-    - name: Update Secrets in AWS Secrets Manager
-      shell: bash
-      run: |
-        SECRET_VALUE=$(cat <<EOF
-        {
-          "MNEMONIC": "${{ inputs.mnemonic }}",
-          "CHAIN_ID": "${{ inputs.chain-id }}"
-        }
-        EOF
-        )
-
-        # Try to update existing secret, create if it doesn't exist
-        aws secretsmanager update-secret \
-          --secret-id calc-${{ inputs.environment }}-worker-secrets \
-          --secret-string "$SECRET_VALUE" 2>/dev/null || \
-        aws secretsmanager create-secret \
-          --name calc-${{ inputs.environment }}-worker-secrets \
-          --description "Secrets for CALC ${{ inputs.environment }} worker containers" \
-          --secret-string "$SECRET_VALUE"
-
     - name: Terraform Plan
       shell: bash
       run: |
@@ -95,8 +75,9 @@ runs:
         terraform plan \
           -var="environment=${{ inputs.environment }}" \
           -var="container_image=${{ env.IMAGE_URI }}" \
+          -var="mnemonic=${{ inputs.mnemonic }}" \
+          -var="chain_id=${{ inputs.chain-id }}" \
           -out=tfplan
-
     - name: Terraform Apply
       shell: bash
       run: |

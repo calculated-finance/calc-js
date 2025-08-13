@@ -39,3 +39,14 @@ variable "task_memory" {
   type        = string
   default     = "512"
 }
+
+variable "mnemonic_placeholder" {
+  description = "Mnemonic for worker containers"
+  type        = string
+  sensitive   = true
+}
+
+variable "chain_id_placeholder" {
+  description = "Chain ID for worker containers"
+  type        = string
+}

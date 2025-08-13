@@ -10,15 +10,15 @@ variable "environment" {
   default     = "prod"
 }
 
-variable "mnemonic_placeholder" {
-  description = "Placeholder value for mnemonic (will be updated via GitHub Actions)"
+variable "mnemonic" {
+  description = "Mnemonic for worker containers"
   type        = string
-  default     = "PLACEHOLDER_MNEMONIC_TO_BE_UPDATED"
+  default     = "PLACEHOLDER"
   sensitive   = true
 }
 
-variable "chain_id_placeholder" {
-  description = "Placeholder value for chain ID"
+variable "chain_id" {
+  description = "Chain ID for worker containers"
   type        = string
-  default     = "PLACEHOLDER_CHAIN_ID"
+  default     = "PLACEHOLDER"
 }

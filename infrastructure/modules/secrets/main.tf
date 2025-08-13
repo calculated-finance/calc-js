@@ -4,7 +4,7 @@ resource "aws_secretsmanager_secret" "worker_secret" {
 }
 
 resource "aws_secretsmanager_secret_version" "worker_secret" {
-  secret_id = aws_secretsmanager_secret.worker_secrets.id
+  secret_id = aws_secretsmanager_secret.worker_secret.id
 
   secret_string = jsonencode({
     MNEMONIC = var.mnemonic

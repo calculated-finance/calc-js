@@ -49,24 +49,24 @@ runs:
         fi
         echo "repository-uri=$REPO_URI" >> $GITHUB_OUTPUT
 
-    - name: Build and Push Docker Image to ECR
-      shell: bash
-      run: |
-        # Login to ECR
-        aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin ${{ inputs.aws-account-id }}.dkr.ecr.ap-southeast-1.amazonaws.com
+    # - name: Build and Push Docker Image to ECR
+    #   shell: bash
+    #   run: |
+    #     # Login to ECR
+    #     aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin ${{ inputs.aws-account-id }}.dkr.ecr.ap-southeast-1.amazonaws.com
 
-        # Build and tag image
-        IMAGE_TAG="${{ github.sha }}"
-        FULL_IMAGE_URI="${{ steps.ecr.outputs.repository-uri }}:${IMAGE_TAG}"
+    #     # Build and tag image
+    #     IMAGE_TAG="${{ github.sha }}"
+    #     FULL_IMAGE_URI="${{ steps.ecr.outputs.repository-uri }}:${IMAGE_TAG}"
 
-        docker build -f packages/worker/Dockerfile -t $FULL_IMAGE_URI .
-        docker push $FULL_IMAGE_URI
+    #     docker build -f packages/worker/Dockerfile -t $FULL_IMAGE_URI .
+    #     docker push $FULL_IMAGE_URI
 
-        # Also tag as latest for this environment
-        docker tag $FULL_IMAGE_URI ${{ steps.ecr.outputs.repository-uri }}:${{ inputs.environment }}-latest
-        docker push ${{ steps.ecr.outputs.repository-uri }}:${{ inputs.environment }}-latest
+    #     # Also tag as latest for this environment
+    #     docker tag $FULL_IMAGE_URI ${{ steps.ecr.outputs.repository-uri }}:${{ inputs.environment }}-latest
+    #     docker push ${{ steps.ecr.outputs.repository-uri }}:${{ inputs.environment }}-latest
 
-        echo "IMAGE_URI=$FULL_IMAGE_URI" >> $GITHUB_ENV
+    #     echo "IMAGE_URI=$FULL_IMAGE_URI" >> $GITHUB_ENV
 
     - name: Update Secrets in AWS Secrets Manager
       shell: bash

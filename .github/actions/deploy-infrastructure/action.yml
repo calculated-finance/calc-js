@@ -36,12 +36,7 @@ runs:
       shell: bash
       run: |
         cd infrastructure
-        terraform init \
-          -backend-config="bucket=calc-terraform-${{ inputs.environment }}" \
-          -backend-config="key=terraform.tfstate" \
-          -backend-config="region=ap-southeast-1" \
-          -backend-config="dynamodb_table=terraform-state-locks" \
-          -backend-config="encrypt=true"
+        terraform init -backend-config="bucket=calc-terraform-state-${{ inputs.environment }}"
 
     - name: Get ECR Repository URI
       id: ecr

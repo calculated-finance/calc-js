@@ -47,6 +47,27 @@ resource "aws_iam_role_policy_attachment" "ecs_execution_role_policy" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
+# Policy for ECS execution role to access Secrets Manager
+resource "aws_iam_role_policy" "execution_secrets_policy" {
+  name = "${var.project_name}-execution-secrets-policy"
+  role = aws_iam_role.ecs_execution_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "secretsmanager:GetSecretValue"
+        ]
+        Resource = [
+          "arn:aws:secretsmanager:${var.aws_region}:*:secret:${var.project_name}-${var.environment}-worker-secrets*"
+        ]
+      }
+    ]
+  })
+}
+
 # ECS Task Role (for accessing AWS services from within containers)
 resource "aws_iam_role" "ecs_task_role" {
   name = "${var.project_name}-ecs-task-role"
@@ -82,9 +103,12 @@ resource "aws_iam_role_policy" "secrets_policy" {
       {
         Effect = "Allow"
         Action = [
-          "secretsmanager:GetSecretValue"
+          "secretsmanager:GetSecretValue",
+          "secretsmanager:DescribeSecret"
         ]
-        Resource = var.secrets_arn
+        Resource = [
+          "arn:aws:secretsmanager:${var.aws_region}:*:secret:${var.project_name}-${var.environment}-worker-secrets*"
+        ]
       }
     ]
   })

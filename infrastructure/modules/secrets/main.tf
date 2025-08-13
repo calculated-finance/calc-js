@@ -1,9 +1,9 @@
 resource "aws_secretsmanager_secret" "worker_secrets" {
-  name        = "${var.project_name}-worker-secrets"
-  description = "Secrets for ${var.project_name} worker containers"
+  name        = "${var.project_name}-${var.environment}-worker-secrets"
+  description = "Secrets for ${var.project_name} ${var.environment} worker containers"
 
   tags = {
-    Name        = "${var.project_name}-worker-secrets"
+    Name        = "${var.project_name}-${var.environment}-worker-secrets"
     Environment = var.environment
     Project     = var.project_name
   }

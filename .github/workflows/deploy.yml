@@ -71,10 +71,10 @@ jobs:
         uses: ./.github/actions/deploy-infrastructure
         with:
           environment: staging
-          aws-account-id: ${{ secrets.AWS_ACCOUNT_ID }}
+          aws-account-id: ${{ vars.AWS_ACCOUNT_ID }}
           oidc-role-name: ${{ secrets.OIDC_ROLE_NAME }}
           mnemonic: ${{ secrets.MNEMONIC }}
-          chain-id: ${{ secrets.CHAIN_ID }}
+          chain-id: ${{ vars.CHAIN_ID }}
 
   deploy-production:
     name: Deploy to Production
@@ -91,7 +91,7 @@ jobs:
         uses: ./.github/actions/deploy-infrastructure
         with:
           environment: production
-          aws-account-id: ${{ secrets.AWS_ACCOUNT_ID }}
+          aws-account-id: ${{ vars.AWS_ACCOUNT_ID }}
           oidc-role-name: ${{ secrets.OIDC_ROLE_NAME }}
           mnemonic: ${{ secrets.MNEMONIC }}
-          chain-id: ${{ secrets.CHAIN_ID }}
+          chain-id: ${{ vars.CHAIN_ID }}

@@ -41,6 +41,8 @@ module "secrets" {
 
   project_name = var.project_name
   environment  = var.environment
+  mnemonic     = var.mnemonic
+  chain_id     = var.chain_id
 }
 
 module "ecr" {

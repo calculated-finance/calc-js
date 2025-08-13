@@ -78,6 +78,7 @@ runs:
           -var="mnemonic=${{ inputs.mnemonic }}" \
           -var="chain_id=${{ inputs.chain-id }}" \
           -out=tfplan
+
     - name: Terraform Apply
       shell: bash
       run: |

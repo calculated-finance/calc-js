@@ -1,5 +1,5 @@
 import type { Chain } from "@template/domain/src/chains";
-import { TransactionData, type Wallet } from "@template/domain/src/wallets";
+import { TransactionData, type Wallet } from "@template/domain/src/clients";
 import { useEffect, useMemo, useState } from "react";
 import { useWallets } from "../../hooks/use-wallets";
 

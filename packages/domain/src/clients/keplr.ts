@@ -8,14 +8,7 @@ import { createCosmosSigningClient } from "../cosmos.js"
 import type { EIP1193Provider } from "../evm.js"
 import { EIP1193Providers } from "../evm.js"
 import { StorageService } from "../storage.js"
-import type {
-    Connection,
-    CosmosTransactionMsgs,
-    ISigningClient,
-    Transaction,
-    TransactionData,
-    Wallet
-} from "./index.js"
+import type { Connection, CosmosTransactionMsgs, Transaction, TransactionData, Wallet } from "./index.js"
 import {
     AccountsNotAvailableError,
     ChainNotAddedError,
@@ -75,7 +68,7 @@ const KEPLR_WALLET: Wallet = {
     }
 }
 
-export const KeplrSigningClient: ISigningClient = {
+export const KeplrSigningClient = {
     simulateTransaction: (transaction: Transaction) =>
         Effect.gen(function*() {
             if (transaction.type === "cosmos") {

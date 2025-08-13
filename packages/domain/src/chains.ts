@@ -120,3 +120,16 @@ export const CHAINS_BY_ID: Record<ChainId, Chain> = CHAINS.reduce(
     }),
     {} as Record<ChainId, Chain>
 )
+
+export const COSMOS_CHAINS_BY_ID: Record<CosmosChainId, CosmosChain> = CHAINS.reduce(
+    (acc, chain) => {
+        if (chain.type === "cosmos") {
+            return {
+                ...acc,
+                [chain.id]: chain
+            }
+        }
+        return acc
+    },
+    {} as Record<CosmosChainId, CosmosChain>
+)

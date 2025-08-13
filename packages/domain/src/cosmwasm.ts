@@ -1,6 +1,6 @@
 import { CosmWasmClient, SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate"
 import type { OfflineSigner } from "@cosmjs/proto-signing"
-import { GasPrice } from "@cosmjs/stargate"
+import { GasPrice, StargateClient } from "@cosmjs/stargate"
 import { BigDecimal, Config, Effect, Schema } from "effect"
 import type { ChainId, CosmosChain } from "./chains.js"
 import { CHAINS } from "./chains.js"
@@ -67,6 +67,17 @@ export const getCosmWasmClient = (chain: CosmosChain) =>
         Effect.gen(function*() {
             return yield* Effect.tryPromise({
                 try: () => CosmWasmClient.connect(chain.rpcUrls[0]),
+                catch: (error) => new CosmWasmConnectionError({ cause: error })
+            })
+        }),
+        (client) => Effect.sync(client.disconnect)
+    )
+
+export const getStargateClient = (chain: CosmosChain) =>
+    Effect.acquireRelease(
+        Effect.gen(function*() {
+            return yield* Effect.tryPromise({
+                try: () => StargateClient.connect(chain.rpcUrls[0]),
                 catch: (error) => new CosmWasmConnectionError({ cause: error })
             })
         }),

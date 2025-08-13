@@ -1,5 +1,5 @@
 import type { Chain, ChainId } from "@template/domain/src/chains";
-import { TransactionData, Wallet, WalletService } from "@template/domain/src/wallets/index";
+import { TransactionData, Wallet, WalletService } from "@template/domain/src/clients/index";
 import { Effect, ManagedRuntime, Stream } from "effect";
 import React, { useEffect } from "react";
 import { useMemoMap } from "../../hooks/use-memo-map";
@@ -57,9 +57,9 @@ export const WalletProvider = ({ children }: WalletProviderProps) => {
                   Effect.runPromise(walletService.switchChain(wallet, chainId)),
                 disconnect: (wallet: Wallet) => Effect.runPromise(walletService.disconnect(wallet)),
                 simulateTransaction: (wallet: Wallet, chain: Chain, data: TransactionData) =>
-                  Effect.runPromise(walletService.simulateTransaction(wallet, chain, data)),
+                  Effect.runPromise(walletService.simulateTransaction(wallet, chain, data).pipe(Effect.scoped)),
                 signTransaction: (wallet: Wallet, chain: Chain, data: TransactionData) =>
-                  Effect.runPromise(walletService.signTransaction(wallet, chain, data)),
+                  Effect.runPromise(walletService.signTransaction(wallet, chain, data).pipe(Effect.scoped)),
               }));
             }),
           ),

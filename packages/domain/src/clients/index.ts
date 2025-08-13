@@ -3,8 +3,8 @@ import { Context, Data, Effect, Layer, Schema, Stream } from "effect"
 import type { ChainId, ChainType } from "../chains.js"
 import { Chain } from "../chains.js"
 import { createKeplrSigningClient, KeplrService } from "./keplr.js"
+import { createQueryClientFromEnv, createSigningClientFromEnv } from "./local.js"
 import { MetaMaskService } from "./metamask.js"
-import { createMnemonicSigningClient } from "./mnemonic.js"
 
 export const Connection = Schema.Union(
     Schema.Struct({
@@ -68,20 +68,25 @@ export const EvmChainId = Schema.Literal(
     56 // Binance Smart Chain
 )
 
+export const TransactionCommon = Schema.Struct({
+    signer: Schema.NonEmptyTrimmedString,
+    memo: Schema.optional(Schema.NonEmptyTrimmedString),
+    hash: Schema.optional(Schema.NonEmptyTrimmedString),
+    events: Schema.optional(Schema.Array(Schema.Unknown))
+})
+
 export const Transaction = Schema.Union(
     Schema.Struct({
         type: Schema.Literal("cosmos"),
         chainId: CosmosChainId,
-        signer: Schema.NonEmptyTrimmedString,
-        memo: Schema.optional(Schema.NonEmptyTrimmedString),
-        data: CosmosTransactionMsgs
+        data: CosmosTransactionMsgs,
+        ...TransactionCommon.fields
     }),
     Schema.Struct({
         type: Schema.Literal("evm"),
         chainId: EvmChainId,
-        signer: Schema.NonEmptyTrimmedString,
-        memo: Schema.optional(Schema.NonEmptyTrimmedString),
-        data: Schema.Unknown
+        data: Schema.Unknown,
+        ...TransactionCommon.fields
     })
 )
 
@@ -97,10 +102,6 @@ export type TransactionSubmissionResult = { type: "cosmos"; result: DeliverTxRes
 export type ISigningClient = Context.Tag.Service<SigningClient>
 
 export type TransactionData = Schema.Schema.Type<typeof TransactionData>
-
-export class ClientNotAvailableError extends Data.TaggedError("ClientNotAvailableError")<{
-    cause: string
-}> {}
 
 export class ChainTypeMismatchError extends Data.TaggedError("ChainTypeMismatchError")<{
     required: ChainType
@@ -118,6 +119,10 @@ export class ChainNotAddedError extends Data.TaggedError("ChainNotAddedError")<{
 }> {}
 
 export class SignerNotAvailableError extends Data.TaggedError("SignerNotAvailableError")<{
+    cause: string
+}> {}
+
+export class ClientNotAvailableError extends Data.TaggedError("ClientNotAvailableError")<{
     cause: string
 }> {}
 
@@ -144,6 +149,18 @@ export class TransactionSimulationFailed extends Data.TaggedError("SimulationFai
 }> {}
 
 export class TransactionSubmissionFailed extends Data.TaggedError("TransactionSubmissionFailed")<{
+    cause: string
+}> {}
+
+export class DecodeTransactionFailed extends Data.TaggedError("DecodeTransactionFailed")<{
+    cause: string
+}> {}
+
+export class TransactionFetchFailed extends Data.TaggedError("TransactionFetchFailed")<{
+    cause: string
+}> {}
+
+export class BalancesFetchFailed extends Data.TaggedError("BalancesFetchFailed")<{
     cause: string
 }> {}
 
@@ -232,6 +249,9 @@ export class WalletService extends Effect.Service<WalletService>()("WalletServic
 }) {}
 
 export class SigningClient extends Context.Tag("SigningClient")<SigningClient, {
+    type: "cosmos" | "evm"
+    chainId: ChainId
+    address: string
     simulateTransaction: (
         transaction: Transaction
     ) => Effect.Effect<TransactionSimulationResult, TransactionSimulationFailed>
@@ -239,7 +259,13 @@ export class SigningClient extends Context.Tag("SigningClient")<SigningClient, {
         transaction: Transaction
     ) => Effect.Effect<TransactionSubmissionResult, TransactionSubmissionFailed>
 }>() {
-    static fromEnv = Layer.effect(this, createMnemonicSigningClient())
-
+    static fromEnv = Layer.effect(this, createSigningClientFromEnv())
     static fromKeplr = (chainId: ChainId) => Layer.effect(this, createKeplrSigningClient(chainId))
+}
+
+export class QueryClient extends Context.Tag("QueryClient")<QueryClient, {
+    fetchTransactions: (address: string, afterBlock: number) => Effect.Effect<Array<Transaction>, Error>
+    fetchBalances: (address: string) => Effect.Effect<Array<{ denom: string; amount: string }>, Error>
+}>() {
+    static fromEnv = Layer.effect(this, createQueryClientFromEnv())
 }

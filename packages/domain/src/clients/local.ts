@@ -2,8 +2,8 @@ import { stringToPath } from "@cosmjs/crypto"
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing"
 import { Config, Effect } from "effect"
 import { CHAINS_BY_ID, type CosmosChain } from "../chains.js"
-import { createCosmosSigningClient } from "../cosmos.js"
-import { SignerNotAvailableError } from "./index.js"
+import { createCosmosQueryClient, createCosmosSigningClient } from "../cosmos.js"
+import { ClientNotAvailableError, SignerNotAvailableError } from "./index.js"
 
 const getSignerFromMnemonic = (mnemonic: string, chain: CosmosChain) =>
     Effect.gen(function*() {
@@ -20,7 +20,7 @@ const getSignerFromMnemonic = (mnemonic: string, chain: CosmosChain) =>
         })
     })
 
-export const createMnemonicSigningClient = () =>
+export const createSigningClientFromEnv = () =>
     Effect.gen(function*() {
         const mnemonic = yield* Config.string("MNEMONIC")
         const chainId = yield* Config.string("CHAIN_ID")
@@ -35,6 +35,22 @@ export const createMnemonicSigningClient = () =>
         return yield* Effect.fail(
             new SignerNotAvailableError({
                 cause: `Mnemonic signing client not available for chain ${chain.id}`
+            })
+        )
+    })
+
+export const createQueryClientFromEnv = () =>
+    Effect.gen(function*() {
+        const chainId = yield* Config.string("CHAIN_ID")
+        const chain = CHAINS_BY_ID[chainId]
+
+        if (chain.type === "cosmos") {
+            return yield* createCosmosQueryClient(chain)
+        }
+
+        return yield* Effect.fail(
+            new ClientNotAvailableError({
+                cause: `Query client not available for chain ${chain.id}`
             })
         )
     })

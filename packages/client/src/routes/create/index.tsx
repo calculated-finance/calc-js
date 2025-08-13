@@ -1,8 +1,8 @@
 import { toUtf8 } from "@cosmjs/encoding";
 import { createFileRoute } from "@tanstack/react-router";
 import { Strategy, StrategyHandle } from "@template/domain/src/calc";
-import { Chain, CHAINS, CHAINS_BY_ID } from "@template/domain/src/chains";
-import { TransactionData, type Wallet } from "@template/domain/src/wallets";
+import { Chain, COSMOS_CHAINS_BY_ID } from "@template/domain/src/chains";
+import { TransactionData, type Wallet } from "@template/domain/src/clients";
 import {
   Background,
   BackgroundVariant,
@@ -179,7 +179,7 @@ function ActiveStrategyHandle({
             <code
               onClick={() => {
                 setExecutableTransactionData({
-                  chain: CHAINS_BY_ID[handle.chainId],
+                  chain: COSMOS_CHAINS_BY_ID[handle.chainId],
                   getDataWithSender: (sender) => ({
                     type: "cosmos",
                     msgs: [
@@ -211,7 +211,7 @@ function ActiveStrategyHandle({
             <code
               onClick={() => {
                 setExecutableTransactionData({
-                  chain: CHAINS_BY_ID[handle.chainId],
+                  chain: COSMOS_CHAINS_BY_ID[handle.chainId],
                   getDataWithSender: (sender) => ({
                     type: "cosmos",
                     msgs: [
@@ -219,7 +219,7 @@ function ActiveStrategyHandle({
                         typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
                         value: {
                           sender,
-                          contract: CHAINS_BY_ID[handle.chainId].managerContract,
+                          contract: COSMOS_CHAINS_BY_ID[handle.chainId].managerContract,
                           msg: toUtf8(
                             JSON.stringify({
                               update_strategy_status: {
@@ -246,7 +246,7 @@ function ActiveStrategyHandle({
             <code
               onClick={() => {
                 setExecutableTransactionData({
-                  chain: CHAINS_BY_ID[handle.chainId],
+                  chain: COSMOS_CHAINS_BY_ID[handle.chainId],
                   getDataWithSender: (sender) => ({
                     type: "cosmos",
                     msgs: [
@@ -254,7 +254,7 @@ function ActiveStrategyHandle({
                         typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
                         value: {
                           sender,
-                          contract: CHAINS_BY_ID[handle.chainId].managerContract,
+                          contract: COSMOS_CHAINS_BY_ID[handle.chainId].managerContract,
                           msg: toUtf8(
                             JSON.stringify({
                               update_strategy_status: {
@@ -579,19 +579,21 @@ export default function CreateStrategy() {
                   {chain.displayName}
                 </code>
                 {isSwitchingStrategyChain &&
-                  CHAINS.filter((c) => !!c.managerContract).map((c) => (
-                    <code
-                      key={c.id}
-                      style={{ color: c.color }}
-                      className="cursor-pointer text-lg hover:underline"
-                      onClick={() => {
-                        setIsSwitchingStrategyChain(false);
-                        setStrategyChain(c.id);
-                      }}
-                    >
-                      {c.displayName}
-                    </code>
-                  ))}
+                  Object.values(COSMOS_CHAINS_BY_ID)
+                    .filter((c) => !!c.managerContract)
+                    .map((c) => (
+                      <code
+                        key={c.id}
+                        style={{ color: c.color }}
+                        className="cursor-pointer text-lg hover:underline"
+                        onClick={() => {
+                          setIsSwitchingStrategyChain(false);
+                          setStrategyChain(c.id);
+                        }}
+                      >
+                        {c.displayName}
+                      </code>
+                    ))}
               </div>
             </div>
             {strategyFilter === "draft" && (

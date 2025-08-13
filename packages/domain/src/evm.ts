@@ -1,5 +1,5 @@
 import { Effect, Schedule, SubscriptionRef } from "effect"
-import { ChainNotAddedError, ConnectionRejectedError, RpcError } from "./clients/index.js"
+import { ChainNotAddedError, ConnectionRejectedError, RpcError } from "./clients.js"
 
 declare global {
     interface WindowEventMap {

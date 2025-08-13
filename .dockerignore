@@ -1,0 +1,55 @@
+# Node modules
+node_modules/
+*/node_modules/
+
+# Build artifacts (we copy these separately)
+build/
+*/build/
+dist/
+*/dist/
+
+# Development files
+.git/
+.gitignore
+.env*
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Test files
+coverage/
+*/coverage/
+**/*.test.ts
+**/*.test.js
+**/*.spec.ts
+**/*.spec.js
+test/
+*/test/
+
+# Documentation
+README.md
+*/README.md
+docs/
+*/docs/
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# MacOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/

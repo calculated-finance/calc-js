@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "type": "module",
   "license": "MIT",
+  "description": "Worker modules for CALC",
   "repository": {
     "type": "git",
     "url": "<PLACEHOLDER>",
@@ -16,7 +17,11 @@
     "build-annotate": "babel build/esm --plugins annotate-pure-calls --out-dir build/esm --source-maps",
     "check": "tsc -b tsconfig.json",
     "test": "vitest",
-    "coverage": "vitest --coverage"
+    "coverage": "vitest --coverage",
+    "start:execute-triggers": "node build/esm/execute-triggers.js",
+    "start:sync-transactions": "node build/esm/sync-transactions.js",
+    "dev:execute-triggers": "tsx src/execute-triggers.ts",
+    "dev:sync-transactions": "tsx src/sync-transactions.ts"
   },
   "dependencies": {
     "@cosmjs/cosmwasm-stargate": "^0.34.0",
@@ -27,7 +32,8 @@
     "@effect/platform": "latest",
     "@effect/platform-node": "latest",
     "@template/domain": "workspace:^",
-    "dotenv": "^17.2.1"
+    "dotenv": "^17.2.1",
+    "effect": "latest"
   },
   "effect": {
     "generateExports": {

@@ -3,7 +3,7 @@ import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx.js"
 import { Effect } from "effect"
 
 import type { CosmosChain } from "./chains.js"
-import type { Transaction } from "./clients/index.js"
+import type { Transaction } from "./clients.js"
 import {
     BalancesFetchFailed,
     SignerNotAvailableError,
@@ -11,7 +11,7 @@ import {
     TransactionFetchFailed,
     TransactionSimulationFailed,
     TransactionSubmissionFailed
-} from "./clients/index.js"
+} from "./clients.js"
 import { getSigningCosmWamClient, getStargateClient } from "./cosmwasm.js"
 
 export const createCosmosSigningClient = (

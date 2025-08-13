@@ -4,7 +4,7 @@ import { GasPrice, StargateClient } from "@cosmjs/stargate"
 import { BigDecimal, Config, Effect, Schema } from "effect"
 import type { ChainId, CosmosChain } from "./chains.js"
 import { CHAINS } from "./chains.js"
-import { SignerNotAvailableError } from "./clients/index.js"
+import { SignerNotAvailableError } from "./clients.js"
 
 export const Uint128 = Schema.BigInt.pipe(Schema.clampBigInt(
     BigInt(0),

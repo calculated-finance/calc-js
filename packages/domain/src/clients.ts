@@ -1,10 +1,10 @@
 import type { DeliverTxResponse } from "@cosmjs/stargate"
 import { Context, Data, Effect, Layer, Schema, Stream } from "effect"
-import type { ChainId, ChainType } from "../chains.js"
-import { Chain } from "../chains.js"
-import { createKeplrSigningClient, KeplrService } from "./keplr.js"
-import { createQueryClientFromEnv, createSigningClientFromEnv } from "./local.js"
-import { MetaMaskService } from "./metamask.js"
+import type { ChainId, ChainType } from "./chains.js"
+import { Chain } from "./chains.js"
+import { createKeplrSigningClient, KeplrService } from "./clients/keplr.js"
+import { createQueryClientFromEnv, createSigningClientFromEnv } from "./clients/local.js"
+import { MetaMaskService } from "./clients/metamask.js"
 
 export const Connection = Schema.Union(
     Schema.Struct({

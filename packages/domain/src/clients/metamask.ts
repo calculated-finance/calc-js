@@ -1,9 +1,7 @@
 import { Effect, Schedule, Stream, SubscriptionRef } from "effect"
-import { BINANCE_SMART_CHAIN, type Chain, type ChainId, ETHEREUM } from "../chains.js"
-import type { EIP1193Provider } from "../evm.js"
-import { EIP1193Providers } from "../evm.js"
-import { StorageService } from "../storage.js"
-import type { Connection, Wallet } from "./index.js"
+import type { Chain, ChainId, EvmChain } from "../chains.js"
+import { BINANCE_SMART_CHAIN, ETHEREUM } from "../chains.js"
+import type { Connection, Wallet } from "../clients.js"
 import {
     AccountsNotAvailableError,
     ChainNotAddedError,
@@ -11,7 +9,10 @@ import {
     ClientNotAvailableError,
     ConnectionRejectedError,
     RpcError
-} from "./index.js"
+} from "../clients.js"
+import type { EIP1193Provider } from "../evm.js"
+import { EIP1193Providers } from "../evm.js"
+import { StorageService } from "../storage.js"
 
 const METAMASK_CONNECTION_KEY = "calc_metamask_connection"
 
@@ -270,7 +271,7 @@ const connectEvm = (
 const addEvmChain = (
     provider: EIP1193Provider,
     connectionRef: SubscriptionRef.SubscriptionRef<Connection>,
-    chain: Chain
+    chain: EvmChain
 ) => Effect.gen(function*() {
     yield* SubscriptionRef.update(connectionRef, (currentConnection) => ({
         ...currentConnection,
@@ -339,7 +340,7 @@ const switchChainMetaMask = (
     }).pipe(
         Effect.catchTag(
             "ChainNotAddedError",
-            (_) => addEvmChain(provider, connectionRef, SUPPORTED_CHAINS_BY_ID[chainId])
+            (_) => addEvmChain(provider, connectionRef, SUPPORTED_CHAINS_BY_ID[chainId] as EvmChain)
         ),
         Effect.catchAll(() =>
             SubscriptionRef.update(connectionRef, (conn) => ({

@@ -12,6 +12,42 @@ services:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
 
+  worker-execute-triggers:
+    container_name: calc-worker-execute-triggers
+    build:
+      context: .
+      dockerfile: packages/worker/Dockerfile
+    command: ["./scripts/start-execute-triggers.sh"]
+    environment:
+      - NODE_ENV=development
+      # Add your environment variables here
+      # - PRIVATE_KEY=your_private_key
+      # - RPC_ENDPOINT=your_rpc_endpoint
+    depends_on:
+      - postgres
+    restart: unless-stopped
+    volumes:
+      # Mount for development hot-reload (optional)
+      - ./packages/worker/src:/app/packages/worker/src:ro
+
+  worker-sync-transactions:
+    container_name: calc-worker-sync-transactions
+    build:
+      context: .
+      dockerfile: packages/worker/Dockerfile
+    command: ["./scripts/start-sync-transactions.sh"]
+    environment:
+      - NODE_ENV=development
+      # Add your environment variables here
+      # - PRIVATE_KEY=your_private_key
+      # - RPC_ENDPOINT=your_rpc_endpoint
+    depends_on:
+      - postgres
+    restart: unless-stopped
+    volumes:
+      # Mount for development hot-reload (optional)
+      - ./packages/worker/src:/app/packages/worker/src:ro
+
 volumes:
   postgres_data:
     driver: local

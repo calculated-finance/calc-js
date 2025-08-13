@@ -4,11 +4,7 @@ import type { Window as KeplrWindow } from "@keplr-wallet/types"
 import { Effect, Schedule, Stream, SubscriptionRef } from "effect"
 import type { Chain, ChainId, CosmosChain, EvmChain, EvmChainId } from "../chains.js"
 import { BINANCE_SMART_CHAIN, COSMOS_HUB, ETHEREUM, RUJIRA_STAGENET } from "../chains.js"
-import { createCosmosSigningClient } from "../cosmos.js"
-import type { EIP1193Provider } from "../evm.js"
-import { EIP1193Providers } from "../evm.js"
-import { StorageService } from "../storage.js"
-import type { Connection, CosmosTransactionMsgs, Transaction, TransactionData, Wallet } from "./index.js"
+import type { Connection, CosmosTransactionMsgs, Transaction, TransactionData, Wallet } from "../clients.js"
 import {
     AccountsNotAvailableError,
     ChainNotAddedError,
@@ -19,7 +15,11 @@ import {
     SignerNotAvailableError,
     TransactionSimulationFailed,
     TransactionSubmissionFailed
-} from "./index.js"
+} from "../clients.js"
+import { createCosmosSigningClient } from "../cosmos.js"
+import type { EIP1193Provider } from "../evm.js"
+import { EIP1193Providers } from "../evm.js"
+import { StorageService } from "../storage.js"
 
 declare global {
     // eslint-disable-next-line @typescript-eslint/no-empty-object-type

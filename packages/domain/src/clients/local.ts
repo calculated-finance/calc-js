@@ -2,8 +2,8 @@ import { stringToPath } from "@cosmjs/crypto"
 import { DirectSecp256k1HdWallet } from "@cosmjs/proto-signing"
 import { Config, Effect } from "effect"
 import { CHAINS_BY_ID, type CosmosChain } from "../chains.js"
+import { ClientNotAvailableError, SignerNotAvailableError } from "../clients.js"
 import { createCosmosQueryClient, createCosmosSigningClient } from "../cosmos.js"
-import { ClientNotAvailableError, SignerNotAvailableError } from "./index.js"
 
 const getSignerFromMnemonic = (mnemonic: string, chain: CosmosChain) =>
     Effect.gen(function*() {

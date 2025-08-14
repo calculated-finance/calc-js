@@ -31,7 +31,7 @@ export type ManagerQueryMsg =
             status?: StrategyStatus | null
         }
     }
-export type Uint64 = string
+export type Uint64 = number
 export type ManagerExecuteMsg =
     | {
         instantiate: {
@@ -332,6 +332,7 @@ export interface Trigger {
     id: Uint64
     jitter?: Duration | null
     msg: Binary
+    owner: Addr
 }
 
 export type SchedulerInstantiateMsg = object

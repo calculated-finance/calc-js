@@ -1,0 +1,516 @@
+React Flow – Internal Deep-Dive Reference
+=======================================
+(Generated: 2025-08-14)
+
+Scope: Exhaustive engineering-oriented overview of React Flow public surface (components, hooks, types, utils, behavioral semantics, integration patterns). Content is original synthesis – NOT a verbatim copy of vendor docs. Use this to accelerate development, code reviews, architectural decisions, and advanced customization.
+
+---------------------------------------------------------------------
+1. Architectural Model
+---------------------------------------------------------------------
+Core pillars:
+- Data Model: Arrays of Node and Edge objects (immutable updates expected).
+- Rendering Engine: <ReactFlow /> orchestrates layered SVG/HTML rendering zones: pane (panning/zoom), node container, edge layer, interaction overlays (selection rect, connection line), auxiliary portals (edge labels, toolbars, mini-map, panels).
+- Interaction State: Maintained in an internal Zustand store (selection, viewport, connection drag state, key modifiers, dimensions, error state, init flags, node internals, etc.).
+- Change Propagation: UI gestures produce granular NodeChange/EdgeChange objects consumed by applyNodeChanges/applyEdgeChanges or automatically handled by *State hooks.
+- Imperative API: useReactFlow() exposes instance-level mutators + coordinate transforms + viewport control.
+- Extensibility: nodeTypes, edgeTypes, custom connection lines, custom markers, portals, resizer/toolbar controls, validation callbacks.
+- Serialization: ReactFlowInstance.toObject() (if using instance) or manual capture: { nodes, edges, viewport }.
+
+Lifecycle Sequence (controlled):
+1. Parent sets nodes/edges props.
+2. React Flow maps to internal nodes (augmenting with dimensions, handle geometry, selection state, ‘internals’ cache).
+3. User interacts -> store updates -> on*Change callbacks fire with diff arrays.
+4. Parent reconciles state (apply*Changes) -> rerenders with new arrays.
+5. Layout or viewport adjustments (fitView, zoom) update transform state; re-render of position contexts.
+
+---------------------------------------------------------------------
+2. Fundamental Types – Exhaustive Detail
+---------------------------------------------------------------------
+Node (core surface fields):
+- id: string (stable unique key – collisions undefined behavior)
+- type?: string (lookup in nodeTypes; default = 'default')
+- data: any (serializable; treat as immutable slice; consider external heavy data mapping by id)
+- position: { x: number; y: number } (top-left in flow coords prior to origin adjustments)
+- positionAbsolute?: { x; y } (internal post-parent/layout transforms)
+- measured?: { width: number; height: number } (set after initial render/resize)
+- selected?: boolean
+- dragging?: boolean (transient)
+- resizing?: boolean (when NodeResizer active)
+- hidden?: boolean (excluded from layout/fit unless includeHiddenNodes true)
+- width?/height?: number (explicit sizing overrides measurement)
+- style?: CSSProperties
+- className?: string
+- zIndex?: number (higher draws over)
+- parentNode?: string (establish hierarchical relationship)
+- extent?: 'parent' | CoordinateExtent (restrict movement)
+- expandParent?: boolean (adjust parent size on move) – (version-dependent; verify availability)
+- draggable?: boolean (overrides global)
+- connectable?: boolean (overrides global; also per-handle option)
+- selectable?: boolean (overrides global)
+- focusable?: boolean (edge of accessibility)
+- deletable?: boolean
+- dragHandle?: string (CSS selector limiting drag start region)
+- origin?: NodeOrigin (anchor inside node; affects transform origin – eg [0.5, 0.5])
+
+Edge:
+- id: string
+- source: node id
+- target: node id
+- sourceHandle?: string
+- targetHandle?: string
+- type?: string (edgeTypes mapping; builtin: 'default','step','smoothstep','straight','simplebezier','bezier')
+- data?: any
+- label?: ReactNode | string
+- labelStyle?: CSSProperties
+- labelShowBg?: boolean
+- labelBgStyle?: CSSProperties
+- labelBgPadding?: [number, number]
+- labelBgBorderRadius?: number
+- animated?: boolean
+- selected?: boolean
+- hidden?: boolean
+- style?: CSSProperties (stroke, etc.)
+- markerStart?/markerEnd?: EdgeMarker (marker type + styling)
+- interactionWidth?: number (fatten click target without visual stroke)
+- pathOptions?: { offset?: number; curvature?: number; borderRadius?: number } (edge-type dependent)
+- focusable?: boolean
+- deletable?: boolean
+- updatable?: boolean | 'source' | 'target' | 'both'
+- zIndex?: number (layer ordering over other edges)
+
+Connection (during creation): { source: string; target: string; sourceHandle?: string; targetHandle?: string }
+
+Handle / NodeHandle:
+- id?: string
+- type: 'source' | 'target'
+- position: Position (enum Top Right Bottom Left)
+- isConnectable?: boolean
+- isValidConnection?: (connection) => boolean | Promise<boolean>
+
+Viewport:
+- { x: number; y: number; zoom: number }
+
+CoordinateExtent / NodeExtent:
+- [[minX, minY], [maxX, maxY]] limit translation
+
+Change Objects:
+NodeChange union examples:
+- { id, type: 'add', item: Node }
+- { id, type: 'remove' }
+- { id, type: 'position', position, dragging? }
+- { id, type: 'dimensions', dimensions: { width,height }, resizing? }
+- { id, type: 'select', selected }
+- { id, type: 'reset' } (internal reinit)
+EdgeChange analogous: add, remove, select, reset.
+
+ReactFlowInstance (key methods – may vary by version):
+- getNodes(): Node[]
+- getNode(id): Node | undefined
+- getEdges(): Edge[]
+- getEdge(id): Edge | undefined
+- setNodes(nodes | updater)
+- setEdges(edges | updater)
+- addNodes(...nodes)
+- addEdges(...edges)
+- deleteElements({ nodes?: Node[]; edges?: Edge[] })
+- toObject(): { nodes; edges; viewport }
+- getViewport(): Viewport
+- setViewport(vp: Viewport, opts?: { duration?: number })
+- fitView(opts?: FitViewOptions)
+- zoomIn(step?: number)
+- zoomOut(step?: number)
+- zoomTo(zoom: number)
+- project(point: { x; y }): { x; y } (screen -> flow)
+- screenToFlowPosition(point) alias
+- updateNode(id, partial: Partial<Node>) (merges data; ensure immutability semantics)
+- updateNodeInternals(id) (force recomputation of handles/dimensions) – underlying store method (useUpdateNodeInternals hook preferred)
+
+FitViewOptions:
+- padding?: number (default ~0.1)
+- includeHiddenNodes?: boolean
+- minZoom?/maxZoom?
+- duration?: number (ms animate)
+- nodes?: Node[] (subset to focus)
+
+EdgeMarker:
+- { type: MarkerType; color?: string; width?: number; height?: number; strokeWidth?: number; markerUnits?: 'strokeWidth'|'userSpaceOnUse'; orient?: 'auto'|'auto-start-reverse'|number }
+
+Pan / Zoom Config:
+- minZoom, maxZoom
+- panOnScroll?: boolean | PanOnScrollMode ('free'|'vertical'|'horizontal')
+- panOnDrag?: boolean | number | [number, number] (mouse button mask)
+- zoomOnPinch?: boolean
+- zoomOnScroll?: boolean
+- preventScrolling?: boolean (wheel event passive config)
+- selectionMode?: SelectionMode ('partial' | 'full')
+
+Keyboard & Interaction Props:
+- selectionKeyCode?: KeyCode | null (default e.g. 'Shift')
+- multiSelectionKeyCode?: KeyCode | null (default e.g. 'Meta'/'Control')
+- deleteKeyCode?: KeyCode | null (backspace/delete for removal)
+- zoomActivationKeyCode?: KeyCode | null (restrict wheel zoom when set)
+
+Misc Behavior Props:
+- snapToGrid?: boolean
+- snapGrid?: [number, number]
+- onlyRenderVisibleElements?: boolean (performance – culls offscreen nodes/edges)
+- elevateNodesOnSelect?: boolean
+- elevateEdgesOnSelect?: boolean
+- defaultMarkerColor?: string
+- edgesFocusable / nodesFocusable / elementsSelectable / nodesDraggable / nodesConnectable (boolean toggles) – note hierarchical overriding by per-node/handle flags.
+- connectionMode?: ConnectionMode ('strict' | 'loose')
+- connectionLineType?: ConnectionLineType (bezier, step, smoothstep, straight, simplebezier)
+- connectionLineStyle?: CSSProperties
+- connectionRadius?: number (snap distance)
+- edgeUpdaterRadius?: number (determine radius for updating endpoints)
+- proOptions?: { hideAttribution?: boolean }
+- translateExtent?: CoordinateExtent (restrict viewport pan)
+- nodeExtent?: CoordinateExtent (restrict node movement – global)
+- defaultEdgeOptions?: Partial<Edge> (applied to new edges)
+- defaultNodeOptions?: Partial<Node> (applied to new nodes)
+- colorMode?: ColorMode ('light'|'dark'|'system')
+- ariaLabel?: string | AriaLabelConfig (accessibility)
+- autoPanOnNodeDrag?: boolean
+- autoPanOnConnect?: boolean
+- autoPanSpeed?: number (px/frame) & autoPanOnNodeDrag threshold region fraction
+- disableKeyboardA11y?: boolean (skip focus mgmt)
+- selectionOnDrag?: boolean (select nodes when starting drag on empty pane area?) – version-specific.
+
+---------------------------------------------------------------------
+3. Components – Deep Notes
+---------------------------------------------------------------------
+<ReactFlowProvider />
+- Supplies context store when separating provider from consumer tree (e.g., customizing panels outside flow render).
+
+<ReactFlow />
+- Must be inside provider (implicitly created if omitted). Resize observer attaches to wrapper; style container with width/height.
+- Children order matters only for overlay layering; internal layers are fixed order: Background | Pane (Edges/Nodes) | Selection/Connection overlays | Portals | Controls, Panels.
+
+<Background />
+- Props: id?; variant?: BackgroundVariant ('dots'|'lines'|'cross'); gap?: number; size?: number (dots diameter / stroke width); offset?: number; color?: string; lineWidth?: number; bgColor?: string; patternColor?; patternId?
+- Renders SVG pattern anchored to viewport transform (scales with zoom). Distinguish between snapping grid vs purely visual background.
+
+<MiniMap />
+- Props: nodeColor?: (node) => string | string; nodeStrokeColor?; nodeClassName?; maskColor?; pannable?; zoomable?; inversePan?; style/position; ariaLabel?; zoomStep?
+- Displays scaled representation; clicking/panning updates viewport.
+
+<Controls /> / <ControlButton />
+- Default set: zoom in, zoom out, fit view, lock/unlock interactive? (variant dependent). Provide onZoomIn,onZoomOut,onFitView callbacks override.
+
+<Panel />
+- Floating positioned container. position?: PanelPosition (top-left, top-right, bottom-left, bottom-right) or absolute style.
+
+<Handle />
+- Must appear within a Node component. Use isValidConnection to enforce domain-specific constraints synchronously or asynchronously (return Promise). Provide id for multiple handles. If omitted targetHandle/sourceHandle is undefined (only single connection interpretation).
+
+<BaseEdge />
+- Low-level path renderer; expects path (d attribute) and marker props. Combine with EdgeLabelRenderer for custom labeling.
+
+<EdgeLabelRenderer />
+- Portal root for labels needing absolute overlay coordinates; ensures label does not distort edge path layering.
+
+<EdgeText />
+- Simplified label component (text on path alignment). Accepts x,y,label, labelStyle, labelShowBg, labelBgStyle, ...
+
+<NodeResizer /> / <NodeResizeControl />
+- Provide resize handles. Emits onResize/onResizeStart/onResizeEnd events. Node must adopt new dimensions (update stored width/height) or rely on internal dimension measurement. Provide minWidth/minHeight/maxWidth/maxHeight/keepAspectRatio/lineStyle/handleStyle/handlePositions (granular control). For persistence update Node state in onResizeEnd.
+
+<NodeToolbar />
+- Floating contextual toolbar anchored to node bounding box (top/auto positioning). position?: Position; offset?: number; isVisible?: boolean | (nodeState) => boolean; portal mount.
+
+<ViewportPortal />
+- Renders children transformed alongside nodes/edges (contrasted with regular portal where item overlays screen coordinates). Good for custom overlays needing scaling.
+
+---------------------------------------------------------------------
+4. Hooks – Advanced Semantics
+---------------------------------------------------------------------
+useNodesState(initialNodes)
+- Internal: wraps useState + onNodesChange applying diffs. setNodes supports functional updates. Provide stable handler references to prevent re-renders.
+
+useEdgesState(initialEdges)
+- Symmetric to nodes version.
+
+useReactFlow()
+- Read/Write graph + viewport. Access inside ReactFlowProvider scope. All set* operations trigger store updates -> reactivity.
+
+useNodes(), useEdges()
+- Selector-based store subscriptions returning arrays (readonly – modifying requires instance methods or state hooks). Avoid heavy inline derivations; memoize.
+
+useNodeId()
+- Inside custom node component returns its id.
+
+useInternalNode(id?)
+- Access InternalNode (includes internals: handle bounds, isParent, internals.positionAbsolute, z, measured). For custom advanced edges/overlays; treat as read-only.
+
+useNodeConnections(id)
+- Returns inbound/outbound connections (edges referencing node) – enables dynamic UI (e.g., handle usage indicators).
+
+useHandleConnections({ type, id? })
+- Connections attached to a specific handle – implement handle-level constraints/visualization.
+
+useConnection()
+- Current live connection drag state: { inProgress, connection, fromNodeId, fromHandleId, fromHandleType, toNodeId?, toHandleId? }. Useful for preview rules or dynamic highlighting.
+
+useNodesInitialized()
+- Boolean becomes true after initial layout + dimension measurement cycle – safe time to call fitView without jitter.
+
+useUpdateNodeInternals()
+- Returns fn(id | ids[]) forcing dimension + handle recalculation (e.g., after data-driven DOM size change). Debounced internally; avoid excessive calls.
+
+useOnSelectionChange({ onChange? | onStart? | onEnd? })
+- Hook attaching selection change lifecycle; stable identity needed for performance.
+
+useOnViewportChange({ onStart?, onChange?, onEnd? })
+- Viewport change subscription – animate overlays or persist user viewport.
+
+useViewport()
+- Returns current viewport object and convenience functions (project, x,y,zoom). Lightweight alternative to useReactFlow if only reading transform.
+
+useStore(selector, equalityFn?) / useStoreApi()
+- Low-level; gives direct store access or imperative getState()/setState() customizing ephemeral state. Risks coupling to internal structure; wrap in adapter functions for resilience.
+
+useKeyPress(keyOrPredicate)
+- Track keyboard state (useful for toggling multi-select UI hints).
+
+---------------------------------------------------------------------
+5. Utilities – Behavioral Details
+---------------------------------------------------------------------
+addEdge(paramsOrEdge, edges)
+- If passed Connection, returns Edge with generated id (edge id generation pattern: "reactflow__edge-{source}{sourceHandle?}-{target}{targetHandle?}" unless override). Merges defaultEdgeOptions. If parallel duplicate allowed, differentiate id.
+
+applyNodeChanges(changes, nodes) / applyEdgeChanges(changes, edges)
+- Pure functions. Order matters: typically pass ReactFlow’s provided ordered changes array. Unknown ids are ignored.
+
+getBezierPath({ sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition }) -> [path, labelX, labelY]
+- Provide control points derived from positions; adjust curvature via global or passed options.
+
+getSimpleBezierPath / getSmoothStepPath / getStraightPath
+- Alternative curve strategies. SmoothStep splits axis transitions with adjustable border radius; Straight is simple line.
+
+getConnectedEdges(nodes, edges)
+- Returns edges whose source or target in nodes set.
+
+getIncomers(node, nodes, edges) / getOutgoers(node, nodes, edges)
+- Graph traversal primitives returning Node[] for inbound/outbound adjacency.
+
+getNodesBounds(nodes)
+- Calculate bounding rect of nodes (for manual viewport scaling / export operations).
+
+getViewportForBounds(bounds, width, height, minZoom, maxZoom, padding)
+- Compute viewport transform to fit bounds inside given screen dimensions.
+
+isNode(element) / isEdge(element)
+- Type guards.
+
+reconnectEdge(oldEdge, newConnection, edges) -> Edge[]
+- Replace endpoints while preserving id (or optionally use new id). Integrate with onEdgeUpdate.
+
+---------------------------------------------------------------------
+6. Events & Callback Semantics
+---------------------------------------------------------------------
+All event prop signatures (simplified):
+- onInit(instance: ReactFlowInstance) – safe time to call instance API (post first mount, pre nodesInitialized maybe).
+- onNodesChange(changes: NodeChange[])
+- onEdgesChange(changes: EdgeChange[])
+- onConnect(connection: Connection) – fired after successful validation drop on handle/node (subject to connectionMode + isValidConnection).
+- onConnectStart(event, { nodeId, handleId, handleType }) – pointer down on a handle.
+- onConnectEnd(event) – pointer released anywhere.
+- onEdgeUpdate(oldEdge, newConnection) – drag existing endpoint to new target.
+- onNodesDelete(deleted: Node[]) / onEdgesDelete(deleted: Edge[])
+- onBeforeDelete({ nodes, edges }) -> boolean | void (return false to veto deletion; synchronous)
+- onSelectionChange({ nodes, edges }) – after commit.
+- onSelectionDragStart / onSelectionDrag / onSelectionDragStop (multi-node drag cluster).
+- onNodeDragStart/Drag/Stop(event, node) – per node; DragStop recommended for persisting final position.
+- onNodeClick(event, node) / onNodeDoubleClick / onNodeMouseEnter/Leave
+- onEdgeClick(event, edge) / onEdgeMouseEnter/Leave
+- onPaneClick(event) / onPaneContextMenu / onPaneScroll
+- onMoveStart(event, viewport) / onMove(event, viewport) / onMoveEnd(event, viewport) – viewport panning & zoom changes.
+- onError(error: { type: string; message?: string; code?: string; data?: any }) – internal error hook (log/telemetry integration).
+- onReconnect?(oldEdge, newConnection) – alias variant or future naming (version alignment needed).
+
+Event Ordering Example (connecting):
+1. onConnectStart
+2. (intermediate pointer moves – live connection state via useConnection)
+3. (validation queries when hovering candidate targets)
+4. Drop: validation => true -> onConnect; else aborted (no onConnectEnd variant carrying failure reason – derive via absence of onConnect invocation).
+5. onConnectEnd always after pointer release.
+
+Edge Update Behavior:
+- User pointer drag near end anchor within edgeUpdaterRadius triggers update mode.
+- onEdgeUpdate passes full Connection; incorporate reconnectEdge to produce new edges array.
+
+Deletion Flow:
+1. Key press (deleteKeyCode) or context menu triggers candidate set.
+2. onBeforeDelete invoked – can veto.
+3. onNodesDelete/onEdgesDelete after removal & before onEdgesChange/onNodesChange commit? (Check version; design for both sequences; rely on final arrays diff not only deletion callbacks.)
+
+---------------------------------------------------------------------
+7. Performance / Scaling Strategies
+---------------------------------------------------------------------
+- onlyRenderVisibleElements reduces DOM; tune overscan margin via style (not directly exposed – may require custom virtualization if extreme scale >10k nodes).
+- Batch state updates: setNodes(prev => { ... }) & setEdges inside single React batch (useTransition or unstable_batchedUpdates if needed).
+- useStore(selector, shallow compare for counting or filtering; avoid reselect functions that allocate each render.
+- Deferrable layout: compute positions off-thread (Web Worker) then commit.
+- Avoid storing large binary blobs in node.data – keep references to external caches.
+- Intersection-based lazy node content (observer) if heavy charts.
+- Consider decoupling logical graph (domain model) from view graph (React Flow) with mapping line for large transforms.
+
+---------------------------------------------------------------------
+8. Advanced Custom Edge Implementation Blueprint
+---------------------------------------------------------------------
+1. Define CustomEdge(props: EdgeProps): { id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data, selected, markerEnd }
+2. Compute path: const [path, labelX, labelY] = getBezierPath({...})
+3. Return <><BaseEdge path={path} markerEnd={markerEnd} style={...} /><EdgeLabelRenderer>...label UI at absolute coordinates...</EdgeLabelRenderer></>
+4. Register: const edgeTypes = { custom: CustomEdge }
+5. Use in edges: { type: 'custom' }
+6. Support interactivity: onClick, onContextMenu via wrapping <path> manually if needed; or supply pointer-events styling.
+
+---------------------------------------------------------------------
+9. Resizing & Dynamic Content
+---------------------------------------------------------------------
+- NodeResizer handles automatically adjust width/height internal store – you must propagate changes if controlling nodes (listen to changes: NodeChange type 'dimensions').
+- For dynamic form expansion inside node: call useUpdateNodeInternals(id) after content height change to recalc handles.
+- Maintain min widths with CSS; measurement pipeline obtains boundingClientRect after paint.
+
+---------------------------------------------------------------------
+10. Connection Validation Patterns
+---------------------------------------------------------------------
+- Local handle-level: <Handle isValidConnection={(c) => condition(c)} />
+- Global gating: Wrap onConnect to re-validate and conditionally ignore (do not append edge).
+- Async: isValidConnection may return Promise; UI indicates pending? (Edge preview accepted only after resolution). Provide fast-fail path for UX.
+- Domain mapping: Source handle encodes output type; target handle encodes input type; table of allowed pairs -> boolean.
+
+---------------------------------------------------------------------
+11. Mapping Domain Graph (Strategies) to React Flow
+---------------------------------------------------------------------
+- Node id = strategyNode.index or stable uuid.
+- Node data: { kind: 'action'|'condition'; payload: OriginalNodeSpec; status }.
+- Edges: For Action: if next -> single edge; For Condition: on_success / on_failure -> labeled edges (edge.data.label = 'success'/'failure'; style color-coded).
+- Execution highlight: update node.style or className based on runtime state store (subscribe via custom hook binding domain engine events).
+- Lock executed nodes: set draggable false when finalized.
+- Provide connection validation: prevent forming cycles unless allowed; maintain adjacency constraints (max outgoing edges from action = 1; from condition <= 2). Implement via isValidConnection & onConnect guard.
+
+---------------------------------------------------------------------
+12. Persistence Format Strategy
+---------------------------------------------------------------------
+Recommended structure:
+{
+  version: 1,
+  nodes: Node[],
+  edges: Edge[],
+  viewport: Viewport,
+  meta: { updatedAt, appVersion }
+}
+Load:
+- Validate version.
+- Sanitize or map unknown node/edge types.
+- Restore viewport using setViewport or fitView fallback.
+
+---------------------------------------------------------------------
+13. Error Sources & Mitigation
+---------------------------------------------------------------------
+- Missing container size: Ensure wrapping div has explicit height/width (CSS 100% inside sized parent).
+- Duplicate IDs: Pre-validate before setNodes.
+- Stale dimension after CSS transform: call useUpdateNodeInternals.
+- Performance stutter on drag: Avoid expensive state computations in onNodeDrag; defer to drag stop.
+- Edge path jitter: Avoid constantly changing source/target handle positions via CSS animations.
+
+---------------------------------------------------------------------
+14. Accessibility
+---------------------------------------------------------------------
+- Nodes/Edges can gain focus (focusable prop); implement onFocus styling.
+- Provide ariaLabel/aria-description for canvas.
+- Keyboard deletion uses deleteKeyCode; ensure discoverability in UI help overlay.
+- Custom node interactive controls: manage tab order; avoid interfering with drag (use dragHandle selector restricting drag start).
+
+---------------------------------------------------------------------
+15. Testing Guidance
+---------------------------------------------------------------------
+- Unit: Pure utilities (applyNodeChanges) snapshot expected arrays.
+- Component: Render <ReactFlow> with testing-library; use data-id attributes (custom) on nodes for queries.
+- Interaction: Simulate pointerDown on handle, pointerMove to target, pointerUp -> expect onConnect invoked.
+- Visual regressions: Capture canvas container screenshot (Chromatic) – ensure deterministic layout randomization seeds.
+
+---------------------------------------------------------------------
+16. Migration & Version Strategy
+---------------------------------------------------------------------
+- Pin reactflow semver; audit changelog for breaking modifications to Change object shapes, hook signatures, internal store property names (if using useStore directly).
+- Wrap store selectors in adapter functions isolating structural changes.
+
+---------------------------------------------------------------------
+17. Security / Sandbox Considerations
+---------------------------------------------------------------------
+- Untrusted graph data: sanitize node.data (avoid rendering unsanitized HTML inside custom nodes; use React escapes by default) & restrict custom components to vetted set.
+- Denial of Service (mass nodes): impose validation limit (max nodes / edges) before setNodes.
+
+---------------------------------------------------------------------
+18. Export / Screenshot Patterns
+---------------------------------------------------------------------
+- Use getNodesBounds + getViewportForBounds to frame export region.
+- Use html-to-canvas libs or toDataURL of underlying SVG (edges) combined with foreignObject constraints. Consider inline CSS duplication for isolated rendering.
+
+---------------------------------------------------------------------
+19. Example Advanced Flow (Pseudo-code)
+---------------------------------------------------------------------
+const [nodes, setNodes, onNodesChange] = useNodesState([])
+const [edges, setEdges, onEdgesChange] = useEdgesState([])
+const instance = useReactFlow()
+
+const onConnect = useCallback(conn => {
+  if (!validateDomainConnection(conn, nodes, edges)) return
+  setEdges(eds => addEdge({ ...conn, type: 'smoothstep', data: { createdAt: Date.now() } }, eds))
+}, [nodes, edges])
+
+useEffect(() => {
+  if (useNodesInitialized()) instance.fitView({ padding: 0.2 })
+}, [instance])
+
+---------------------------------------------------------------------
+20. Quick API Matrix (Cheat)
+---------------------------------------------------------------------
+Operation -> Where:
+Add Node -> setNodes/addNodes (instance)
+Add Edge -> addEdge + setEdges / addEdges
+Move Nodes -> drag UI -> onNodesChange(position) -> applyNodeChanges
+Resize Node -> NodeResizer -> NodeChange(dimensions)
+Reconnect Edge -> onEdgeUpdate -> reconnectEdge
+Delete Elements -> selection + deleteKey -> onBeforeDelete -> onNodesDelete/onEdgesDelete
+Viewport Fit -> fitView()
+Zoom Programmatic -> zoomTo / zoomIn / zoomOut
+Project Screen Pt -> project / screenToFlowPosition
+Update Node Internals -> useUpdateNodeInternals(id)
+Listen Selection -> useOnSelectionChange / onSelectionChange
+Listen Viewport -> useOnViewportChange
+Serialize -> instance.toObject()
+
+---------------------------------------------------------------------
+21. Glossary
+---------------------------------------------------------------------
+- Flow Coordinates: Logical coordinate space transformed by viewport (pan+zoom) into screen coords.
+- InternalNode: Augmented runtime node with layout metadata (not for persistence).
+- Handle: Interaction anchor for connections.
+- Connection Drag State: Transient structure while user draws new edge.
+- Change Object: Declarative diff describing mutation; consumed by reducers.
+
+---------------------------------------------------------------------
+22. Implementation Recommendations for This Repository
+---------------------------------------------------------------------
+- Create domain<->flow adapter layer: domainStrategicNode -> FlowNode, FlowEdges.
+- Implement isValidConnection referencing domain rules (max edges per node type, preventing orphan loops unless flagged).
+- Provide custom node components for Action vs Condition with status color strip & handle arrangement (condition: two outputs success/failure; action: one output). Use NodeToolbar for CRUD (duplicate / delete / convert).
+- Persist layout after drag stop in domain store (debounce 300ms to minimize writes).
+- Use useUpdateNodeInternals after dynamic label or metrics insertion (e.g., execution time updated).
+- Provide graph metrics overlay via <Panel> (counts, active edges, runtime warnings).
+- Implement keyboard shortcuts: Cmd+D duplicate selection; Cmd+Enter trigger execute strategy simulation; map via useKeyPress.
+- Use onlyRenderVisibleElements for large strategies; measure cross-over point (e.g., >200 nodes) in profiling.
+
+---------------------------------------------------------------------
+23. Open Extension Ideas
+---------------------------------------------------------------------
+- Edge-level tooltips (EdgeLabelRenderer) for swap route metadata.
+- Animated execution path highlight (CSS stroke-dashoffset animation) when a condition passes.
+- Error edge styling on failed condition (red pulsating). Maintain status in edge.data.
+
+---------------------------------------------------------------------
+End of Document
+---------------------------------------------------------------------

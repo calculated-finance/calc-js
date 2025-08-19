@@ -6,7 +6,7 @@ import { SigningClient } from "@template/domain/clients"
 import { CosmWasmQueryError, getCosmWasmClient } from "@template/domain/cosmwasm"
 import type { ConditionFilter, SchedulerQueryMsg } from "@template/domain/types"
 import { config } from "dotenv"
-import { DateTime, Effect, Fiber, Queue, Schedule, Stream } from "effect"
+import { DateTime, Effect, Fiber, Queue, Stream } from "effect"
 
 config()
 ;(BigInt.prototype as any).toJSON = function() {
@@ -144,8 +144,7 @@ const program = Effect.gen(function*() {
     const timeFetcher = Effect.gen(function*() {
         yield* Stream.repeatEffect(
             fetchTimeTriggers().pipe(
-                Effect.delay("3 seconds"),
-                Effect.retry(Schedule.exponential("1 seconds")),
+                Effect.delay("1 seconds"),
                 Effect.catchAll((error) =>
                     Effect.gen(function*() {
                         yield* Effect.logError("Failed to fetch time triggers", error)
@@ -161,8 +160,7 @@ const program = Effect.gen(function*() {
     const blockFetcher = Effect.gen(function*() {
         yield* Stream.repeatEffect(
             fetchBlockTriggers().pipe(
-                Effect.delay("3 seconds"),
-                Effect.retry(Schedule.exponential("1 seconds")),
+                Effect.delay("1 seconds"),
                 Effect.catchAll((error) =>
                     Effect.gen(function*() {
                         yield* Effect.logError("Failed to fetch block triggers", error)

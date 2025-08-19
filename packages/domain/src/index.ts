@@ -16,7 +16,3 @@ export * as storage from "./storage.js"
 export * as strategies from "./strategies.js"
 export * as types from "./types.js"
 export * as utils from "./utils.js"
-// Provide v2 graph API under a single namespace to avoid symbol collisions
-export * as v2 from "./v2_index.js"
-
-// (Temporarily removed problematic flat v2 re-exports to avoid duplicate symbol conflicts)

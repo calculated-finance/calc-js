@@ -1,6 +1,6 @@
 import { decodeTxRaw, type OfflineSigner } from "@cosmjs/proto-signing"
 import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx.js"
-import { Effect } from "effect"
+import { Data, Effect, Schedule } from "effect"
 
 import type { CosmosChain } from "./chains.js"
 import type { Transaction } from "./clients.js"
@@ -13,6 +13,8 @@ import {
     TransactionSubmissionFailed
 } from "./clients.js"
 import { getSigningCosmWamClient, getStargateClient } from "./cosmwasm.js"
+
+export class AccountSequenceMismatchError extends Data.TaggedError("AccountSequenceMismatchError") {}
 
 export const createCosmosSigningClient = (
     chain: CosmosChain,
@@ -50,9 +52,7 @@ export const createCosmosSigningClient = (
                             cause: `Transaction simulation failed: ${error.message}`
                         })
                     }
-                }).pipe(
-                    Effect.catchAll((error) => Effect.fail(new TransactionSimulationFailed(error)))
-                )
+                })
 
                 return {
                     type: "cosmos" as const,
@@ -74,12 +74,21 @@ export const createCosmosSigningClient = (
                     try: () => client.signAndBroadcast(transaction.signer, transaction.data, "auto", transaction.memo),
                     catch: (error: any) => {
                         console.log(`Failed to sign and broadcast transaction on chain ${chain.id}: ${error.message}`)
+
+                        if (`${error}`.includes("account sequence mismatch")) {
+                            return new AccountSequenceMismatchError()
+                        }
+
                         return new TransactionSubmissionFailed({
                             cause: `Failed to sign and broadcast transaction on chain ${chain.id}: ${error.message}`
                         })
                     }
                 }).pipe(
-                    Effect.catchAll((error) => Effect.fail(new TransactionSubmissionFailed(error)))
+                    Effect.retry({
+                        schedule: Schedule.exponential("100 millis")
+                    }),
+                    Effect.catchTag("AccountSequenceMismatchError", (error) =>
+                        new TransactionSubmissionFailed({ cause: `${error}` }))
                 )
 
                 return {

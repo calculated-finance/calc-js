@@ -6,7 +6,7 @@ import { SigningClient } from "@template/domain/clients"
 import { CosmWasmQueryError, getCosmWasmClient } from "@template/domain/cosmwasm"
 import type { ConditionFilter, SchedulerQueryMsg } from "@template/domain/types"
 import { config } from "dotenv"
-import { DateTime, Effect, Fiber, Queue, Stream } from "effect"
+import { DateTime, Effect, Queue, Stream } from "effect"
 
 config()
 ;(BigInt.prototype as any).toJSON = function() {
@@ -97,12 +97,6 @@ const fetchTimeTriggers = () =>
 
         const blockTime = DateTime.unsafeFromDate(new Date(Date.parse(block.header.time)))
 
-        console.log(`Fetched block time: ${
-            (blockTime.epochMillis * (10 ** 6)).toFixed(
-                0
-            )
-        }`)
-
         const start = (blockTime
             .pipe(DateTime.subtractDuration("24 hours"))
             .epochMillis * (10 ** 6)).toFixed(0)
@@ -130,8 +124,6 @@ const fetchBlockTriggers = () =>
                 return new CosmWasmQueryError({ cause: error })
             }
         })
-
-        console.log(`Fetched block height: ${block}`)
 
         return yield* getCosmosChainTriggers(chain, {
             block_height: { start: block - 14_400, end: block }
@@ -180,20 +172,13 @@ const program = Effect.gen(function*() {
         )
     })
 
-    const timeFiberFiber = yield* Effect.forkScoped(timeFetcher)
-    const blockFiberFiber = yield* Effect.forkScoped(blockFetcher)
-    const processorFiber = yield* Effect.forkScoped(processor)
-
     yield* Effect.log("Started trigger execution worker")
 
-    yield* Fiber.joinAll([
-        timeFiberFiber,
-        blockFiberFiber,
-        processorFiber
-    ]).pipe(
-        Effect.onInterrupt(() => Effect.log("Trigger worker interrupted, cleaning up...")),
-        Effect.onExit(() => Effect.log("Trigger worker exited"))
-    )
+    yield* Effect.all([
+        timeFetcher,
+        blockFetcher,
+        processor
+    ], { concurrency: 3 })
 })
 
 program.pipe(

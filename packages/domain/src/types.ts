@@ -31,7 +31,7 @@ export type ManagerQueryMsg =
             status?: StrategyStatus | null
         }
     }
-export type Uint64 = number
+export type Uint64 = string
 export type ManagerExecuteMsg =
     | {
         instantiate: {

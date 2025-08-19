@@ -79,7 +79,7 @@ runs:
       run: |
         echo "## 🚀 Deployment Complete - ${{ inputs.environment }}" >> $GITHUB_STEP_SUMMARY
         echo "- **Environment**: ${{ inputs.environment }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Container Image**: ${{ inputs.container-image }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Container Image**: ${{ inputs.aws-account-id }}.dkr.ecr.ap-southeast-1.amazonaws.com/calc-worker:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
         echo "- **Region**: ap-southeast-1" >> $GITHUB_STEP_SUMMARY
         echo "- **Terraform State**: calc-terraform-${{ inputs.environment }}" >> $GITHUB_STEP_SUMMARY
 

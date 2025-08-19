@@ -144,7 +144,7 @@ const program = Effect.gen(function*() {
     const timeFetcher = Effect.gen(function*() {
         yield* Stream.repeatEffect(
             fetchTimeTriggers().pipe(
-                Effect.delay("1 seconds"),
+                Effect.delay("3 seconds"),
                 Effect.catchAll((error) =>
                     Effect.gen(function*() {
                         yield* Effect.logError("Failed to fetch time triggers", error)
@@ -160,7 +160,7 @@ const program = Effect.gen(function*() {
     const blockFetcher = Effect.gen(function*() {
         yield* Stream.repeatEffect(
             fetchBlockTriggers().pipe(
-                Effect.delay("1 seconds"),
+                Effect.delay("3 seconds"),
                 Effect.catchAll((error) =>
                     Effect.gen(function*() {
                         yield* Effect.logError("Failed to fetch block triggers", error)

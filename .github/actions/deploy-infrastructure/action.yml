@@ -16,6 +16,9 @@ inputs:
   chain-id:
     description: "Chain ID for worker secrets"
     required: true
+  container-image:
+    description: "Pre-built container image (optional)"
+    required: true
 
 runs:
   using: "composite"
@@ -38,43 +41,13 @@ runs:
         cd infrastructure
         terraform init -backend-config="bucket=calc-terraform-state-${{ inputs.environment }}"
 
-    - name: Get ECR Repository URI
-      id: ecr
-      shell: bash
-      run: |
-        REPO_URI=$(aws ecr describe-repositories --repository-names calc-worker 2>/dev/null | jq -r '.repositories[0].repositoryUri' || echo "")
-        if [ -z "$REPO_URI" ]; then
-          echo "ECR repository not found, will be created by Terraform"
-          REPO_URI="${{ inputs.aws-account-id }}.dkr.ecr.ap-southeast-1.amazonaws.com/calc-worker"
-        fi
-        echo "repository-uri=$REPO_URI" >> $GITHUB_OUTPUT
-
-    - name: Build and Push Docker Image to ECR
-      shell: bash
-      run: |
-        # Login to ECR
-        aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin ${{ inputs.aws-account-id }}.dkr.ecr.ap-southeast-1.amazonaws.com
-
-        # Build and tag image
-        IMAGE_TAG="${{ github.sha }}"
-        FULL_IMAGE_URI="${{ steps.ecr.outputs.repository-uri }}:${IMAGE_TAG}"
-
-        docker build -f packages/worker/Dockerfile -t $FULL_IMAGE_URI .
-        docker push $FULL_IMAGE_URI
-
-        # Also tag as latest for this environment
-        docker tag $FULL_IMAGE_URI ${{ steps.ecr.outputs.repository-uri }}:${{ inputs.environment }}-latest
-        docker push ${{ steps.ecr.outputs.repository-uri }}:${{ inputs.environment }}-latest
-
-        echo "IMAGE_URI=$FULL_IMAGE_URI" >> $GITHUB_ENV
-
     - name: Terraform Plan
       shell: bash
       run: |
         cd infrastructure
         terraform plan \
           -var="environment=${{ inputs.environment }}" \
-          -var="container_image=${{ env.IMAGE_URI }}" \
+          -var="container_image=${{ inputs.container-image }}" \
           -var="mnemonic=${{ inputs.mnemonic }}" \
           -var="chain_id=${{ inputs.chain-id }}" \
           -out=tfplan
@@ -90,7 +63,7 @@ runs:
       run: |
         echo "## 🚀 Deployment Complete - ${{ inputs.environment }}" >> $GITHUB_STEP_SUMMARY
         echo "- **Environment**: ${{ inputs.environment }}" >> $GITHUB_STEP_SUMMARY
-        echo "- **Container Image**: ${{ env.IMAGE_URI }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Container Image**: ${{ inputs.container-image }}" >> $GITHUB_STEP_SUMMARY
         echo "- **Region**: ap-southeast-1" >> $GITHUB_STEP_SUMMARY
         echo "- **Terraform State**: calc-terraform-${{ inputs.environment }}" >> $GITHUB_STEP_SUMMARY
 

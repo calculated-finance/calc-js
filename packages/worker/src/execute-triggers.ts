@@ -87,7 +87,7 @@ const executeTransaction = (triggers: ReadonlyArray<Trigger>) =>
             .signAndSubmitTransaction({
                 type: "cosmos",
                 chainId: signingClient.chainId as any,
-                signer: `signingClient.address`,
+                signer: signingClient.address,
                 data: messages
             })
             .pipe(

@@ -91,9 +91,8 @@ const executeTransaction = (triggers: ReadonlyArray<Trigger>) =>
                 data: messages
             })
             .pipe(
-                Effect.tap((r) => {
+                Effect.tap(() => {
                     console.log("Executed triggers:", triggerIds)
-                    console.log(JSON.stringify(r, null, 2))
                 }),
                 Effect.catchAll((error) => Effect.logError("Transaction failed:", error)),
                 Effect.retry(Schedule.exponential("500 millis"))

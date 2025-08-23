@@ -1,7 +1,7 @@
 import { CosmWasmClient, SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate"
 import type { OfflineSigner } from "@cosmjs/proto-signing"
 import { GasPrice, StargateClient } from "@cosmjs/stargate"
-import { BigDecimal, Config, Effect, Schema } from "effect"
+import { BigDecimal, Config, Effect, Schedule, Schema } from "effect"
 import type { ChainId, CosmosChain } from "./chains.js"
 import { CHAINS } from "./chains.js"
 import { SignerNotAvailableError } from "./clients.js"
@@ -97,11 +97,13 @@ export const getSigningCosmWamClient = (
                     gasPrice: GasPrice.fromString(chain.defaultGasPrice)
                 }
             ),
-        catch: (error: any) =>
-            new SignerNotAvailableError({
+        catch: (error: any) => {
+            console.warn(`Failed to connect to chain ${chain.id} with signer:`, error)
+            return new SignerNotAvailableError({
                 cause: `Failed to connect to chain ${chain.id} with signer: ${error.message}`
             })
-    }),
+        }
+    }).pipe(Effect.retry(Schedule.exponential("500 millis"))),
     (signer) =>
         Effect.sync(() => {
             console.log(`Disconnecting signer for chain ${chain.id}`)

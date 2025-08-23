@@ -102,8 +102,8 @@ export const RUJIRA_STAGENET = {
     hdPath: "m/44'/931'/0'/0/0",
     rpcUrls: ["https://stagenet-rpc.ninerealms.com"],
     defaultGasPrice: "0.0rune",
-    managerContract: "sthor18e35rm2dwpx3h09p7q7xx8qfvwdsxz2ls92fdfd4j7vh6g55h8ash7gkau",
-    schedulerContract: "sthor14zd6glgu67mg2ze7ekqtce3r7yjuk846l3982en9y5v6nlh2y5es2llpa6"
+    managerContract: "sthor1sws3r2t5zecjskzh8n5plk8yhpxm2grtm0tthqljl02qgklfemhqhfnkpr",
+    schedulerContract: "sthor1yya2jk2upk6ncxmr7ugg3mt9dlxy2zgxpea2yxerdje7hr5tmn2qsktr5z"
 }
 
 export const CHAINS = [

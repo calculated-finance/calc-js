@@ -6,7 +6,7 @@ import { SigningClient } from "@template/domain/clients"
 import { CosmWasmQueryError, getCosmWasmClient } from "@template/domain/cosmwasm"
 import type { ConditionFilter, SchedulerQueryMsg } from "@template/domain/types"
 import { config } from "dotenv"
-import { DateTime, Effect, Queue, Stream } from "effect"
+import { DateTime, Effect, Queue, Schedule, Stream } from "effect"
 
 config()
 ;(BigInt.prototype as any).toJSON = function() {
@@ -16,12 +16,19 @@ config()
 const getCosmosChainTriggers = (chain: CosmosChain, filter: ConditionFilter) =>
     Effect.gen(function*() {
         if (!chain.schedulerContract) {
-            return yield* Effect.fail(new CosmWasmQueryError({ cause: "Scheduler contract not defined for chain" }))
+            return yield* Effect.fail(
+                new CosmWasmQueryError({
+                    cause: "Scheduler contract not defined for chain"
+                })
+            )
         }
 
         const client = yield* getCosmWasmClient(chain)
 
-        const triggers = yield* Effect.tryPromise<Array<Trigger>, CosmWasmQueryError>({
+        const triggers = yield* Effect.tryPromise<
+            Array<Trigger>,
+            CosmWasmQueryError
+        >({
             try: () =>
                 client.queryContractSmart(chain.schedulerContract!, {
                     filtered: {
@@ -32,12 +39,14 @@ const getCosmosChainTriggers = (chain: CosmosChain, filter: ConditionFilter) =>
             catch: (error: any) => {
                 console.log(
                     `Failed to fetch triggers from chain ${chain.id} with filter ${
-                        JSON.stringify(filter)
+                        JSON.stringify(
+                            filter
+                        )
                     }: ${error.message}`
                 )
                 return new CosmWasmQueryError({ cause: error })
             }
-        })
+        }).pipe(Effect.retry(Schedule.exponential("500 millis")))
 
         yield* Effect.log(
             `Fetched triggers with filter: ${JSON.stringify(filter)}`,
@@ -58,29 +67,37 @@ const executeTransaction = (triggers: ReadonlyArray<Trigger>) =>
         const signingClient = yield* SigningClient
         const triggerIds = triggers.map((t) => t.id)
 
-        const messages: CosmosTransactionMsgs = [{
-            typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
-            value: {
-                sender: signingClient.address,
-                contract: chain.schedulerContract,
-                msg: toUtf8(JSON.stringify({
-                    execute: triggerIds
-                })),
-                funds: []
+        const messages: CosmosTransactionMsgs = [
+            {
+                typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+                value: {
+                    sender: signingClient.address,
+                    contract: chain.schedulerContract,
+                    msg: toUtf8(
+                        JSON.stringify({
+                            execute: triggerIds
+                        })
+                    ),
+                    funds: []
+                }
             }
-        }]
+        ]
 
-        yield* signingClient.signAndSubmitTransaction({
-            type: "cosmos",
-            chainId: signingClient.chainId as any,
-            signer: signingClient.address,
-            data: messages
-        }).pipe(
-            Effect.tap(() => {
-                console.log("Executed triggers:", triggerIds)
-            }),
-            Effect.catchAll((error) => Effect.logError("Transaction failed:", error))
-        )
+        yield* signingClient
+            .signAndSubmitTransaction({
+                type: "cosmos",
+                chainId: signingClient.chainId as any,
+                signer: `signingClient.address`,
+                data: messages
+            })
+            .pipe(
+                Effect.tap((r) => {
+                    console.log("Executed triggers:", triggerIds)
+                    console.log(JSON.stringify(r, null, 2))
+                }),
+                Effect.catchAll((error) => Effect.logError("Transaction failed:", error)),
+                Effect.retry(Schedule.exponential("500 millis"))
+            )
     })
 
 const fetchTimeTriggers = () =>
@@ -90,20 +107,23 @@ const fetchTimeTriggers = () =>
         const block = yield* Effect.tryPromise({
             try: async () => client.getBlock(),
             catch: (error: any) => {
-                Effect.log(`Failed to fetch block height from chain ${chain.id}: ${error.message}`)
+                Effect.log(
+                    `Failed to fetch block height from chain ${chain.id}: ${error.message}`
+                )
                 return new CosmWasmQueryError({ cause: error })
             }
         })
 
-        const blockTime = DateTime.unsafeFromDate(new Date(Date.parse(block.header.time)))
-
-        const start = (blockTime
-            .pipe(DateTime.subtractDuration("24 hours"))
-            .epochMillis * (10 ** 6)).toFixed(0)
-
-        const end = (blockTime.epochMillis * (10 ** 6)).toFixed(
-            0
+        const blockTime = DateTime.unsafeFromDate(
+            new Date(Date.parse(block.header.time))
         )
+
+        const start = (
+            blockTime.pipe(DateTime.subtractDuration("24 hours")).epochMillis *
+            10 ** 6
+        ).toFixed(0)
+
+        const end = (blockTime.epochMillis * 10 ** 6).toFixed(0)
 
         return yield* getCosmosChainTriggers(chain, {
             timestamp: { start, end }
@@ -120,7 +140,9 @@ const fetchBlockTriggers = () =>
                 return block.header.height
             },
             catch: (error: any) => {
-                Effect.log(`Failed to fetch block height from chain ${chain.id}: ${error.message}`)
+                Effect.log(
+                    `Failed to fetch block height from chain ${chain.id}: ${error.message}`
+                )
                 return new CosmWasmQueryError({ cause: error })
             }
         })
@@ -174,11 +196,7 @@ const program = Effect.gen(function*() {
 
     yield* Effect.log("Started trigger execution worker")
 
-    yield* Effect.all([
-        timeFetcher,
-        blockFetcher,
-        processor
-    ], { concurrency: 3 })
+    yield* Effect.all([timeFetcher, blockFetcher, processor], { concurrency: 3 })
 })
 
 program.pipe(

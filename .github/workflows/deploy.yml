@@ -36,7 +36,7 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          docker build -f Dockerfile -t calc-worker:${{ github.sha }} .
+          docker build -f ./Dockerfile -t calc-worker:${{ github.sha }} .
           docker save calc-worker:${{ github.sha }} | gzip > worker.${{ github.sha }}.tar.gz
 
       - name: Save image artifact

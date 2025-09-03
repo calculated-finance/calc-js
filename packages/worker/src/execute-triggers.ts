@@ -25,7 +25,7 @@ const getCosmosChainTriggers = (chain: CosmosChain, filter: ConditionFilter) =>
       return yield* Effect.fail(
         new CosmWasmQueryError({
           cause: "Scheduler contract not defined for chain",
-        }),
+        })
       );
     }
 
@@ -45,8 +45,8 @@ const getCosmosChainTriggers = (chain: CosmosChain, filter: ConditionFilter) =>
       catch: (error: any) => {
         console.log(
           `Failed to fetch triggers from chain ${chain.id} with filter ${JSON.stringify(
-            filter,
-          )}: ${error.message}`,
+            filter
+          )}: ${error.message}`
         );
         return new CosmWasmQueryError({ cause: error });
       },
@@ -54,7 +54,7 @@ const getCosmosChainTriggers = (chain: CosmosChain, filter: ConditionFilter) =>
 
     yield* Effect.log(
       `Fetched triggers with filter: ${JSON.stringify(filter)}`,
-      triggers.map((t) => (t as any).condition),
+      triggers.map((t) => (t as any).condition)
     );
 
     return triggers;
@@ -80,7 +80,7 @@ const executeTransaction = (triggers: ReadonlyArray<Trigger>) =>
           msg: toUtf8(
             JSON.stringify({
               execute: triggerIds,
-            }),
+            })
           ),
           funds: [],
         },
@@ -95,13 +95,14 @@ const executeTransaction = (triggers: ReadonlyArray<Trigger>) =>
         data: messages,
       })
       .pipe(
-        Effect.tap(() => {
+        Effect.tap((r) => {
           console.log("Executed triggers:", triggerIds);
+          console.log("Transaction result:", JSON.stringify(r, null, 2));
         }),
         Effect.catchAll((error) =>
-          Effect.logError("Transaction failed:", error),
+          Effect.logError("Transaction failed:", error)
         ),
-        Effect.retry(Schedule.exponential("500 millis")),
+        Effect.retry(Schedule.exponential("500 millis"))
       );
   });
 
@@ -113,14 +114,14 @@ const fetchTimeTriggers = () =>
       try: async () => client.getBlock(),
       catch: (error: any) => {
         Effect.log(
-          `Failed to fetch block height from chain ${chain.id}: ${error.message}`,
+          `Failed to fetch block height from chain ${chain.id}: ${error.message}`
         );
         return new CosmWasmQueryError({ cause: error });
       },
     });
 
     const blockTime = DateTime.unsafeFromDate(
-      new Date(Date.parse(block.header.time)),
+      new Date(Date.parse(block.header.time))
     );
 
     const start = (
@@ -146,7 +147,7 @@ const fetchBlockTriggers = () =>
       },
       catch: (error: any) => {
         Effect.log(
-          `Failed to fetch block height from chain ${chain.id}: ${error.message}`,
+          `Failed to fetch block height from chain ${chain.id}: ${error.message}`
         );
         return new CosmWasmQueryError({ cause: error });
       },
@@ -168,11 +169,11 @@ const program = Effect.gen(function* () {
           Effect.gen(function* () {
             yield* Effect.logError("Failed to fetch time triggers", error);
             return [];
-          }),
-        ),
-      ),
+          })
+        )
+      )
     ).pipe(
-      Stream.runForEach((triggers) => Queue.offer(triggerQueue, triggers)),
+      Stream.runForEach((triggers) => Queue.offer(triggerQueue, triggers))
     );
   });
 
@@ -184,18 +185,18 @@ const program = Effect.gen(function* () {
           Effect.gen(function* () {
             yield* Effect.logError("Failed to fetch block triggers", error);
             return [];
-          }),
-        ),
-      ),
+          })
+        )
+      )
     ).pipe(
-      Stream.runForEach((triggers) => Queue.offer(triggerQueue, triggers)),
+      Stream.runForEach((triggers) => Queue.offer(triggerQueue, triggers))
     );
   });
 
   const processor = Effect.gen(function* () {
     yield* Stream.fromQueue(triggerQueue).pipe(
       Stream.filter((triggers) => triggers.length > 0),
-      Stream.runForEach((triggers) => executeTransaction(triggers)),
+      Stream.runForEach((triggers) => executeTransaction(triggers))
     );
   });
 
@@ -207,5 +208,5 @@ const program = Effect.gen(function* () {
 program.pipe(
   Effect.provide(SigningClient.fromEnv),
   Effect.scoped,
-  Effect.runPromise,
+  Effect.runPromise
 );

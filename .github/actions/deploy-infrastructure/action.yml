@@ -17,6 +17,10 @@ inputs:
     description: "Chain ID for worker secrets"
     required: true
 
+defaults:
+  run:
+    working-directory: packages/worker
+
 runs:
   using: "composite"
   steps:

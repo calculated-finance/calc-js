@@ -18,10 +18,15 @@ permissions:
   id-token: write
   contents: read
 
+defaults:
+  run:
+    working-directory: packages/worker
+
 jobs:
   build:
     name: Build Docker Images
     runs-on: ubuntu-latest
+
     outputs:
       image-tar: worker.${{ github.sha }}.tar.gz
 
@@ -31,7 +36,7 @@ jobs:
 
       - name: Build Docker Image
         run: |
-          docker build -f packages/worker/Dockerfile -t calc-worker:${{ github.sha }} .
+          docker build -f Dockerfile -t calc-worker:${{ github.sha }} .
           docker save calc-worker:${{ github.sha }} | gzip > worker.${{ github.sha }}.tar.gz
 
       - name: Save image artifact

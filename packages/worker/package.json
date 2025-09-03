@@ -19,9 +19,7 @@
     "test": "vitest",
     "coverage": "vitest --coverage",
     "start:execute-triggers": "node build/esm/execute-triggers.js",
-    "start:sync-transactions": "node build/esm/sync-transactions.js",
-    "dev:execute-triggers": "tsx src/execute-triggers.ts",
-    "dev:sync-transactions": "tsx src/sync-transactions.ts"
+    "dev:execute-triggers": "tsx src/execute-triggers.ts"
   },
   "dependencies": {
     "@cosmjs/cosmwasm-stargate": "^0.34.0",

@@ -19,7 +19,7 @@ inputs:
 
 defaults:
   run:
-    working-directory: packages/worker
+    working-directory: packages/worker/infrastructure
 
 runs:
   using: "composite"
@@ -62,14 +62,11 @@ runs:
 
     - name: Terraform Init
       shell: bash
-      run: |
-        cd infrastructure
-        terraform init -backend-config="bucket=calc-terraform-state-${{ inputs.environment }}"
+      run: terraform init -backend-config="bucket=calc-terraform-state-${{ inputs.environment }}"
 
     - name: Terraform Plan
       shell: bash
       run: |
-        cd infrastructure
         terraform plan \
           -var="environment=${{ inputs.environment }}" \
           -var="container_image=${{ inputs.aws-account-id }}.dkr.ecr.ap-southeast-1.amazonaws.com/calc-worker:${{ github.sha }}" \
@@ -80,7 +77,6 @@ runs:
     - name: Terraform Apply
       shell: bash
       run: |
-        cd infrastructure
         terraform apply -auto-approve tfplan
 
     - name: Output Infrastructure Info
@@ -93,7 +89,6 @@ runs:
         echo "- **Terraform State**: calc-terraform-${{ inputs.environment }}" >> $GITHUB_STEP_SUMMARY
 
         # Get ECS cluster info
-        cd infrastructure
         CLUSTER_NAME=$(terraform output -raw cluster_name 2>/dev/null || echo "calc-${{ inputs.environment }}-cluster")
         echo "- **ECS Cluster**: $CLUSTER_NAME" >> $GITHUB_STEP_SUMMARY
 

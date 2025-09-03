@@ -39,10 +39,17 @@ module "vpc" {
 module "secrets" {
   source = "./modules/secrets"
 
+  project_name     = var.project_name
+  environment      = var.environment
+  chain_id         = var.chain_id
+  signer_mnemonics = var.signer_mnemonics
+}
+
+module "sqs" {
+  source = "./modules/sqs"
+
   project_name = var.project_name
   environment  = var.environment
-  mnemonic     = var.mnemonic
-  chain_id     = var.chain_id
 }
 
 module "ecr" {
@@ -64,4 +71,15 @@ module "ecs" {
   secrets_arn       = module.secrets.secret_arn
   task_cpu          = var.task_cpu
   task_memory       = var.task_memory
+  queue_url         = module.sqs.triggers_queue_url
+}
+
+module "lambda" {
+  source = "./modules/lambda"
+
+  project_name       = var.project_name
+  environment        = var.environment
+  signer_secret_arns = module.secrets.signer_secret_arns
+  chain_id           = var.chain_id
+  triggers_queue_arn = module.sqs.triggers_queue_arn
 }

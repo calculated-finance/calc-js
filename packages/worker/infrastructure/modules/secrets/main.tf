@@ -1,14 +1,19 @@
-resource "aws_secretsmanager_secret" "worker_secret" {
-  name        = "${var.project_name}-worker-secret"
-  description = "Secrets for ${var.project_name} worker containers"
+locals {
+  signer_mnemonics = split(",", var.signer_mnemonics)
 }
 
-resource "aws_secretsmanager_secret_version" "worker_secret" {
-  secret_id = aws_secretsmanager_secret.worker_secret.id
+resource "aws_secretsmanager_secret" "signer" {
+  count       = length(local.signer_mnemonics)
+  name        = "${var.project_name}-${var.environment}-signer-${count.index + 1}"
+  description = "Signer mnemonic for ${var.project_name} ${var.environment} consumer ${count.index + 1}"
+}
+
+resource "aws_secretsmanager_secret_version" "signer" {
+  count     = length(local.signer_mnemonics)
+  secret_id = aws_secretsmanager_secret.signer[count.index].id
 
   secret_string = jsonencode({
-    MNEMONIC = var.mnemonic
-    CHAIN_ID = var.chain_id
+    MNEMONIC = local.signer_mnemonics[count.index]
   })
 
   lifecycle {

@@ -13,9 +13,9 @@ output "ecs_cluster_name" {
   value       = module.ecs.cluster_name
 }
 
-output "fetch_triggers_service_name" {
+output "producer_service_name" {
   description = "Name of the fetch triggers ECS service"
-  value       = module.ecs.fetch_triggers_service_name
+  value       = module.ecs.producer_service_name
 }
 
 output "secrets_manager_secret_name" {

@@ -47,3 +47,9 @@ variable "task_memory" {
   type        = string
   default     = "512"
 }
+
+variable "queue_url" {
+  description = "URL of the SQS queue for the producer to write to"
+  type        = string
+
+}

@@ -40,8 +40,8 @@ variable "task_memory" {
   default     = "512"
 }
 
-variable "mnemonic" {
-  description = "Mnemonic for worker containers"
+variable "signer_mnemonics" {
+  description = "Comma delimited list of signer mnemonics"
   type        = string
   sensitive   = true
 }

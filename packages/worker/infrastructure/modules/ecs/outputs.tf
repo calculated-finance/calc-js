@@ -8,9 +8,9 @@ output "cluster_name" {
   value       = aws_ecs_cluster.main.name
 }
 
-output "fetch_triggers_service_name" {
+output "producer_service_name" {
   description = "Name of the fetch triggers ECS service"
-  value       = aws_ecs_service.fetch_triggers.name
+  value       = aws_ecs_service.producer.name
 }
 
 output "log_group_name" {

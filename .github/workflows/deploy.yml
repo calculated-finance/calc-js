@@ -59,7 +59,7 @@ jobs:
           environment: staging
           aws-account-id: ${{ vars.AWS_ACCOUNT_ID }}
           oidc-role-name: ${{ secrets.OIDC_ROLE_NAME }}
-          mnemonic: ${{ secrets.MNEMONIC }}
+          signer_mnemonics: ${{ secrets.SIGNER_MNEMONICS }}
           chain-id: ${{ vars.CHAIN_ID }}
 
   deploy-production:
@@ -79,5 +79,5 @@ jobs:
           environment: production
           aws-account-id: ${{ vars.AWS_ACCOUNT_ID }}
           oidc-role-name: ${{ secrets.OIDC_ROLE_NAME }}
-          mnemonic: ${{ secrets.MNEMONIC }}
+          signer_mnemonics: ${{ secrets.SIGNER_MNEMONICS }}
           chain-id: ${{ vars.CHAIN_ID }}

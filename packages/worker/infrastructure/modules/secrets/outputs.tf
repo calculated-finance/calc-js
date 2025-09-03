@@ -1,9 +1,4 @@
-output "secret_arn" {
-  description = "ARN of the secrets manager secret"
-  value       = aws_secretsmanager_secret.worker_secret.arn
-}
-
-output "secret_name" {
-  description = "Name of the secrets manager secret"
-  value       = aws_secretsmanager_secret.worker_secret.name
+output "signer_secret_arns" {
+  description = "ARNs of signer mnemonics for Lambda consumers (ordered)"
+  value       = [for s in aws_secretsmanager_secret.signer : s.arn]
 }

@@ -11,17 +11,20 @@
   },
   "scripts": {
     "codegen": "build-utils prepare-v2",
-    "build": "pnpm build-esm && pnpm build-annotate && pnpm build-cjs && build-utils pack-v2",
+    "bundle": "tsx scripts/bundle-handlers.ts",
+    "build": "pnpm build-esm && pnpm build-annotate && pnpm build-cjs && build-utils pack-v2 && tsnode ./src/scripts/bundle-handlers.ts",
     "build-esm": "tsc -b tsconfig.build.json",
     "build-cjs": "babel build/esm --plugins @babel/transform-export-namespace-from --plugins @babel/transform-modules-commonjs --out-dir build/cjs --source-maps",
     "build-annotate": "babel build/esm --plugins annotate-pure-calls --out-dir build/esm --source-maps",
     "check": "tsc -b tsconfig.json",
     "test": "vitest",
     "coverage": "vitest --coverage",
-    "start:fetch-triggers": "node build/esm/fetch-triggers.js",
-    "dev:fetch-triggers": "tsx src/fetch-triggers.ts"
+    "start:producer": "node build/esm/producer.js",
+    "dev:producer": "tsx src/producer.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-secrets-manager": "^3.879.0",
+    "@aws-sdk/client-sqs": "^3.879.0",
     "@cosmjs/cosmwasm-stargate": "^0.34.0",
     "@cosmjs/crypto": "^0.34.0",
     "@cosmjs/encoding": "^0.34.0",
@@ -30,8 +33,9 @@
     "@effect/platform": "latest",
     "@effect/platform-node": "latest",
     "@template/domain": "workspace:^",
-    "dotenv": "^17.2.1",
-    "effect": "latest"
+    "dotenv": "^17.2.2",
+    "effect": "latest",
+    "esbuild": "^0.25.9"
   },
   "effect": {
     "generateExports": {

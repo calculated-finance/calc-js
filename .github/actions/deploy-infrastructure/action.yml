@@ -10,8 +10,8 @@ inputs:
   oidc-role-name:
     description: "OIDC Role Name for AWS authentication"
     required: true
-  mnemonic:
-    description: "Mnemonic for worker secrets"
+  signer_mnemonics:
+    description: "Comma-separated mnemonics for Lambda consumers (one per consumer)"
     required: true
   chain-id:
     description: "Chain ID for worker secrets"
@@ -71,7 +71,7 @@ runs:
         terraform plan \
           -var="environment=${{ inputs.environment }}" \
           -var="container_image=${{ inputs.aws-account-id }}.dkr.ecr.ap-southeast-1.amazonaws.com/calc-worker:${{ github.sha }}" \
-          -var="mnemonic=${{ inputs.mnemonic }}" \
+          -var="signer_mnemonics=${{ inputs.signer_mnemonics }}" \
           -var="chain_id=${{ inputs.chain-id }}" \
           -out=tfplan
 
@@ -98,6 +98,6 @@ runs:
         # Get service status
         aws ecs describe-services \
           --cluster $CLUSTER_NAME \
-          --services calc-${{ inputs.environment }}-fetch-triggers calc-${{ inputs.environment }}-sync-transactions \
+          --services calc-${{ inputs.environment }}-producer \
           --query 'services[].{Name:serviceName,Status:status,Running:runningCount,Desired:desiredCount}' \
           --output table >> $GITHUB_STEP_SUMMARY || echo "Services not yet available" >> $GITHUB_STEP_SUMMARY

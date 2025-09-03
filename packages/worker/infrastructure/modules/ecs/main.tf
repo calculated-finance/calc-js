@@ -116,8 +116,8 @@ resource "aws_cloudwatch_log_group" "workers" {
   }
 }
 
-resource "aws_ecs_task_definition" "fetch_triggers" {
-  family                   = "${var.project_name}-fetch-triggers"
+resource "aws_ecs_task_definition" "producer" {
+  family                   = "${var.project_name}-producer"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   cpu                      = var.task_cpu
@@ -127,19 +127,19 @@ resource "aws_ecs_task_definition" "fetch_triggers" {
 
   container_definitions = jsonencode([
     {
-      name      = "fetch-triggers"
+      name      = "producer"
       image     = var.container_image
-      command   = ["dumb-init", "./scripts/start-fetch-triggers.sh"]
+      command   = ["dumb-init", "./scripts/start-producer.sh"]
       essential = true
 
       secrets = [
         {
-          name      = "MNEMONIC"
-          valueFrom = "${var.secrets_arn}:MNEMONIC::"
-        },
-        {
           name      = "CHAIN_ID"
           valueFrom = "${var.secrets_arn}:CHAIN_ID::"
+        },
+        {
+          name      = "QUEUE_URL"
+          valueFrom = var.queue_url
         }
       ]
 
@@ -148,12 +148,12 @@ resource "aws_ecs_task_definition" "fetch_triggers" {
         options = {
           awslogs-group         = aws_cloudwatch_log_group.workers.name
           awslogs-region        = var.aws_region
-          awslogs-stream-prefix = "fetch-triggers"
+          awslogs-stream-prefix = "producer"
         }
       }
 
       healthCheck = {
-        command     = ["CMD-SHELL", "pgrep -f fetch-triggers || exit 1"]
+        command     = ["CMD-SHELL", "pgrep -f producer || exit 1"]
         interval    = 30
         timeout     = 5
         retries     = 3
@@ -163,16 +163,16 @@ resource "aws_ecs_task_definition" "fetch_triggers" {
   ])
 
   tags = {
-    Name        = "${var.project_name}-fetch-triggers-task"
+    Name        = "${var.project_name}-producer-task"
     Environment = var.environment
     Project     = var.project_name
   }
 }
 
-resource "aws_ecs_service" "fetch_triggers" {
-  name            = "${var.project_name}-fetch-triggers"
+resource "aws_ecs_service" "producer" {
+  name            = "${var.project_name}-producer"
   cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.fetch_triggers.arn
+  task_definition = aws_ecs_task_definition.producer.arn
   desired_count   = 1
   launch_type     = "FARGATE"
 
@@ -183,7 +183,7 @@ resource "aws_ecs_service" "fetch_triggers" {
   }
 
   tags = {
-    Name        = "${var.project_name}-fetch-triggers-service"
+    Name        = "${var.project_name}-producer-service"
     Environment = var.environment
     Project     = var.project_name
   }

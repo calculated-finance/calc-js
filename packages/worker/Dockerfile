@@ -45,4 +45,4 @@ RUN addgroup -g 1001 -S worker && \
 USER worker
 WORKDIR /app/packages/worker
 
-CMD ["dumb-init", "./scripts/start-execute-triggers.sh"]
+CMD ["dumb-init", "./scripts/start-fetch-triggers.sh"]

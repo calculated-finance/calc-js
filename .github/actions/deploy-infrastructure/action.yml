@@ -19,7 +19,6 @@ inputs:
 
 defaults:
   run:
-    working-directory: packages/worker/infrastructure
 
 runs:
   using: "composite"
@@ -61,10 +60,12 @@ runs:
         terraform_version: ~1.0
 
     - name: Terraform Init
+      working-directory: packages/worker/infrastructure
       shell: bash
       run: terraform init -backend-config="bucket=calc-terraform-state-${{ inputs.environment }}"
 
     - name: Terraform Plan
+      working-directory: packages/worker/infrastructure
       shell: bash
       run: |
         terraform plan \
@@ -75,11 +76,13 @@ runs:
           -out=tfplan
 
     - name: Terraform Apply
+      working-directory: packages/worker/infrastructure
       shell: bash
       run: |
         terraform apply -auto-approve tfplan
 
     - name: Output Infrastructure Info
+      working-directory: packages/worker/infrastructure
       shell: bash
       run: |
         echo "## 🚀 Deployment Complete - ${{ inputs.environment }}" >> $GITHUB_STEP_SUMMARY
@@ -95,6 +98,6 @@ runs:
         # Get service status
         aws ecs describe-services \
           --cluster $CLUSTER_NAME \
-          --services calc-${{ inputs.environment }}-execute-triggers calc-${{ inputs.environment }}-sync-transactions \
+          --services calc-${{ inputs.environment }}-fetch-triggers calc-${{ inputs.environment }}-sync-transactions \
           --query 'services[].{Name:serviceName,Status:status,Running:runningCount,Desired:desiredCount}' \
           --output table >> $GITHUB_STEP_SUMMARY || echo "Services not yet available" >> $GITHUB_STEP_SUMMARY

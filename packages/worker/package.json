@@ -18,8 +18,8 @@
     "check": "tsc -b tsconfig.json",
     "test": "vitest",
     "coverage": "vitest --coverage",
-    "start:execute-triggers": "node build/esm/execute-triggers.js",
-    "dev:execute-triggers": "tsx src/execute-triggers.ts"
+    "start:fetch-triggers": "node build/esm/fetch-triggers.js",
+    "dev:fetch-triggers": "tsx src/fetch-triggers.ts"
   },
   "dependencies": {
     "@cosmjs/cosmwasm-stargate": "^0.34.0",

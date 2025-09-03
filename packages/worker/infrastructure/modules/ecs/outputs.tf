@@ -8,14 +8,9 @@ output "cluster_name" {
   value       = aws_ecs_cluster.main.name
 }
 
-output "execute_triggers_service_name" {
-  description = "Name of the execute triggers ECS service"
-  value       = aws_ecs_service.execute_triggers.name
-}
-
-output "sync_transactions_service_name" {
-  description = "Name of the sync transactions ECS service"
-  value       = aws_ecs_service.sync_transactions.name
+output "fetch_triggers_service_name" {
+  description = "Name of the fetch triggers ECS service"
+  value       = aws_ecs_service.fetch_triggers.name
 }
 
 output "log_group_name" {

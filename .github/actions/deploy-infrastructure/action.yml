@@ -64,6 +64,10 @@ runs:
       with:
         version: 9.10.0
 
+    - name: Install dependencies
+      working-directory: packages/worker
+      run: pnpm install --prod=false --dev
+
     - name: Bundle lambda handler
       working-directory: packages/worker
       shell: bash

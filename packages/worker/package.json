@@ -34,8 +34,11 @@
     "@effect/platform-node": "latest",
     "@template/domain": "workspace:^",
     "dotenv": "^17.2.2",
-    "effect": "latest",
-    "esbuild": "^0.25.9"
+    "effect": "latest"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.9",
+    "tsx": "^4.20.5"
   },
   "effect": {
     "generateExports": {

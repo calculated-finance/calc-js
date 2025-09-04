@@ -71,7 +71,9 @@ const roundRobinSignTx = async (
         },
         "auto"
       );
-    } catch (error) {}
+    } catch (error) {
+      console.log(`Signer failed to sign transaction: ${error}`);
+    }
   }
 
   throw new Error("All signers failed to sign the transaction");
@@ -89,8 +91,10 @@ export const handler = async (event: {
   const result = await roundRobinSignTx(signers, address, scheduler, triggers);
 
   for (const event of result.events) {
-    if (event.type.startsWith("wasm-calc-strategy/process")) {
-      console.log("Process event:", JSON.stringify(event, null, 2));
+    if (event.type === "wasm-calc-strategy/process") {
+      console.log(JSON.stringify(event, null, 2));
     }
   }
+
+  return { batchIemFailures: [] };
 };

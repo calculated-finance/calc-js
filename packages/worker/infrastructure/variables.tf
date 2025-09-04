@@ -49,4 +49,5 @@ variable "signer_mnemonics" {
 variable "chain_id" {
   description = "Chain ID for worker containers"
   type        = string
+  default     = "thorchain-stagenet-2"
 }

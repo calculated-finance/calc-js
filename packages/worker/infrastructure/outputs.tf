@@ -18,11 +18,6 @@ output "producer_service_name" {
   value       = module.ecs.producer_service_name
 }
 
-output "secrets_manager_secret_name" {
-  description = "Name of the secrets manager secret"
-  value       = module.secrets.secret_name
-}
-
 output "cloudwatch_log_group" {
   description = "Name of the CloudWatch log group"
   value       = module.ecs.log_group_name

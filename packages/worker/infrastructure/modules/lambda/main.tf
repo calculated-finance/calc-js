@@ -27,7 +27,7 @@ data "aws_iam_policy_document" "lambda_policy" {
   statement {
     sid       = "SqsAccess"
     actions   = ["sqs:SendMessage", "sqs:ReceiveMessage", "sqs:DeleteMessage", "sqs:GetQueueAttributes", "sqs:ChangeMessageVisibility"]
-    resources = [aws_sqs_queue.triggers.arn]
+    resources = [var.triggers_queue_arn]
   }
 
   statement {
@@ -47,15 +47,21 @@ resource "aws_iam_role_policy_attachment" "lambda_attach" {
   policy_arn = aws_iam_policy.lambda_policy.arn
 }
 
+data "archive_file" "handler_zip" {
+  type        = "zip"
+  source_dir  = "${path.module}/../../../dist/consumer"
+  output_path = "${path.module}/${basename(var.source_dir)}.zip"
+}
+
 resource "aws_lambda_function" "consumer" {
   count            = length(var.signer_secret_arns)
   function_name    = "${local.lambda_name_prefix}-consumer-${count.index + 1}"
   role             = aws_iam_role.lambda_role.arn
   runtime          = "nodejs20.x"
-  handler          = "handlers/sqs.consumer"
-  filename         = "${path.module}/../dist/lambda.zip"
-  source_code_hash = filebase64sha256("${path.module}/../dist/lambda.zip")
-  timeout          = 60
+  handler          = "consumer.handler"
+  filename         = "${path.module}/${basename(var.source_dir)}.zip"
+  source_code_hash = filebase64sha256("${path.module}/${basename(var.source_dir)}.zip")
+  timeout          = 20
   memory_size      = 512
 
   environment {

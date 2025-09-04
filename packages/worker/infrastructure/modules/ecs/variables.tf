@@ -31,11 +31,6 @@ variable "container_image" {
   type        = string
 }
 
-variable "secrets_arn" {
-  description = "ARN of the secrets in AWS Secrets Manager"
-  type        = string
-}
-
 variable "task_cpu" {
   description = "CPU for ECS tasks (256, 512, 1024, etc.)"
   type        = string
@@ -52,4 +47,10 @@ variable "queue_url" {
   description = "URL of the SQS queue for the producer to write to"
   type        = string
 
+}
+
+variable "chain_id" {
+  description = "Chain ID for worker containers"
+  type        = string
+  default     = "thorchain-stagenet-2"
 }

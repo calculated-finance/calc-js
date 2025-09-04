@@ -1,7 +1,7 @@
 import { build } from "esbuild";
 import * as Fs from "fs";
 
-const outdir = "./dist/consumer";
+const outdir = "./dist/handler";
 
 (async () => {
   try {

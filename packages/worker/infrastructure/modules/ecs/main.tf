@@ -135,7 +135,7 @@ resource "aws_ecs_task_definition" "producer" {
       secrets = [
         {
           name      = "CHAIN_ID"
-          valueFrom = "${var.secrets_arn}:CHAIN_ID::"
+          valueFrom = var.chain_id
         },
         {
           name      = "QUEUE_URL"

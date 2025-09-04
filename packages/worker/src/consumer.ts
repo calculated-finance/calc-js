@@ -53,7 +53,7 @@ function init(): Promise<Resources> {
   return initPromise;
 }
 
-export const consumer = async (event: {
+export const handler = async (event: {
   Records: Array<{ messageId: string; body: string }>;
 }) => {
   const { signer, address, scheduler } = await init();

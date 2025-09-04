@@ -78,8 +78,7 @@ runs:
     - name: Terraform Apply
       working-directory: packages/worker/infrastructure
       shell: bash
-      run: |
-        terraform apply -auto-approve tfplan
+      run: terraform apply -auto-approve tfplan
 
     - name: Output Infrastructure Info
       working-directory: packages/worker/infrastructure

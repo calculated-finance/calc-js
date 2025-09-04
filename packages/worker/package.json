@@ -6,13 +6,13 @@
   "description": "Worker modules for CALC",
   "repository": {
     "type": "git",
-    "url": "<PLACEHOLDER>",
+    "url": "https://github.com/calculated-finance/calc-js",
     "directory": "packages/worker"
   },
   "scripts": {
     "codegen": "build-utils prepare-v2",
     "bundle": "tsx scripts/bundle-handlers.ts",
-    "build": "pnpm build-esm && pnpm build-annotate && pnpm build-cjs && build-utils pack-v2 && tsnode ./src/scripts/bundle-handlers.ts",
+    "build": "pnpm build-esm && pnpm build-annotate && pnpm build-cjs && build-utils pack-v2",
     "build-esm": "tsc -b tsconfig.build.json",
     "build-cjs": "babel build/esm --plugins @babel/transform-export-namespace-from --plugins @babel/transform-modules-commonjs --out-dir build/cjs --source-maps",
     "build-annotate": "babel build/esm --plugins annotate-pure-calls --out-dir build/esm --source-maps",

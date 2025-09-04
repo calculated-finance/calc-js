@@ -23,3 +23,8 @@ variable "chain_id" {
   description = "The ID of the blockchain network"
   type        = string
 }
+
+variable "source_dir" {
+  description = "The source directory for the Lambda function code (Terraform zips it)"
+  type        = string
+}

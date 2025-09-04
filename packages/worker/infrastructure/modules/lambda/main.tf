@@ -78,8 +78,4 @@ resource "aws_lambda_event_source_mapping" "consumer_sqs" {
   event_source_arn = var.triggers_queue_arn
   function_name    = aws_lambda_function.consumer[count.index].arn
   batch_size       = 10
-
-  scaling_config {
-    maximum_concurrency = 1
-  }
 }

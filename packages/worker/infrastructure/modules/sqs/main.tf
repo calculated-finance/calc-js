@@ -10,9 +10,6 @@ resource "aws_sqs_queue" "triggers" {
   visibility_timeout_seconds  = 5
   message_retention_seconds   = 60
   sqs_managed_sse_enabled     = false
-  redrive_policy = jsonencode({
-    maxReceiveCount = 1
-  })
 }
 
 data "aws_iam_policy_document" "lambda_assume" {

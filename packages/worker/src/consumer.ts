@@ -11,7 +11,7 @@ import { CHAINS_BY_ID, CosmosChain } from "@template/domain/chains";
 const secrets = new SecretsManagerClient({});
 
 type Resources = {
-  signer: SigningCosmWasmClient;
+  signers: SigningCosmWasmClient[];
   address: string;
   scheduler: string;
 };
@@ -39,31 +39,54 @@ function init(): Promise<Resources> {
       hdPaths: [stringToPath(chain.hdPath)],
     });
 
-    const signer = await SigningCosmWasmClient.connectWithSigner(
-      chain.rpcUrls[0],
-      wallet,
-      { gasPrice: GasPrice.fromString(chain.defaultGasPrice) }
+    const signers = await Promise.all(
+      chain.rpcUrls.map((rpcUrl) =>
+        SigningCosmWasmClient.connectWithSigner(rpcUrl, wallet, {
+          gasPrice: GasPrice.fromString(chain.defaultGasPrice),
+        })
+      )
     );
 
     const [{ address }] = await wallet.getAccounts();
 
-    return { signer, address, scheduler };
+    return { signers, address, scheduler };
   })();
 
   return initPromise;
 }
 
+const roundRobinSignTx = async (
+  signers: SigningCosmWasmClient[],
+  address: string,
+  scheduler: string,
+  triggers: string[]
+) => {
+  for (const signer of signers) {
+    try {
+      return await signer.execute(
+        address,
+        scheduler,
+        {
+          execute: triggers,
+        },
+        "auto"
+      );
+    } catch (error) {}
+  }
+
+  throw new Error("All signers failed to sign the transaction");
+};
+
 export const handler = async (event: {
   Records: Array<{ messageId: string; body: string }>;
 }) => {
-  const { signer, address, scheduler } = await init();
+  const { signers, address, scheduler } = await init();
 
-  await signer.execute(
-    address,
-    scheduler,
-    {
-      execute: event.Records.map((r) => r.body),
-    },
-    "auto"
-  );
+  const triggers = event.Records.map((r) => r.body);
+
+  console.log("Processing triggers:", JSON.stringify(triggers, null, 2));
+
+  const result = await roundRobinSignTx(signers, address, scheduler, triggers);
+
+  console.log("Transaction result:", result);
 };

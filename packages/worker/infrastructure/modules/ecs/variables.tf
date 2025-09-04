@@ -54,3 +54,9 @@ variable "chain_id" {
   type        = string
   default     = "thorchain-stagenet-2"
 }
+
+variable "fetch_delay" {
+  description = "Delay between fetch trigger calls"
+  type        = string
+  default     = "2000"
+}

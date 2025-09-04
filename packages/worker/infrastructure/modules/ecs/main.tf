@@ -140,6 +140,10 @@ resource "aws_ecs_task_definition" "producer" {
         {
           name      = "QUEUE_URL"
           valueFrom = var.queue_url
+        },
+        {
+          name      = "FETCH_DELAY"
+          valueFrom = var.fetch_delay
         }
       ]
 

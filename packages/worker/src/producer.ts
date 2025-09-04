@@ -145,26 +145,29 @@ const producer = Effect.gen(function* () {
   const client = yield* getCosmWasmClient(chain);
 
   const enqueueTriggers = (triggers: Trigger[]) =>
-    triggers.length === 0
-      ? Promise.resolve()
-      : Effect.tryPromise({
-          try: () =>
-            sqs.send(
-              new SendMessageBatchCommand({
-                QueueUrl: queueUrl,
-                Entries: triggers.map((trigger) => ({
-                  Id: trigger.id,
-                  MessageBody: trigger.id,
-                })),
-              })
-            ),
-          catch: (error: any) => {
-            console.log(
-              `Failed to enqueue triggers for chain ${chain.id}: ${error.message}`
-            );
-            return new SQSSendMessageError({ cause: error });
-          },
-        });
+    Effect.tryPromise({
+      try: async () => {
+        if (triggers.length === 0) {
+          return;
+        }
+
+        await sqs.send(
+          new SendMessageBatchCommand({
+            QueueUrl: queueUrl,
+            Entries: triggers.map((trigger) => ({
+              Id: trigger.id,
+              MessageBody: trigger.id,
+            })),
+          })
+        );
+      },
+      catch: (error: any) => {
+        console.log(
+          `Failed to enqueue triggers for chain ${chain.id}: ${error.message}`
+        );
+        return new SQSSendMessageError({ cause: error });
+      },
+    });
 
   const timeFetcher = Stream.repeatEffect(
     fetchTimeTriggers(chain, client).pipe(

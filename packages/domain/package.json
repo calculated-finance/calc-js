@@ -46,6 +46,6 @@
     }
   },
   "devDependencies": {
-    "@keplr-wallet/types": "^0.12.252"
+    "@keplr-wallet/types": "^0.12.269"
   }
 }

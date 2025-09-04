@@ -56,18 +56,13 @@ const getCosmosChainTriggers = (
         } as SchedulerQueryMsg),
       catch: (error: any) => {
         console.log(
-          `Failed to fetch triggers from chain ${
-            chain.id
-          } with filter ${JSON.stringify(filter)}: ${error.message}`
+          `Failed to fetch triggers from chain ${chain.id} with filter ${filter}: ${error.message}`
         );
         return new CosmWasmQueryError({ cause: error });
       },
     }).pipe(Effect.retry(Schedule.exponential("500 millis")));
 
-    yield* Effect.log(
-      `Fetched triggers with filter: ${JSON.stringify(filter)}`,
-      triggers.map((t) => (t as any).condition)
-    );
+    console.log(`Fetched triggers with filter: ${filter}`, triggers);
 
     return triggers;
   });

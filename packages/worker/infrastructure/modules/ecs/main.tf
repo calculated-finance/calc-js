@@ -132,18 +132,18 @@ resource "aws_ecs_task_definition" "producer" {
       command   = ["dumb-init", "./scripts/start-producer.sh"]
       essential = true
 
-      secrets = [
+      environment = [
         {
-          name      = "CHAIN_ID"
-          valueFrom = var.chain_id
+          name  = "CHAIN_ID"
+          value = var.chain_id
         },
         {
-          name      = "QUEUE_URL"
-          valueFrom = var.queue_url
+          name  = "QUEUE_URL"
+          value = var.queue_url
         },
         {
-          name      = "FETCH_DELAY"
-          valueFrom = var.fetch_delay
+          name  = "FETCH_DELAY"
+          value = var.fetch_delay
         }
       ]
 

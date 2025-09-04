@@ -54,15 +54,16 @@ data "archive_file" "handler_zip" {
 }
 
 resource "aws_lambda_function" "consumer" {
-  count            = length(var.signer_secret_arns)
-  function_name    = "${local.lambda_name_prefix}-consumer-${count.index + 1}"
-  role             = aws_iam_role.lambda_role.arn
-  runtime          = "nodejs20.x"
-  handler          = "consumer.handler"
-  filename         = "${path.module}/${basename(var.source_dir)}.zip"
-  source_code_hash = filebase64sha256("${path.module}/${basename(var.source_dir)}.zip")
-  timeout          = 20
-  memory_size      = 512
+  count                          = length(var.signer_secret_arns)
+  function_name                  = "${local.lambda_name_prefix}-consumer-${count.index + 1}"
+  role                           = aws_iam_role.lambda_role.arn
+  runtime                        = "nodejs20.x"
+  handler                        = "consumer.handler"
+  filename                       = "${path.module}/${basename(var.source_dir)}.zip"
+  source_code_hash               = filebase64sha256("${path.module}/${basename(var.source_dir)}.zip")
+  timeout                        = 20
+  memory_size                    = 512
+  reserved_concurrent_executions = 1
 
   environment {
     variables = {
@@ -73,10 +74,12 @@ resource "aws_lambda_function" "consumer" {
 }
 
 resource "aws_lambda_event_source_mapping" "consumer_sqs" {
-  count                              = length(var.signer_secret_arns)
-  event_source_arn                   = var.triggers_queue_arn
-  function_name                      = aws_lambda_function.consumer[count.index].arn
-  batch_size                         = 10
-  maximum_batching_window_in_seconds = 10
-  function_response_types            = ["ReportBatchItemFailures"]
+  count            = length(var.signer_secret_arns)
+  event_source_arn = var.triggers_queue_arn
+  function_name    = aws_lambda_function.consumer[count.index].arn
+  batch_size       = 10
+
+  scaling_config {
+    maximum_concurrency = 1
+  }
 }

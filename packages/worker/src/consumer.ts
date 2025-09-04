@@ -91,7 +91,7 @@ export const handler = async (event: {
   const result = await roundRobinSignTx(signers, address, scheduler, triggers);
 
   for (const event of result.events) {
-    if (event.type === "wasm-calc-strategy/process") {
+    if (event.type.startsWith("wasm-calc-strategy/process")) {
       console.log(JSON.stringify(event, null, 2));
     }
   }

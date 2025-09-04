@@ -54,6 +54,11 @@ runs:
         docker tag $SRC $BASE
         docker push $BASE
 
+    - name: Bundle lambda handler
+      working-directory: packages/worker
+      shell: bash
+      run: pnpm run bundle
+
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
       with:

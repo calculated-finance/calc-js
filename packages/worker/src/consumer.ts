@@ -32,9 +32,9 @@ function init(): Promise<Resources> {
       new GetSecretValueCommand({ SecretId: process.env.SECRET_ARN! })
     );
 
-    const { mnemonic } = JSON.parse(secret.SecretString!);
+    const { MNEMONIC } = JSON.parse(secret.SecretString!);
 
-    const wallet = await DirectSecp256k1HdWallet.fromMnemonic(mnemonic, {
+    const wallet = await DirectSecp256k1HdWallet.fromMnemonic(MNEMONIC, {
       prefix: chain.bech32AddressPrefix,
       hdPaths: [stringToPath(chain.hdPath)],
     });

@@ -105,6 +105,26 @@ resource "aws_iam_role_policy" "secrets_policy" {
   })
 }
 
+resource "aws_iam_role_policy" "sqs_policy" {
+  name = "${var.project_name}-ecs-sqs-policy"
+  role = aws_iam_role.ecs_task_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "sqs:SendMessage"
+        ]
+        Resource = [
+          var.triggers_queue_arn
+        ]
+      }
+    ]
+  })
+}
+
 resource "aws_cloudwatch_log_group" "workers" {
   name              = "/ecs/${var.project_name}-workers"
   retention_in_days = 7
@@ -139,7 +159,7 @@ resource "aws_ecs_task_definition" "producer" {
         },
         {
           name  = "QUEUE_URL"
-          value = var.queue_url
+          value = var.triggers_queue_url
         },
         {
           name  = "FETCH_DELAY"

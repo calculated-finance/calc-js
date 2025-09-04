@@ -62,16 +62,17 @@ module "ecr" {
 module "ecs" {
   source = "./modules/ecs"
 
-  project_name      = var.project_name
-  environment       = var.environment
-  aws_region        = var.aws_region
-  subnet_ids        = module.vpc.public_subnet_ids
-  security_group_id = module.vpc.security_group_id
-  container_image   = var.container_image
-  task_cpu          = var.task_cpu
-  task_memory       = var.task_memory
-  queue_url         = module.sqs.triggers_queue_url
-  chain_id          = var.chain_id
+  project_name       = var.project_name
+  environment        = var.environment
+  aws_region         = var.aws_region
+  subnet_ids         = module.vpc.public_subnet_ids
+  security_group_id  = module.vpc.security_group_id
+  container_image    = var.container_image
+  task_cpu           = var.task_cpu
+  task_memory        = var.task_memory
+  triggers_queue_url = module.sqs.triggers_queue_url
+  triggers_queue_arn = module.sqs.triggers_queue_arn
+  chain_id           = var.chain_id
 }
 
 module "lambda" {

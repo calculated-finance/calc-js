@@ -43,7 +43,7 @@ variable "task_memory" {
   default     = "512"
 }
 
-variable "queue_url" {
+variable "triggers_queue_url" {
   description = "URL of the SQS queue for the producer to write to"
   type        = string
 
@@ -59,4 +59,9 @@ variable "fetch_delay" {
   description = "Delay between fetch trigger calls"
   type        = string
   default     = "2000"
+}
+
+variable "triggers_queue_arn" {
+  description = "ARN of the SQS triggers queue"
+  type        = string
 }

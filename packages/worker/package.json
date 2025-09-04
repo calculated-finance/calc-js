@@ -37,6 +37,7 @@
     "effect": "latest"
   },
   "devDependencies": {
+    "@effect/language-service": "^0.37.0",
     "esbuild": "^0.25.9",
     "tsx": "^4.20.5"
   },

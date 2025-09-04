@@ -132,7 +132,11 @@ const producer = Effect.gen(function* () {
   const chainId = yield* Config.string("CHAIN_ID").pipe(
     Config.withDefault(RUJIRA_STAGENET.id)
   );
-  const queueUrl = yield* Config.string("QUEUE_URL");
+  const queueUrl = yield* Config.string("QUEUE_URL").pipe(
+    Config.withDefault(
+      "https://sqs.ap-southeast-1.amazonaws.com/503097572706/calc-staging-triggers.fifo"
+    )
+  );
   const fetchDelay = yield* Config.string("FETCH_DELAY").pipe(
     Config.withDefault("2000")
   );

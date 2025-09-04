@@ -67,7 +67,7 @@ runs:
     - name: Install dependencies
       working-directory: packages/worker
       shell: bash
-      run: pnpm install --prod=false --dev
+      run: pnpm install
 
     - name: Bundle lambda handler
       working-directory: packages/worker

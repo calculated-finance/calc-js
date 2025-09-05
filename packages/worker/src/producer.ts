@@ -153,7 +153,6 @@ const producer = Effect.gen(function* () {
               Id: trigger.id,
               MessageBody: trigger.id,
               MessageGroupId: trigger.id,
-              MessageDeduplicationId: trigger.id,
             })),
           })
         );

@@ -17,7 +17,7 @@ resource "aws_sqs_queue" "triggers" {
   fifo_queue                  = true
   content_based_deduplication = true
   deduplication_scope         = "queue"
-  visibility_timeout_seconds  = 10
+  visibility_timeout_seconds  = 6
   message_retention_seconds   = 60
   sqs_managed_sse_enabled     = false
   redrive_policy = jsonencode({

@@ -65,19 +65,6 @@ const getCosmosChainTriggers = (
       },
     }).pipe(Effect.retry(Schedule.exponential("500 millis")));
 
-    if (triggers.length === 0) {
-      return [];
-    }
-
-    console.log(
-      `Fetched triggers:`,
-      JSON.stringify(
-        triggers.map((t) => t.condition),
-        null,
-        2
-      )
-    );
-
     return triggers;
   });
 
@@ -225,6 +212,14 @@ const producer = Effect.gen(function* () {
       try: async () => {
         if (triggers.length === 0) {
           return;
+        }
+
+        for (const trigger of triggers) {
+          console.log(
+            `Enqueuing trigger ${trigger.id} with condition ${JSON.stringify(
+              trigger.condition
+            )}`
+          );
         }
 
         await sqs.send(

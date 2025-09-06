@@ -91,6 +91,7 @@ export const Trigger = Schema.Struct({
   owner: Schema.NonEmptyTrimmedString,
   executors: Schema.Array(Schema.NonEmptyTrimmedString),
   jitter: Schema.optional(Schema.NullOr(Duration)),
+  condition: Condition,
 });
 
 export type Trigger = Schema.Schema.Type<typeof Trigger>;

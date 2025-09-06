@@ -10,7 +10,7 @@ import {
   CosmWasmQueryError,
   getCosmWasmClient,
 } from "@template/domain/cosmwasm";
-import { PAIRS_BY_CHAIN_ID } from "@template/domain/rujira";
+import { FinPair, PAIRS_BY_CHAIN_ID } from "@template/domain/rujira";
 import type {
   ConditionFilter,
   SchedulerQueryMsg,
@@ -160,14 +160,14 @@ const fetchBlockTriggers = (chain: CosmosChain, client: CosmWasmClient) =>
 const fetchLimitOrders = (
   chain: CosmosChain,
   client: CosmWasmClient,
-  pairAddress: string
+  pair: FinPair
 ) =>
   Effect.gen(function* () {
     const limitOrderTriggers = yield* getCosmosChainTriggers(
       chain,
       {
         limit_order: {
-          pair_address: pairAddress,
+          pair_address: pair.address,
         },
       },
       client
@@ -184,6 +184,10 @@ const fetchLimitOrders = (
 
       if (canExecute) {
         triggers.push(trigger);
+      } else {
+        console.log(
+          `Skipping limit order trigger at ${trigger.condition} for pair ${pair.denoms}`
+        );
       }
     }
 
@@ -259,7 +263,7 @@ const producer = Effect.gen(function* () {
 
   const limitOrderFetchers = PAIRS_BY_CHAIN_ID[chainId].map((pair) =>
     Stream.repeatEffect(
-      fetchLimitOrders(chain, client, pair.address).pipe(
+      fetchLimitOrders(chain, client, pair).pipe(
         Effect.delay("30 seconds"),
         Effect.catchAll((error) =>
           Effect.gen(function* () {

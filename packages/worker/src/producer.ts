@@ -194,7 +194,9 @@ const fetchLimitOrders = (
         triggers.push(trigger);
       } else {
         console.log(
-          `Skipping limit order trigger at ${trigger.condition} for pair ${pair.denoms}`
+          `Skipping limit order trigger at ${JSON.stringify(
+            trigger.condition
+          )} for pair ${pair.denoms}`
         );
       }
     }

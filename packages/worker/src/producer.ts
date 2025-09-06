@@ -67,7 +67,7 @@ const getCosmosChainTriggers = (
 
     console.log(
       `Fetched triggers with filter: ${JSON.stringify(filter)}`,
-      triggers
+      triggers.map((t) => t.condition)
     );
 
     return triggers;

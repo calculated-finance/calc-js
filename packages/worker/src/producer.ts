@@ -65,6 +65,10 @@ const getCosmosChainTriggers = (
       },
     }).pipe(Effect.retry(Schedule.exponential("500 millis")));
 
+    if (triggers.length === 0) {
+      return [];
+    }
+
     console.log(
       `Fetched triggers:`,
       JSON.stringify(

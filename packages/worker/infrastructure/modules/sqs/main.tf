@@ -18,11 +18,11 @@ resource "aws_sqs_queue" "triggers" {
   content_based_deduplication = true
   deduplication_scope         = "queue"
   visibility_timeout_seconds  = 20
-  message_retention_seconds   = 60
+  message_retention_seconds   = 200
   sqs_managed_sse_enabled     = false
   redrive_policy = jsonencode({
     deadLetterTargetArn = aws_sqs_queue.triggers_dql.arn
-    maxReceiveCount     = 5
+    maxReceiveCount     = 10
   })
 }
 

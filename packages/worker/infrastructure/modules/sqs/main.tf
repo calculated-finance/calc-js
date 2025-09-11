@@ -8,6 +8,7 @@ resource "aws_sqs_queue" "triggers_dql" {
   content_based_deduplication = true
   deduplication_scope         = "queue"
   visibility_timeout_seconds  = 120
+  receive_wait_time_seconds   = 5
   message_retention_seconds   = 1209600
   sqs_managed_sse_enabled     = false
 }
@@ -19,6 +20,7 @@ resource "aws_sqs_queue" "triggers" {
   deduplication_scope         = "queue"
   visibility_timeout_seconds  = 20
   message_retention_seconds   = 200
+  receive_wait_time_seconds   = 3
   sqs_managed_sse_enabled     = false
   redrive_policy = jsonencode({
     deadLetterTargetArn = aws_sqs_queue.triggers_dql.arn

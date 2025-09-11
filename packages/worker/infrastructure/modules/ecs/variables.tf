@@ -58,7 +58,7 @@ variable "chain_id" {
 variable "fetch_delay" {
   description = "Delay between fetch trigger calls"
   type        = string
-  default     = "2000"
+  default     = "4000"
 }
 
 variable "triggers_queue_arn" {

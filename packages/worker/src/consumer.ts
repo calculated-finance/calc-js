@@ -66,9 +66,7 @@ const roundRobinSignTx = async (
       return await signer.execute(
         address,
         scheduler,
-        {
-          execute: triggers,
-        },
+        { execute: triggers },
         "auto"
       );
     } catch (error) {
@@ -83,7 +81,6 @@ export const handler = async (event: {
   Records: Array<{ messageId: string; body: string }>;
 }) => {
   const { signers, address, scheduler } = await init();
-
   const triggers = event.Records.map((r) => r.body);
 
   console.log("Processing triggers:", JSON.stringify(triggers, null, 2));

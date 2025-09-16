@@ -19,6 +19,16 @@ variable "triggers_queue_arn" {
   type        = string
 }
 
+variable "triggers_fifo_queue_url" {
+  description = "URL of the SQS FIFO queue to trigger the Lambda function"
+  type        = string
+}
+
+variable "triggers_fifo_queue_arn" {
+  description = "ARN of the SQS FIFO queue to trigger the Lambda function"
+  type        = string
+}
+
 variable "chain_id" {
   description = "The ID of the blockchain network"
   type        = string

@@ -20,7 +20,8 @@
     "test": "vitest",
     "coverage": "vitest --coverage",
     "start:producer": "node build/esm/producer.js",
-    "dev:producer": "tsx src/producer.ts"
+    "dev:producer": "tsx src/producer.ts",
+    "dev:indexer": "tsx src/indexer.ts"
   },
   "dependencies": {
     "@aws-sdk/client-secrets-manager": "^3.879.0",
@@ -30,9 +31,11 @@
     "@cosmjs/encoding": "^0.34.0",
     "@cosmjs/proto-signing": "^0.34.0",
     "@cosmjs/stargate": "^0.34.0",
+    "@cosmjs/tendermint-rpc": "^0.36.0",
     "@effect/platform": "latest",
     "@effect/platform-node": "latest",
     "@template/domain": "workspace:^",
+    "cosmjs-types": "0.9.0",
     "dotenv": "^17.2.2",
     "effect": "latest"
   },

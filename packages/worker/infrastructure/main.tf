@@ -78,10 +78,12 @@ module "ecs" {
 module "lambda" {
   source = "./modules/lambda"
 
-  project_name       = var.project_name
-  environment        = var.environment
-  signer_secret_arns = module.secrets.signer_secret_arns
-  chain_id           = var.chain_id
-  triggers_queue_arn = module.sqs.triggers_queue_arn
-  source_dir         = "../dist/consumer"
+  project_name            = var.project_name
+  environment             = var.environment
+  signer_secret_arns      = module.secrets.signer_secret_arns
+  chain_id                = var.chain_id
+  triggers_queue_arn      = module.sqs.triggers_queue_arn
+  triggers_fifo_queue_url = module.sqs.triggers_fifo_queue_url
+  triggers_fifo_queue_arn = module.sqs.triggers_fifo_queue_arn
+  source_dir              = "../dist/consumer"
 }

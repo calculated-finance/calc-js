@@ -1,3 +1,40 @@
+/**
+ * Sync transactions to a dynammodb table.
+ *
+ * Transactions of interest are:
+ *
+ * 1. Any MsgSend that transfers funds INTO a smart contract address. These could be deposits into
+ * a CALC strategy address and hence must be indexed.
+ *
+ * 2. Any MsgSend that transfers funds OUT OF a smart contract address. These could be deposits into
+ * a CALC strategy address and hence must be indexed.
+ *
+ * 3. Any MsgExecuteContract with a CALC event, these include
+ *
+ *    * wasm-calc-manager/strategy.create
+ *
+ *      - Fetch the strategy config and save it to the strategies table
+ *      - Log any asset deposits
+ *
+ *    * wasm-calc-manager/strategy.execute
+ *
+ *      - Save relevant events from the TX in the events table
+ *      - Log any asset deposits
+ *
+ *    * wasm-calc-manager/strategy.update
+ *
+ *      - Fetch the strategy config and update it in the strategies table
+ *      - Log any asset deposits
+ *
+ *    * wasm-calc-manager/strategy.update-status
+ *
+ *      - Update the strategy status in the strategies table
+ *
+ *    * wasm-calc-manager/strategy.update-label
+ *
+ *      - Update the strategy name in the strategies table
+ */
+
 import { Event } from "@cosmjs/stargate";
 import { Tendermint37Client } from "@cosmjs/tendermint-rpc";
 import {

@@ -112,17 +112,12 @@ const fetchTimeTriggers = (chain: CosmosChain, client: CosmWasmClient) =>
       new Date(Date.parse(block.header.time))
     );
 
-    const start = (
-      blockTime.pipe(DateTime.subtractDuration("24 hours")).epochMillis *
-      10 ** 6
-    ).toFixed(0);
-
     const end = (blockTime.epochMillis * 10 ** 6).toFixed(0);
 
     return yield* getCosmosChainTriggers(
       chain,
       {
-        timestamp: { start, end },
+        timestamp: { end },
       },
       client
     );
@@ -146,7 +141,7 @@ const fetchBlockTriggers = (chain: CosmosChain, client: CosmWasmClient) =>
     return yield* getCosmosChainTriggers(
       chain,
       {
-        block_height: { start: block - 14_400, end: block },
+        block_height: { end: block },
       },
       client
     );

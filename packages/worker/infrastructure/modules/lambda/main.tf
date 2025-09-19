@@ -49,7 +49,7 @@ resource "aws_iam_role_policy_attachment" "lambda_attach" {
 
 data "archive_file" "handler_zip" {
   type        = "zip"
-  source_dir  = "${path.module}/../../../dist/consumer"
+  source_dir  = "${path.module}/../../../dist/handlers/consumer"
   output_path = "${path.module}/${basename(var.source_dir)}.zip"
 }
 
@@ -58,7 +58,7 @@ resource "aws_lambda_function" "consumer" {
   function_name                  = "${local.lambda_name_prefix}-consumer-${count.index + 1}"
   role                           = aws_iam_role.lambda_role.arn
   runtime                        = "nodejs20.x"
-  handler                        = "consumer.handler"
+  handler                        = "app.handler"
   filename                       = "${path.module}/${basename(var.source_dir)}.zip"
   source_code_hash               = filebase64sha256("${path.module}/${basename(var.source_dir)}.zip")
   timeout                        = 20
@@ -78,4 +78,49 @@ resource "aws_lambda_event_source_mapping" "consumer_sqs" {
   event_source_arn = var.triggers_queue_arn
   function_name    = aws_lambda_function.consumer[count.index].arn
   batch_size       = 10
+}
+
+data "archive_file" "handler_zip" {
+  type        = "zip"
+  source_dir  = "${path.module}/../../../dist/handlers/counter"
+  output_path = "${path.module}/${basename(var.source_dir)}.zip"
+}
+
+resource "aws_lambda_function" "counter" {
+  count                          = length(var.signer_secret_arns)
+  function_name                  = "${local.lambda_name_prefix}-counter-${count.index + 1}"
+  role                           = aws_iam_role.lambda_role.arn
+  runtime                        = "nodejs20.x"
+  handler                        = "app.handler"
+  filename                       = "${path.module}/${basename(var.source_dir)}.zip"
+  source_code_hash               = filebase64sha256("${path.module}/${basename(var.source_dir)}.zip")
+  timeout                        = 20
+  memory_size                    = 512
+  reserved_concurrent_executions = 1
+
+  environment {
+    variables = {
+      CHAIN_ID   = var.chain_id
+      SECRET_ARN = var.signer_secret_arns[count.index]
+    }
+  }
+}
+
+resource "aws_cloudwatch_event_rule" "counter_schedule" {
+  name                = "${local.lambda_name_prefix}-counter-schedule"
+  schedule_expression = "rate(5 minutes)"
+}
+
+resource "aws_cloudwatch_event_target" "counter_target" {
+  rule      = aws_cloudwatch_event_rule.counter_schedule.name
+  target_id = "counter"
+  arn       = aws_lambda_function.counter.arn
+}
+
+resource "aws_lambda_permission" "counter_events" {
+  statement_id  = "AllowEventsInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.counter.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.counter_schedule.arn
 }

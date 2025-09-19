@@ -1,14 +1,17 @@
 import { build } from "esbuild";
 import * as Fs from "fs";
 
-const outdir = "./dist/consumer";
+const outdir = "./dist/handlers";
 
 (async () => {
   try {
     Fs.rmSync(outdir, { recursive: true, force: true });
 
     const res = await build({
-      entryPoints: ["./src/consumer.ts"],
+      entryPoints: [
+        "./src/handlers/consumer/app.ts",
+        "./src/handlers/counter/app.ts",
+      ],
       outdir,
       minify: true,
       sourcemap: false,

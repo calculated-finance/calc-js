@@ -10,7 +10,6 @@ import {
   CosmWasmQueryError,
   getCosmWasmClient,
 } from "@template/domain/cosmwasm";
-import { FinPair, PAIRS_BY_CHAIN_ID } from "@template/domain/rujira";
 import type {
   ConditionFilter,
   SchedulerQueryMsg,
@@ -68,34 +67,6 @@ const getCosmosChainTriggers = (
     return triggers;
   });
 
-const checkTriggerCanExecute = (
-  chain: CosmosChain,
-  triggerId: string,
-  client: CosmWasmClient
-) =>
-  Effect.gen(function* () {
-    if (!chain.schedulerContract) {
-      return yield* Effect.fail(
-        new CosmWasmQueryError({
-          cause: "Scheduler contract not defined for chain",
-        })
-      );
-    }
-
-    return yield* Effect.tryPromise<boolean, CosmWasmQueryError>({
-      try: () =>
-        client.queryContractSmart(chain.schedulerContract!, {
-          can_execute: triggerId,
-        }),
-      catch: (error: any) => {
-        console.log(
-          `Failed to check if trigger can execute on chain ${chain.id} for trigger ${triggerId}: ${error.message}`
-        );
-        return new CosmWasmQueryError({ cause: error });
-      },
-    }).pipe(Effect.retry(Schedule.exponential("500 millis")));
-  });
-
 const fetchTimeTriggers = (chain: CosmosChain, client: CosmWasmClient) =>
   Effect.gen(function* () {
     const block = yield* Effect.tryPromise({
@@ -145,45 +116,6 @@ const fetchBlockTriggers = (chain: CosmosChain, client: CosmWasmClient) =>
       },
       client
     );
-  });
-
-const fetchLimitOrders = (
-  chain: CosmosChain,
-  client: CosmWasmClient,
-  pair: FinPair
-) =>
-  Effect.gen(function* () {
-    const limitOrderTriggers = yield* getCosmosChainTriggers(
-      chain,
-      {
-        limit_order: {
-          pair_address: pair.address,
-        },
-      },
-      client
-    );
-
-    const triggers = [];
-
-    for (const trigger of limitOrderTriggers) {
-      const canExecute = yield* checkTriggerCanExecute(
-        chain,
-        trigger.id,
-        client
-      );
-
-      if (canExecute) {
-        triggers.push(trigger);
-      } else {
-        console.log(
-          `Skipping limit order trigger at ${JSON.stringify(
-            trigger.condition
-          )} for pair ${pair.denoms}`
-        );
-      }
-    }
-
-    return triggers;
   });
 
 const producer = Effect.gen(function* () {
@@ -261,24 +193,7 @@ const producer = Effect.gen(function* () {
     )
   ).pipe(Stream.runForEach(enqueueTriggers));
 
-  const limitOrderFetchers = PAIRS_BY_CHAIN_ID[chainId].map((pair) =>
-    Stream.repeatEffect(
-      fetchLimitOrders(chain, client, pair).pipe(
-        Effect.delay("30 seconds"),
-        Effect.catchAll((error) =>
-          Effect.gen(function* () {
-            yield* Effect.logError(
-              "Failed to fetch limit order triggers",
-              error
-            );
-            return [];
-          })
-        )
-      )
-    ).pipe(Stream.runForEach(enqueueTriggers))
-  );
-
-  yield* Effect.all([timeFetcher, blockFetcher, ...limitOrderFetchers], {
+  yield* Effect.all([timeFetcher, blockFetcher], {
     concurrency: "unbounded",
   });
 });

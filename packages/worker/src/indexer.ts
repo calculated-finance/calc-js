@@ -4,10 +4,10 @@
  * Transactions of interest are:
  *
  * 1. Any MsgSend that transfers funds INTO a smart contract address. These could be deposits into
- * a CALC strategy address and hence must be indexed.
+ *    a CALC strategy address and hence must be indexed.
  *
  * 2. Any MsgSend that transfers funds OUT OF a smart contract address. These could be deposits into
- * a CALC strategy address and hence must be indexed.
+ *    a CALC strategy address and hence must be indexed.
  *
  * 3. Any MsgExecuteContract with a CALC event, these include
  *
@@ -60,7 +60,7 @@ const loadConfig = Effect.gen(function* () {
     Config.withDefault(RUJIRA_STAGENET.id)
   );
   const startHeight = yield* Config.number("START_HEIGHT").pipe(
-    Config.withDefault(6_136_226)
+    Config.withDefault(6_168_959)
   );
   const lag = yield* Config.number("LAG").pipe(Config.withDefault(2));
   const pollMs = yield* Config.number("POLL_MS").pipe(

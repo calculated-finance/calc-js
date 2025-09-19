@@ -20,7 +20,8 @@
     "test": "vitest",
     "coverage": "vitest --coverage",
     "start:producer": "node build/esm/producer.js",
-    "dev:producer": "tsx src/producer.ts"
+    "dev:producer": "tsx src/producer.ts",
+    "dev:indexer": "tsx src/indexer.ts"
   },
   "dependencies": {
     "@aws-sdk/client-secrets-manager": "^3.879.0",

@@ -83,5 +83,5 @@ module "lambda" {
   signer_secret_arns = module.secrets.signer_secret_arns
   chain_id           = var.chain_id
   triggers_queue_arn = module.sqs.triggers_queue_arn
-  source_dir         = "../dist/consumer"
+  source_dir         = "../dist/handlers"
 }

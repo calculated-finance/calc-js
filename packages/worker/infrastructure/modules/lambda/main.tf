@@ -50,7 +50,7 @@ resource "aws_iam_role_policy_attachment" "lambda_attach" {
 data "archive_file" "consumer_zip" {
   type        = "zip"
   source_dir  = "${path.module}/../../../dist/handlers/consumer"
-  output_path = "${path.module}/${basename(var.source_dir)}.zip"
+  output_path = "${path.module}/${basename(var.source_dir)}-consumer.zip"
 }
 
 resource "aws_lambda_function" "consumer" {
@@ -59,8 +59,8 @@ resource "aws_lambda_function" "consumer" {
   role                           = aws_iam_role.lambda_role.arn
   runtime                        = "nodejs20.x"
   handler                        = "app.handler"
-  filename                       = "${path.module}/${basename(var.source_dir)}.zip"
-  source_code_hash               = filebase64sha256("${path.module}/${basename(var.source_dir)}.zip")
+  filename                       = data.archive_file.consumer_zip.output_path
+  source_code_hash               = filebase64sha256(data.archive_file.consumer_zip.output_path)
   timeout                        = 20
   memory_size                    = 512
   reserved_concurrent_executions = 1
@@ -83,25 +83,22 @@ resource "aws_lambda_event_source_mapping" "consumer_sqs" {
 data "archive_file" "counter_zip" {
   type        = "zip"
   source_dir  = "${path.module}/../../../dist/handlers/counter"
-  output_path = "${path.module}/${basename(var.source_dir)}.zip"
+  output_path = "${path.module}/${basename(var.source_dir)}-counter.zip"
 }
 
 resource "aws_lambda_function" "counter" {
-  count                          = length(var.signer_secret_arns)
-  function_name                  = "${local.lambda_name_prefix}-counter-${count.index + 1}"
-  role                           = aws_iam_role.lambda_role.arn
-  runtime                        = "nodejs20.x"
-  handler                        = "app.handler"
-  filename                       = "${path.module}/${basename(var.source_dir)}.zip"
-  source_code_hash               = filebase64sha256("${path.module}/${basename(var.source_dir)}.zip")
-  timeout                        = 20
-  memory_size                    = 512
-  reserved_concurrent_executions = 1
+  function_name    = "${local.lambda_name_prefix}-counter"
+  role             = aws_iam_role.lambda_role.arn
+  runtime          = "nodejs20.x"
+  handler          = "app.handler"
+  filename         = data.archive_file.counter_zip.output_path
+  source_code_hash = filebase64sha256(data.archive_file.counter_zip.output_path)
+  timeout          = 20
+  memory_size      = 128
 
   environment {
     variables = {
-      CHAIN_ID   = var.chain_id
-      SECRET_ARN = var.signer_secret_arns[count.index]
+      CHAIN_ID = var.chain_id
     }
   }
 }

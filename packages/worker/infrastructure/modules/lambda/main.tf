@@ -47,7 +47,7 @@ resource "aws_iam_role_policy_attachment" "lambda_attach" {
   policy_arn = aws_iam_policy.lambda_policy.arn
 }
 
-data "archive_file" "handler_zip" {
+data "archive_file" "consumer_zip" {
   type        = "zip"
   source_dir  = "${path.module}/../../../dist/handlers/consumer"
   output_path = "${path.module}/${basename(var.source_dir)}.zip"
@@ -80,7 +80,7 @@ resource "aws_lambda_event_source_mapping" "consumer_sqs" {
   batch_size       = 10
 }
 
-data "archive_file" "handler_zip" {
+data "archive_file" "counter_zip" {
   type        = "zip"
   source_dir  = "${path.module}/../../../dist/handlers/counter"
   output_path = "${path.module}/${basename(var.source_dir)}.zip"

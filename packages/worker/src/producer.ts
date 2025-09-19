@@ -223,7 +223,7 @@ const producer = Effect.gen(function* () {
             Entries: triggers.map((trigger) => ({
               Id: trigger.id,
               MessageBody: trigger.id,
-              MessageGroupId: trigger.id,
+              MessageGroupId: "all",
               MessageDeduplicationId: trigger.id,
             })),
           })

@@ -1,0 +1,214 @@
+{
+    "widgets": [
+        {
+            "type": "metric",
+            "x": 0,
+            "y": 26,
+            "width": 24,
+            "height": 7,
+            "properties": {
+                "metrics": [
+                    [
+                        "AWS/ECS",
+                        "CPUUtilization",
+                        "ServiceName",
+                        "calc-producer",
+                        "ClusterName",
+                        "calc-cluster",
+                        {
+                            "region": "ap-southeast-1"
+                        }
+                    ],
+                    [
+                        ".",
+                        "MemoryUtilization",
+                        ".",
+                        ".",
+                        ".",
+                        ".",
+                        {
+                            "region": "ap-southeast-1"
+                        }
+                    ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "ap-southeast-1",
+                "title": "Producer Infrastructure",
+                "period": 60,
+                "stat": "Average"
+            }
+        },
+        {
+            "type": "metric",
+            "x": 0,
+            "y": 6,
+            "width": 24,
+            "height": 6,
+            "properties": {
+                "metrics": [
+                    [
+                        "AWS/SQS",
+                        "NumberOfMessagesSent",
+                        "QueueName",
+                        "calc-staging-triggers.fifo",
+                        {
+                            "region": "ap-southeast-1"
+                        }
+                    ],
+                    [
+                        ".",
+                        "NumberOfMessagesDeleted",
+                        ".",
+                        ".",
+                        {
+                            "region": "ap-southeast-1"
+                        }
+                    ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "ap-southeast-1",
+                "period": 60,
+                "stat": "Sum",
+                "title": "Trigger Messages Sent/Deleted"
+            }
+        },
+        {
+            "type": "metric",
+            "x": 0,
+            "y": 19,
+            "width": 24,
+            "height": 7,
+            "properties": {
+                "metrics": [
+                    [
+                        "AWS/Lambda",
+                        "Throttles",
+                        "FunctionName",
+                        "calc-staging-consumer-1",
+                        {
+                            "region": "ap-southeast-1"
+                        }
+                    ],
+                    [
+                        "...",
+                        "calc-staging-consumer-2",
+                        {
+                            "region": "ap-southeast-1"
+                        }
+                    ],
+                    [
+                        "...",
+                        "calc-staging-consumer-3",
+                        {
+                            "region": "ap-southeast-1"
+                        }
+                    ],
+                    [
+                        "...",
+                        "calc-staging-consumer-4",
+                        {
+                            "region": "ap-southeast-1"
+                        }
+                    ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "ap-southeast-1",
+                "title": "Execution Lambda Throttles",
+                "period": 10,
+                "stat": "Sum"
+            }
+        },
+        {
+            "type": "metric",
+            "x": 0,
+            "y": 12,
+            "width": 24,
+            "height": 7,
+            "properties": {
+                "metrics": [
+                    [
+                        "AWS/Lambda",
+                        "Errors",
+                        "FunctionName",
+                        "calc-staging-consumer-1",
+                        {
+                            "region": "ap-southeast-1"
+                        }
+                    ],
+                    [
+                        "...",
+                        "calc-staging-consumer-2",
+                        {
+                            "region": "ap-southeast-1"
+                        }
+                    ],
+                    [
+                        "...",
+                        "calc-staging-consumer-3",
+                        {
+                            "region": "ap-southeast-1"
+                        }
+                    ],
+                    [
+                        "...",
+                        "calc-staging-consumer-4",
+                        {
+                            "region": "ap-southeast-1"
+                        }
+                    ]
+                ],
+                "view": "timeSeries",
+                "stacked": false,
+                "region": "ap-southeast-1",
+                "title": "Execution Lambda Errors",
+                "period": 10,
+                "stat": "Sum"
+            }
+        },
+        {
+            "type": "log",
+            "x": 0,
+            "y": 33,
+            "width": 24,
+            "height": 7,
+            "properties": {
+                "query": "SOURCE '/aws/lambda/calc-staging-consumer-1' | SOURCE '/aws/lambda/calc-staging-consumer-2' | SOURCE '/aws/lambda/calc-staging-consumer-3' | SOURCE '/aws/lambda/calc-staging-consumer-4' | SOURCE '/ecs/calc-workers' | fields @timestamp, @message \n| filter @message like /error/ \n| limit 100",
+                "region": "ap-southeast-1",
+                "stacked": false,
+                "title": "Error Logs",
+                "view": "table"
+            }
+        },
+        {
+            "type": "metric",
+            "x": 0,
+            "y": 0,
+            "width": 24,
+            "height": 6,
+            "properties": {
+                "metrics": [
+                    [
+                        "Calc/Custom",
+                        "StrategyCount",
+                        "ChainId",
+                        "thorchain",
+                        {
+                            "region": "ap-southeast-1"
+                        }
+                    ]
+                ],
+                "sparkline": false,
+                "view": "singleValue",
+                "region": "ap-southeast-1",
+                "period": 60,
+                "stat": "Average",
+                "title": "Total Strategies",
+                "singleValueFullPrecision": false,
+                "setPeriodToTimeRange": true
+            }
+        }
+    ]
+}

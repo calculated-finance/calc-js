@@ -46,13 +46,13 @@ runs:
       run: |
         aws ecr get-login-password --region ap-southeast-1 | docker login --username AWS --password-stdin ${{ inputs.aws-account-id }}.dkr.ecr.ap-southeast-1.amazonaws.com
 
-    # - name: Tag & Push
-    #   shell: bash
-    #   run: |
-    #     SRC=calc-worker:${{ github.sha }}
-    #     BASE=${{ inputs.aws-account-id }}.dkr.ecr.ap-southeast-1.amazonaws.com/calc-worker:${{ github.sha }}
-    #     docker tag $SRC $BASE
-    #     docker push $BASE
+    - name: Tag & Push
+      shell: bash
+      run: |
+        SRC=calc-worker:${{ github.sha }}
+        BASE=${{ inputs.aws-account-id }}.dkr.ecr.ap-southeast-1.amazonaws.com/calc-worker:${{ github.sha }}
+        docker tag $SRC $BASE
+        docker push $BASE
 
     - name: Setup Node.js
       uses: actions/setup-node@v4

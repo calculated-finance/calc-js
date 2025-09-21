@@ -122,6 +122,7 @@ export const CHAINS = [
   BINANCE_SMART_CHAIN,
   COSMOS_HUB,
   RUJIRA_STAGENET,
+  RUJIRA,
 ];
 
 export const CHAINS_BY_ID: Record<ChainId, Chain> = CHAINS.reduce(

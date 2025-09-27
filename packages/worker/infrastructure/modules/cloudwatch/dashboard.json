@@ -51,7 +51,7 @@
                         "AWS/SQS",
                         "NumberOfMessagesSent",
                         "QueueName",
-                        "calc-staging-triggers.fifo",
+                        "calc-production-triggers.fifo",
                         {
                             "region": "ap-southeast-1"
                         }
@@ -86,28 +86,63 @@
                         "AWS/Lambda",
                         "Throttles",
                         "FunctionName",
-                        "calc-staging-consumer-1",
+                        "calc-production-consumer-1",
                         {
                             "region": "ap-southeast-1"
                         }
                     ],
                     [
                         "...",
-                        "calc-staging-consumer-2",
+                        "calc-production-consumer-2",
                         {
                             "region": "ap-southeast-1"
                         }
                     ],
                     [
                         "...",
-                        "calc-staging-consumer-3",
+                        "calc-production-consumer-3",
                         {
                             "region": "ap-southeast-1"
                         }
                     ],
                     [
                         "...",
-                        "calc-staging-consumer-4",
+                        "calc-production-consumer-4",
+                        {
+                            "region": "ap-southeast-1"
+                        }
+                    ],
+                    [
+                        "...",
+                        "calc-production-consumer-5",
+                        {
+                            "region": "ap-southeast-1"
+                        }
+                    ],
+                    [
+                        "...",
+                        "calc-production-consumer-6",
+                        {
+                            "region": "ap-southeast-1"
+                        }
+                    ],
+                    [
+                        "...",
+                        "calc-production-consumer-7",
+                        {
+                            "region": "ap-southeast-1"
+                        }
+                    ],
+                    [
+                        "...",
+                        "calc-production-consumer-8",
+                        {
+                            "region": "ap-southeast-1"
+                        }
+                    ],
+                    [
+                        "...",
+                        "calc-production-consumer-9",
                         {
                             "region": "ap-southeast-1"
                         }
@@ -133,28 +168,63 @@
                         "AWS/Lambda",
                         "Errors",
                         "FunctionName",
-                        "calc-staging-consumer-1",
+                        "calc-production-consumer-1",
                         {
                             "region": "ap-southeast-1"
                         }
                     ],
                     [
                         "...",
-                        "calc-staging-consumer-2",
+                        "calc-production-consumer-2",
                         {
                             "region": "ap-southeast-1"
                         }
                     ],
                     [
                         "...",
-                        "calc-staging-consumer-3",
+                        "calc-production-consumer-3",
                         {
                             "region": "ap-southeast-1"
                         }
                     ],
                     [
                         "...",
-                        "calc-staging-consumer-4",
+                        "calc-production-consumer-4",
+                        {
+                            "region": "ap-southeast-1"
+                        }
+                    ],
+                    [
+                        "...",
+                        "calc-production-consumer-5",
+                        {
+                            "region": "ap-southeast-1"
+                        }
+                    ],
+                    [
+                        "...",
+                        "calc-production-consumer-6",
+                        {
+                            "region": "ap-southeast-1"
+                        }
+                    ],
+                    [
+                        "...",
+                        "calc-production-consumer-7",
+                        {
+                            "region": "ap-southeast-1"
+                        }
+                    ],
+                    [
+                        "...",
+                        "calc-production-consumer-8",
+                        {
+                            "region": "ap-southeast-1"
+                        }
+                    ],
+                    [
+                        "...",
+                        "calc-production-consumer-9",
                         {
                             "region": "ap-southeast-1"
                         }
@@ -175,7 +245,7 @@
             "width": 24,
             "height": 7,
             "properties": {
-                "query": "SOURCE '/aws/lambda/calc-staging-consumer-1' | SOURCE '/aws/lambda/calc-staging-consumer-2' | SOURCE '/aws/lambda/calc-staging-consumer-3' | SOURCE '/aws/lambda/calc-staging-consumer-4' | SOURCE '/ecs/calc-workers' | fields @timestamp, @message \n| filter @message like /error/ \n| limit 100",
+                "query": "SOURCE '/aws/lambda/calc-production-consumer-1' | SOURCE '/aws/lambda/calc-production-consumer-2' | SOURCE '/aws/lambda/calc-production-consumer-3' | SOURCE '/aws/lambda/calc-production-consumer-4' | SOURCE '/ecs/calc-workers' | fields @timestamp, @message \n| filter @message like /error/ \n| limit 100",
                 "region": "ap-southeast-1",
                 "stacked": false,
                 "title": "Error Logs",

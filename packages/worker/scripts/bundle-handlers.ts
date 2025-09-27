@@ -11,6 +11,7 @@ const outdir = "./dist/handlers";
       entryPoints: [
         "./src/handlers/consumer/app.ts",
         "./src/handlers/counter/app.ts",
+        "./src/handlers/tvl/app.ts",
       ],
       outdir,
       minify: true,

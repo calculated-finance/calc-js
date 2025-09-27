@@ -121,3 +121,45 @@ resource "aws_lambda_permission" "counter_events" {
   principal     = "events.amazonaws.com"
   source_arn    = aws_cloudwatch_event_rule.counter_schedule.arn
 }
+
+data "archive_file" "tvl_zip" {
+  type        = "zip"
+  source_dir  = "${path.module}/../../../dist/handlers/tvl"
+  output_path = "${path.module}/${basename(var.source_dir)}-tvl.zip"
+}
+
+resource "aws_lambda_function" "tvl" {
+  function_name    = "${local.lambda_name_prefix}-tvl"
+  role             = aws_iam_role.lambda_role.arn
+  runtime          = "nodejs20.x"
+  handler          = "app.handler"
+  filename         = data.archive_file.tvl_zip.output_path
+  source_code_hash = filebase64sha256(data.archive_file.tvl_zip.output_path)
+  timeout          = 20
+  memory_size      = 128
+
+  environment {
+    variables = {
+      CHAIN_ID = var.chain_id
+    }
+  }
+}
+
+resource "aws_cloudwatch_event_rule" "tvl_schedule" {
+  name                = "${local.lambda_name_prefix}-tvl-schedule"
+  schedule_expression = "rate(5 minutes)"
+}
+
+resource "aws_cloudwatch_event_target" "tvl_target" {
+  rule      = aws_cloudwatch_event_rule.tvl_schedule.name
+  target_id = "tvl"
+  arn       = aws_lambda_function.tvl.arn
+}
+
+resource "aws_lambda_permission" "tvl_events" {
+  statement_id  = "AllowEventsInvoke"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.tvl.function_name
+  principal     = "events.amazonaws.com"
+  source_arn    = aws_cloudwatch_event_rule.tvl_schedule.arn
+}

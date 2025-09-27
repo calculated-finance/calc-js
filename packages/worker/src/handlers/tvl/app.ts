@@ -18,8 +18,6 @@ async function fetchAllStrategies(client: CosmWasmClient, manager: string) {
       strategies: { limit: PAGE_LIMIT, start_after },
     })) as Strategy[];
 
-    console.log(res.length, start_after);
-
     if (!res.length) break;
 
     strategies.push(...res);
@@ -57,10 +55,10 @@ export const handler = metricScope((metrics) => async () => {
   }
 
   metrics.setNamespace("Calc/Custom");
-  metrics.setDimensions({ ChainId: chainId });
 
   for (const [denom, amount] of totals) {
     metrics.setDimensions({ ChainId: chainId, Denom: denom });
     metrics.putMetric("TVL", Number(amount / 10n ** 8n), Unit.Count);
+    metrics.flush();
   }
 });

@@ -59,6 +59,6 @@ export const handler = metricScope((metrics) => async () => {
   for (const [denom, amount] of totals) {
     metrics.setDimensions({ ChainId: chainId, Denom: denom });
     metrics.putMetric("TVL", Number(amount / 10n ** 8n), Unit.Count);
-    metrics.flush();
+    await metrics.flush();
   }
 });

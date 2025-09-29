@@ -47,6 +47,12 @@ export const ASSETS = {
     coinGeckoId: "tcy",
     color: "#102A22",
   },
+  "gaia-atom": {
+    displayName: "ATOM",
+    significantFigures: 8,
+    coinGeckoId: "cosmos",
+    color: "#2E3148",
+  },
 };
 
 export const ASSETS_BY_COINGECKO_ID: Record<string, { rawName: string }> =

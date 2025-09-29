@@ -28,3 +28,9 @@ variable "source_dir" {
   description = "The source directory for the Lambda function code (Terraform zips it)"
   type        = string
 }
+
+variable "coingecko_api_key" {
+  description = "API key for CoinGecko"
+  type        = string
+  default     = "CG-hH9ZLcUMLkAurz4gYHEpb17f"
+}

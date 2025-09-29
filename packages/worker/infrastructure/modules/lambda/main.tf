@@ -140,7 +140,8 @@ resource "aws_lambda_function" "tvl" {
 
   environment {
     variables = {
-      CHAIN_ID = var.chain_id
+      CHAIN_ID          = var.chain_id
+      COINGECKO_API_KEY = var.coingecko_api_key
     }
   }
 }

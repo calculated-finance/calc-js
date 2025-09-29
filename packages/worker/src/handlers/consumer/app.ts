@@ -72,7 +72,7 @@ const roundRobinSignTx = async (
         "auto"
       );
     } catch (error) {
-      console.log(`Signer failed to sign transaction: ${error}`);
+      console.error(`Signer failed to sign transaction: ${error}`);
     }
   }
 

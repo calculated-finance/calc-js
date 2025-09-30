@@ -8,7 +8,7 @@ import axios from "axios";
 const chainId = process.env.CHAIN_ID!;
 const chain = CHAINS_BY_ID[chainId] as CosmosChain;
 
-const PAGE_LIMIT = Number(process.env.PAGE_LIMIT ?? 150);
+const PAGE_LIMIT = Number(process.env.PAGE_LIMIT ?? 300);
 const BATCH_CONCURRENCY = Number(process.env.BALANCE_CONCURRENCY ?? 10);
 
 const fetchPrices = async () => {

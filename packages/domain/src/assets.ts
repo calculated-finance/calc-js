@@ -50,7 +50,7 @@ export const ASSETS = {
   "gaia-atom": {
     displayName: "ATOM",
     significantFigures: 8,
-    coinGeckoId: "cosmos",
+    coinGeckoId: "cosmos-hub",
     color: "#2E3148",
   },
 };

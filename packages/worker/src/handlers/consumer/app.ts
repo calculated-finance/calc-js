@@ -72,6 +72,10 @@ const roundRobinSignTx = async (
         "auto"
       );
     } catch (error) {
+      if (`${error}`.includes("account sequence mismatch")) {
+        await new Promise((resolve) => setTimeout(resolve, 30_000));
+      }
+
       console.error(`Signer failed to sign transaction: ${error}`);
     }
   }

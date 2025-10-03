@@ -61,7 +61,7 @@ resource "aws_lambda_function" "consumer" {
   handler                        = "app.handler"
   filename                       = data.archive_file.consumer_zip.output_path
   source_code_hash               = filebase64sha256(data.archive_file.consumer_zip.output_path)
-  timeout                        = 20
+  timeout                        = 30
   memory_size                    = 512
   reserved_concurrent_executions = 1
 
@@ -93,7 +93,7 @@ resource "aws_lambda_function" "counter" {
   handler          = "app.handler"
   filename         = data.archive_file.counter_zip.output_path
   source_code_hash = filebase64sha256(data.archive_file.counter_zip.output_path)
-  timeout          = 20
+  timeout          = 10
   memory_size      = 128
 
   environment {
@@ -135,7 +135,7 @@ resource "aws_lambda_function" "tvl" {
   handler          = "app.handler"
   filename         = data.archive_file.tvl_zip.output_path
   source_code_hash = filebase64sha256(data.archive_file.tvl_zip.output_path)
-  timeout          = 20
+  timeout          = 60
   memory_size      = 128
 
   environment {

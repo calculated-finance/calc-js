@@ -109,7 +109,10 @@ export const RUJIRA = {
   color: "#ab3ddb",
   bech32AddressPrefix: "thor",
   hdPath: "m/44'/931'/0'/0/0",
-  rpcUrls: ["https://thornode-mainnet-rpc.bryanlabs.net"],
+  rpcUrls: [
+    "https://thornode-mainnet-rpc.bryanlabs.net",
+    "https://rpc.ninerealms.com",
+  ],
   defaultGasPrice: "0.0rune",
   managerContract:
     "thor136rwqvwy3flttm9wfnc5xgnlr6mu5k8e2elgzs2hdhuwf50w3l2q0nu2qu",
@@ -134,12 +137,15 @@ export const CHAINS_BY_ID: Record<ChainId, Chain> = CHAINS.reduce(
 );
 
 export const COSMOS_CHAINS_BY_ID: Record<CosmosChainId, CosmosChain> =
-  CHAINS.reduce((acc, chain) => {
-    if (chain.type === "cosmos") {
-      return {
-        ...acc,
-        [chain.id]: chain,
-      };
-    }
-    return acc;
-  }, {} as Record<CosmosChainId, CosmosChain>);
+  CHAINS.reduce(
+    (acc, chain) => {
+      if (chain.type === "cosmos") {
+        return {
+          ...acc,
+          [chain.id]: chain,
+        };
+      }
+      return acc;
+    },
+    {} as Record<CosmosChainId, CosmosChain>
+  );

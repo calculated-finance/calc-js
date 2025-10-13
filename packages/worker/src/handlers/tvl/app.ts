@@ -92,10 +92,10 @@ export const handler = metricScope((metrics) => async () => {
     metrics.setDimensions({ ChainId: chainId, Denom: denom });
     metrics.putMetric(
       "TVL",
-      Number(amount / 10n ** 8n) * (prices[denom] ?? 0),
+      (Number(amount) / 10 ** 8) * (prices[denom] ?? 0),
       Unit.Count
     );
-    metrics.putMetric("Balance", Number(amount / 10n ** 8n), Unit.Count);
+    metrics.putMetric("Balance", Number(amount) / 10 ** 8, Unit.Count);
     metrics.putMetric("Price", prices[denom] ?? 0, Unit.Count);
     await metrics.flush();
   }

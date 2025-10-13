@@ -84,7 +84,7 @@ export const handler = metricScope((metrics) => async () => {
     );
   }
 
-  console.log(prices);
+  console.log(strategies.length, totals);
 
   metrics.setNamespace("Calc/Custom");
 

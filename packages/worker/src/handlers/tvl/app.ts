@@ -24,13 +24,16 @@ const fetchPrices = async () => {
     }
   );
 
-  return data.reduce((acc, { id, current_price }) => {
-    const asset = ASSETS_BY_COINGECKO_ID[id];
-    if (asset) {
-      acc[asset.rawName] = current_price;
-    }
-    return acc;
-  }, {} as Record<string, number>);
+  return data.reduce(
+    (acc, { id, current_price }) => {
+      const asset = ASSETS_BY_COINGECKO_ID[id];
+      if (asset) {
+        acc[asset.rawName] = current_price;
+      }
+      return acc;
+    },
+    {} as Record<string, number>
+  );
 };
 
 const fetchAllStrategies = async (client: CosmWasmClient, manager: string) => {
@@ -80,6 +83,8 @@ export const handler = metricScope((metrics) => async () => {
       })
     );
   }
+
+  console.log(Object.keys(totals));
 
   metrics.setNamespace("Calc/Custom");
 

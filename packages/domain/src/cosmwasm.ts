@@ -77,22 +77,18 @@ export class CosmWasmQueryError extends Schema.TaggedError<CosmWasmQueryError>()
 
 export const getCosmWasmClient = (chain: CosmosChain) =>
   Effect.acquireRelease(
-    Effect.gen(function* () {
-      return yield* Effect.tryPromise({
-        try: () => CosmWasmClient.connect(chain.rpcUrls[0]),
-        catch: (error) => new CosmWasmConnectionError({ cause: error }),
-      });
+    Effect.tryPromise({
+      try: () => CosmWasmClient.connect(chain.rpcUrls[0]),
+      catch: (error) => new CosmWasmConnectionError({ cause: error }),
     }),
     (client) => Effect.sync(client.disconnect)
   );
 
 export const getStargateClient = (chain: CosmosChain) =>
   Effect.acquireRelease(
-    Effect.gen(function* () {
-      return yield* Effect.tryPromise({
-        try: () => StargateClient.connect(chain.rpcUrls[0]),
-        catch: (error) => new CosmWasmConnectionError({ cause: error }),
-      });
+    Effect.tryPromise({
+      try: () => StargateClient.connect(chain.rpcUrls[0]),
+      catch: (error) => new CosmWasmConnectionError({ cause: error }),
     }),
     (client) => Effect.sync(client.disconnect)
   );

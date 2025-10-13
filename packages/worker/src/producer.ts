@@ -3,7 +3,7 @@ import { CosmWasmClient } from "@cosmjs/cosmwasm-stargate";
 import type { Trigger } from "@template/domain/calc2";
 import {
   CHAINS_BY_ID,
-  RUJIRA_STAGENET,
+  RUJIRA,
   type CosmosChain,
 } from "@template/domain/chains";
 import {
@@ -120,7 +120,7 @@ const fetchBlockTriggers = (chain: CosmosChain, client: CosmWasmClient) =>
 
 const producer = Effect.gen(function* () {
   const chainId = yield* Config.string("CHAIN_ID").pipe(
-    Config.withDefault(RUJIRA_STAGENET.id)
+    Config.withDefault(RUJIRA.id)
   );
   const queueUrl = yield* Config.string("QUEUE_URL").pipe(
     Config.withDefault(

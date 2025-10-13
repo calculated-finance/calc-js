@@ -84,7 +84,7 @@ export const handler = metricScope((metrics) => async () => {
     );
   }
 
-  console.log(Object.keys(totals));
+  console.log(prices);
 
   metrics.setNamespace("Calc/Custom");
 
@@ -95,6 +95,8 @@ export const handler = metricScope((metrics) => async () => {
       Number(amount / 10n ** 8n) * (prices[denom] ?? 0),
       Unit.Count
     );
+    metrics.putMetric("Balance", Number(amount / 10n ** 8n), Unit.Count);
+    metrics.putMetric("Price", prices[denom] ?? 0, Unit.Count);
     await metrics.flush();
   }
 });

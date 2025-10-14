@@ -57,7 +57,7 @@ resource "aws_cloudwatch_log_group" "api_gw" {
 resource "aws_lambda_permission" "apigw_invoke" {
   statement_id  = "AllowAPIGWInvoke"
   action        = "lambda:InvokeFunction"
-  function_name = var.prices_lambda_invoke_arn
+  function_name = var.prices_lambda_function_name
   principal     = "apigateway.amazonaws.com"
   source_arn    = "${aws_apigatewayv2_api.http.execution_arn}/*/*"
 }

@@ -164,3 +164,27 @@ resource "aws_lambda_permission" "tvl_events" {
   principal     = "events.amazonaws.com"
   source_arn    = aws_cloudwatch_event_rule.tvl_schedule.arn
 }
+
+
+data "archive_file" "prices_zip" {
+  type        = "zip"
+  source_dir  = "${path.module}/../../../dist/handlers/prices"
+  output_path = "${path.module}/${basename(var.source_dir)}-prices.zip"
+}
+
+resource "aws_lambda_function" "prices" {
+  function_name    = "${local.lambda_name_prefix}-prices"
+  role             = aws_iam_role.lambda_role.arn
+  runtime          = "nodejs20.x"
+  handler          = "app.handler"
+  filename         = data.archive_file.prices_zip.output_path
+  source_code_hash = filebase64sha256(data.archive_file.prices_zip.output_path)
+  timeout          = 60
+  memory_size      = 128
+
+  environment {
+    variables = {
+      COINGECKO_API_KEY = var.coingecko_api_key
+    }
+  }
+}

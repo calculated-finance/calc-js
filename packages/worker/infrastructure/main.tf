@@ -85,3 +85,17 @@ module "lambda" {
   triggers_queue_arn = module.sqs.triggers_queue_arn
   source_dir         = "../dist/handlers"
 }
+
+module "apigw" {
+  source = "./modules/apigw"
+
+  project_name             = var.project_name
+  prices_lambda_invoke_arn = module.lambda.prices_lambda_invoke_arn
+}
+
+module "cloudfront" {
+  source = "./modules/cloudfront"
+
+  project_name     = var.project_name
+  apigw_invoke_url = module.apigw.apigw_invoke_url
+}

@@ -12,6 +12,7 @@ const outdir = "./dist/handlers";
         "./src/handlers/consumer/app.ts",
         "./src/handlers/counter/app.ts",
         "./src/handlers/tvl/app.ts",
+        "./src/handlers/prices/app.ts",
       ],
       outdir,
       minify: true,

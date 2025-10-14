@@ -89,8 +89,9 @@ module "lambda" {
 module "apigw" {
   source = "./modules/apigw"
 
-  project_name             = var.project_name
-  prices_lambda_invoke_arn = module.lambda.prices_lambda_invoke_arn
+  project_name                = var.project_name
+  prices_lambda_invoke_arn    = module.lambda.prices_lambda_invoke_arn
+  prices_lambda_function_name = module.lambda.prices_lambda_function_name
 }
 
 module "cloudfront" {

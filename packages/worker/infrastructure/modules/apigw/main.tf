@@ -20,14 +20,18 @@ resource "aws_apigatewayv2_integration" "lambda" {
   timeout_milliseconds   = 10000
 }
 
-# Route: GET /cg/{proxy+}
 resource "aws_apigatewayv2_route" "cg_get" {
   api_id    = aws_apigatewayv2_api.http.id
   route_key = "GET /cg/{proxy+}"
   target    = "integrations/${aws_apigatewayv2_integration.lambda.id}"
 }
 
-# Stage with CORS (allow only your origins)
+resource "aws_apigatewayv2_route" "cg_options" {
+  api_id    = aws_apigatewayv2_api.http.id
+  route_key = "OPTIONS /cg/{proxy+}"
+  target    = "integrations/${aws_apigatewayv2_integration.lambda.id}"
+}
+
 resource "aws_apigatewayv2_stage" "default" {
   api_id      = aws_apigatewayv2_api.http.id
   name        = "$default"
@@ -55,7 +59,6 @@ resource "aws_cloudwatch_log_group" "api_gw" {
   retention_in_days = 14
 }
 
-# Permission for API GW to invoke Lambda
 resource "aws_lambda_permission" "apigw_invoke" {
   statement_id  = "AllowAPIGWInvoke"
   action        = "lambda:InvokeFunction"

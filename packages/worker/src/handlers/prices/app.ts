@@ -6,7 +6,11 @@ import {
 const sm = new SecretsManagerClient({});
 let CG_KEY;
 
-const ORIGINS = new Set(["https://staging.yumdao.org", "https://yumdao.org"]);
+const ORIGINS = new Set([
+  "https://staging.yumdao.org",
+  "https://yumdao.org",
+  "http://localhost:3000",
+]);
 
 export const handler = async (event: any) => {
   const origin = event.headers?.origin;

@@ -1,6 +1,15 @@
 resource "aws_apigatewayv2_api" "http" {
   name          = "${var.project_name}-api"
   protocol_type = "HTTP"
+
+  cors_configuration {
+    allow_credentials = false
+    allow_headers     = ["content-type", "x-amz-date", "authorization", "x-api-key"]
+    allow_methods     = ["GET", "OPTIONS"]
+    allow_origins     = ["http://localhost:3000", "https://staging.yumdao.org", "https://yumdao.org"]
+    expose_headers    = ["date", "keep-alive"]
+    max_age           = 86400
+  }
 }
 
 resource "aws_apigatewayv2_integration" "lambda" {
@@ -15,13 +24,6 @@ resource "aws_apigatewayv2_integration" "lambda" {
 resource "aws_apigatewayv2_route" "cg_get" {
   api_id    = aws_apigatewayv2_api.http.id
   route_key = "GET /cg/{proxy+}"
-  target    = "integrations/${aws_apigatewayv2_integration.lambda.id}"
-}
-
-# Preflight handled by API GW (optional; you can also do it in Lambda)
-resource "aws_apigatewayv2_route" "cg_options" {
-  api_id    = aws_apigatewayv2_api.http.id
-  route_key = "OPTIONS /cg/{proxy+}"
   target    = "integrations/${aws_apigatewayv2_integration.lambda.id}"
 }
 

@@ -1,10 +1,4 @@
-import {
-  GetSecretValueCommand,
-  SecretsManagerClient,
-} from "@aws-sdk/client-secrets-manager";
-
-const sm = new SecretsManagerClient({});
-let CG_KEY;
+const CG_KEY = process.env.COINGECKO_API_KEY!;
 
 const ORIGINS = new Set([
   "https://staging.yumdao.org",
@@ -37,13 +31,8 @@ export const handler = async (event: any) => {
     const qs = event.rawQueryString ? `?${event.rawQueryString}` : "";
     const path = event.rawPath?.replace(/^\/cg/, "") || "";
 
-    CG_KEY ||= (
-      await sm.send(
-        new GetSecretValueCommand({ SecretId: "COINGECKO_PRO_KEY" })
-      )
-    ).SecretString;
-
     const target = `https://pro-api.coingecko.com${path}${qs}`;
+
     const response = await fetch(target, {
       headers: { "x-cg-pro-api-key": CG_KEY },
     });

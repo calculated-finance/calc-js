@@ -86,17 +86,17 @@ module "lambda" {
   source_dir         = "../dist/handlers"
 }
 
-# module "apigw" {
-#   source = "./modules/apigw"
+module "apigw" {
+  source = "./modules/apigw"
 
-#   project_name                = var.project_name
-#   prices_lambda_invoke_arn    = module.lambda.prices_lambda_invoke_arn
-#   prices_lambda_function_name = module.lambda.prices_lambda_function_name
-# }
+  project_name                = var.project_name
+  prices_lambda_invoke_arn    = module.lambda.prices_lambda_invoke_arn
+  prices_lambda_function_name = module.lambda.prices_lambda_function_name
+}
 
-# module "cloudfront" {
-#   source = "./modules/cloudfront"
+module "cloudfront" {
+  source = "./modules/cloudfront"
 
-#   project_name     = var.project_name
-#   apigw_invoke_url = module.apigw.apigw_invoke_url
-# }
+  project_name     = var.project_name
+  apigw_invoke_url = module.apigw.apigw_invoke_url
+}

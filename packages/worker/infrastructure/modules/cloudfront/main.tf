@@ -10,7 +10,7 @@ resource "aws_cloudfront_cache_policy" "all_query" {
     enable_accept_encoding_gzip   = true
 
     headers_config {
-      header_behavior = "none"
+      header_behavior = "whitelist"
 
       headers {
         items = ["Origin"]

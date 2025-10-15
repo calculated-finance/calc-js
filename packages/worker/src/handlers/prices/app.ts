@@ -1,14 +1,14 @@
 const CG_KEY = process.env.COINGECKO_API_KEY!;
 
-const ORIGINS = new Set([
+const ORIGINS = [
   "https://staging.yumdao.org",
   "https://yumdao.org",
   "http://localhost:3000",
-]);
+];
 
 export const handler = async (event: any) => {
   const origin = event.headers?.origin;
-  const corsAllowed = ORIGINS.has(origin) ? origin : null;
+  const corsAllowed = ORIGINS.some((o) => o.startsWith(origin)) ? origin : null;
 
   if (event.requestContext?.http?.method === "OPTIONS") {
     return {

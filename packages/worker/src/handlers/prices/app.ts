@@ -16,6 +16,23 @@ export const handler = async (event: any) => {
   const origin = event.headers?.origin;
   const corsAllowed = ORIGINS.has(origin) ? origin : null;
 
+  if (event.requestContext?.http?.method === "OPTIONS") {
+    return {
+      statusCode: 200,
+      headers: {
+        ...(corsAllowed
+          ? {
+              "Access-Control-Allow-Origin": corsAllowed,
+              "Access-Control-Allow-Methods": "GET, OPTIONS",
+              "Access-Control-Allow-Headers": "content-type",
+              "Access-Control-Max-Age": "86400",
+            }
+          : {}),
+      },
+      body: "",
+    };
+  }
+
   try {
     const qs = event.rawQueryString ? `?${event.rawQueryString}` : "";
     const path = event.rawPath?.replace(/^\/cg/, "") || "";

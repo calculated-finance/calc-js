@@ -4,20 +4,28 @@ locals {
 
 resource "aws_cloudfront_cache_policy" "all_query" {
   name = "${var.project_name}-cache-all-query"
+
   parameters_in_cache_key_and_forwarded_to_origin {
     enable_accept_encoding_brotli = true
     enable_accept_encoding_gzip   = true
 
     headers_config {
       header_behavior = "none"
+
+      headers {
+        items = ["Origin"]
+      }
     }
+
     cookies_config {
       cookie_behavior = "none"
     }
+
     query_strings_config {
       query_string_behavior = "all"
     }
   }
+
   default_ttl = 120
   max_ttl     = 300
   min_ttl     = 0

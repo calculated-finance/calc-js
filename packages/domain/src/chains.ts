@@ -109,7 +109,11 @@ export const RUJIRA = {
   color: "#ab3ddb",
   bech32AddressPrefix: "thor",
   hdPath: "m/44'/931'/0'/0/0",
-  rpcUrls: ["https://rpc.ninerealms.com"],
+  rpcUrls: [
+    "https://rpc.ninerealms.com",
+    "https://thorchain-rpc.ibs.team",
+    "https://rpc-thorchain.rorcual.xyz",
+  ],
   defaultGasPrice: "0.0rune",
   managerContract:
     "thor136rwqvwy3flttm9wfnc5xgnlr6mu5k8e2elgzs2hdhuwf50w3l2q0nu2qu",

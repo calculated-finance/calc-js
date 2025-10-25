@@ -149,7 +149,7 @@ resource "aws_ecs_task_definition" "producer" {
     {
       name      = "producer"
       image     = var.container_image
-      command   = ["dumb-init", "./scripts/start-producer.sh"]
+      command   = ["./build/esm/runners/producer/app.js"]
       essential = true
 
       environment = [

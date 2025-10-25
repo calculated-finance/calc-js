@@ -128,7 +128,7 @@ const producer = Effect.gen(function* () {
     )
   );
   const fetchDelay = yield* Config.string("FETCH_DELAY").pipe(
-    Config.withDefault("2000")
+    Config.withDefault("6000")
   );
 
   const chain = CHAINS_BY_ID[chainId] as CosmosChain;

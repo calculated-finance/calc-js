@@ -13,6 +13,6 @@ if [ ! -f "$FILE" ]; then
   exit 66
 fi
 
-echo "Running $FILE in $NODE_ENV mode..."
+echo "Running $FILE in production mode..."
 
 exec node "$FILE" "$@"

@@ -19,8 +19,10 @@
     "check": "tsc -b tsconfig.json",
     "test": "vitest",
     "coverage": "vitest --coverage",
-    "start:producer": "node build/esm/producer.js",
-    "dev:producer": "tsx src/producer.ts"
+    "start:producer": "node build/esm/runners/producer/app.js",
+    "dev:producer": "tsx src/runners/producer/app.ts",
+    "start:indexer": "node build/esm/runners/indexer/app.js",
+    "dev:indexer": "tsx src/runners/indexer/app.ts"
   },
   "dependencies": {
     "@aws-sdk/client-secrets-manager": "^3.879.0",

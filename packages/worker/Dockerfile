@@ -45,4 +45,4 @@ RUN addgroup -g 1001 -S worker && \
 USER worker
 WORKDIR /app/packages/worker
 
-CMD ["dumb-init", "./scripts/start-producer.sh"]
+ENTRYPOINT ["dumb-init", "--", "./scripts/entrypoint.sh"]

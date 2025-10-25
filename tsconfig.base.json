@@ -40,9 +40,9 @@
       "@template/domain": ["./packages/domain/src/index.js"],
       "@template/domain/*": ["./packages/domain/src/*.js"],
       "@template/domain/test/*": ["./packages/domain/test/*.js"],
-      "@template/server": ["./packages/server/src/index.js"],
-      "@template/server/*": ["./packages/server/src/*.js"],
-      "@template/server/test/*": ["./packages/server/test/*.js"]
+      "@template/worker": ["./packages/worker/src/index.js"],
+      "@template/worker/*": ["./packages/worker/src/*.js"],
+      "@template/worker/test/*": ["./packages/worker/test/*.js"]
     }
   }
 }

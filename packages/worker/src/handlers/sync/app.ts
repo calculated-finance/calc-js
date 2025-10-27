@@ -1,6 +1,6 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
-import { FoundTx } from "@template/worker/types";
+import { FoundTx } from "../../types.js";
 
 type Resources = {
   dynamodb: DynamoDBDocumentClient;

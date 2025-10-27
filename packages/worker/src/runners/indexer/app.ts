@@ -34,7 +34,7 @@ async function getCheckpoint(
   const out = await dynamodb.send(
     new GetCommand({
       TableName: tableName,
-      Key: { pk: chainId },
+      Key: { chain_id: chainId },
       ConsistentRead: true,
     })
   );
@@ -51,7 +51,7 @@ async function setCheckpoint(
   await dynamodb.send(
     new UpdateCommand({
       TableName: tableName,
-      Key: { pk: chainId },
+      Key: { chain_id: chainId },
       UpdateExpression: "SET last_height = :h",
       ConditionExpression:
         "attribute_not_exists(last_height) OR :h > last_height",

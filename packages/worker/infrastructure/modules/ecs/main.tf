@@ -126,6 +126,31 @@ resource "aws_iam_role_policy" "sqs_policy" {
   })
 }
 
+resource "aws_iam_role_policy" "dynamodb_policy" {
+  name = "${var.project_name}-ecs-dynamodb-policy"
+  role = aws_iam_role.ecs_task_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:UpdateItem"
+        ]
+        Resource = [
+          var.indexer_checkpoint_table_arn,
+          var.events_table_arn,
+          var.strategies_table_arn
+        ]
+      }
+    ]
+  })
+}
+
+
 resource "aws_cloudwatch_log_group" "scheduler" {
   name              = "/ecs/${var.project_name}-scheduler"
   retention_in_days = 7

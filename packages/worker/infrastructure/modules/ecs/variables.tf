@@ -79,3 +79,18 @@ variable "indexer_checkpoint_table_name" {
   description = "Name of the DynamoDB table for indexer checkpoints"
   type        = string
 }
+
+variable "indexer_checkpoint_table_arn" {
+  description = "ARN of the DynamoDB table for indexer checkpoints"
+  type        = string
+}
+
+variable "events_table_arn" {
+  description = "ARN of the DynamoDB table for events"
+  type        = string
+}
+
+variable "strategies_table_arn" {
+  description = "ARN of the DynamoDB table for strategies"
+  type        = string
+}

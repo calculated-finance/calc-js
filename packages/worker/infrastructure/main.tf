@@ -83,6 +83,9 @@ module "ecs" {
   transactions_queue_arn        = module.sqs.transactions_queue_arn
   chain_id                      = var.chain_id
   indexer_checkpoint_table_name = module.dynamodb.indexer_checkpoint_table_name
+  indexer_checkpoint_table_arn  = module.dynamodb.indexer_checkpoint_table_arn
+  events_table_arn              = module.dynamodb.events_table_arn
+  strategies_table_arn          = module.dynamodb.strategies_table_arn
 }
 
 module "lambda" {

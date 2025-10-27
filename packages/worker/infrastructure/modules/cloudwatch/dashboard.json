@@ -12,7 +12,7 @@
                         "AWS/ECS",
                         "CPUUtilization",
                         "ServiceName",
-                        "calc-producer",
+                        "calc-scheduler",
                         "ClusterName",
                         "calc-cluster",
                         {
@@ -34,7 +34,7 @@
                 "view": "timeSeries",
                 "stacked": false,
                 "region": "ap-southeast-1",
-                "title": "Producer Infrastructure",
+                "title": "Scheduler Infrastructure",
                 "period": 60,
                 "stat": "Average"
             }
@@ -86,63 +86,63 @@
                         "AWS/Lambda",
                         "Throttles",
                         "FunctionName",
-                        "calc-production-consumer-1",
+                        "calc-production-executor-1",
                         {
                             "region": "ap-southeast-1"
                         }
                     ],
                     [
                         "...",
-                        "calc-production-consumer-2",
+                        "calc-production-executor-2",
                         {
                             "region": "ap-southeast-1"
                         }
                     ],
                     [
                         "...",
-                        "calc-production-consumer-3",
+                        "calc-production-executor-3",
                         {
                             "region": "ap-southeast-1"
                         }
                     ],
                     [
                         "...",
-                        "calc-production-consumer-4",
+                        "calc-production-executor-4",
                         {
                             "region": "ap-southeast-1"
                         }
                     ],
                     [
                         "...",
-                        "calc-production-consumer-5",
+                        "calc-production-executor-5",
                         {
                             "region": "ap-southeast-1"
                         }
                     ],
                     [
                         "...",
-                        "calc-production-consumer-6",
+                        "calc-production-executor-6",
                         {
                             "region": "ap-southeast-1"
                         }
                     ],
                     [
                         "...",
-                        "calc-production-consumer-7",
+                        "calc-production-executor-7",
                         {
                             "region": "ap-southeast-1"
                         }
                     ],
                     [
                         "...",
-                        "calc-production-consumer-8",
+                        "calc-production-executor-8",
                         {
                             "region": "ap-southeast-1"
                         }
                     ],
                     [
                         "...",
-                        "calc-production-consumer-9",
+                        "calc-production-executor-9",
                         {
                             "region": "ap-southeast-1"
                         }
@@ -168,63 +168,63 @@
                         "AWS/Lambda",
                         "Errors",
                         "FunctionName",
-                        "calc-production-consumer-1",
+                        "calc-production-executor-1",
                         {
                             "region": "ap-southeast-1"
                         }
                     ],
                     [
                         "...",
-                        "calc-production-consumer-2",
+                        "calc-production-executor-2",
                         {
                             "region": "ap-southeast-1"
                         }
                     ],
                     [
                         "...",
-                        "calc-production-consumer-3",
+                        "calc-production-executor-3",
                         {
                             "region": "ap-southeast-1"
                         }
                     ],
                     [
                         "...",
-                        "calc-production-consumer-4",
+                        "calc-production-executor-4",
                         {
                             "region": "ap-southeast-1"
                         }
                     ],
                     [
                         "...",
-                        "calc-production-consumer-5",
+                        "calc-production-executor-5",
                         {
                             "region": "ap-southeast-1"
                         }
                     ],
                     [
                         "...",
-                        "calc-production-consumer-6",
+                        "calc-production-executor-6",
                         {
                             "region": "ap-southeast-1"
                         }
                     ],
                     [
                         "...",
-                        "calc-production-consumer-7",
+                        "calc-production-executor-7",
                         {
                             "region": "ap-southeast-1"
                         }
                     ],
                     [
                         "...",
-                        "calc-production-consumer-8",
+                        "calc-production-executor-8",
                         {
                             "region": "ap-southeast-1"
                         }
                     ],
                     [
                         "...",
-                        "calc-production-consumer-9",
+                        "calc-production-executor-9",
                         {
                             "region": "ap-southeast-1"
                         }
@@ -245,7 +245,7 @@
             "width": 24,
             "height": 7,
             "properties": {
-                "query": "SOURCE '/aws/lambda/calc-production-consumer-1' | SOURCE '/aws/lambda/calc-production-consumer-2' | SOURCE '/aws/lambda/calc-production-consumer-3' | SOURCE '/aws/lambda/calc-production-consumer-4' | SOURCE '/ecs/calc-workers' | fields @timestamp, @message \n| filter @message like /error/ \n| limit 100",
+                "query": "SOURCE '/aws/lambda/calc-production-executor-1' | SOURCE '/aws/lambda/calc-production-executor-2' | SOURCE '/aws/lambda/calc-production-executor-3' | SOURCE '/aws/lambda/calc-production-executor-4' | SOURCE '/ecs/calc-workers' | fields @timestamp, @message \n| filter @message like /error/ \n| limit 100",
                 "region": "ap-southeast-1",
                 "stacked": false,
                 "title": "Error Logs",

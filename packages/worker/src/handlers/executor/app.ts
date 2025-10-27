@@ -21,7 +21,7 @@ let initPromise: Promise<Resources> | null = null;
 function init(): Promise<Resources> {
   if (initPromise) return initPromise;
 
-  console.log("Initializing consumer dependencies...");
+  console.log("Initializing executor dependencies...");
 
   initPromise = (async () => {
     const chainId = process.env.CHAIN_ID!;

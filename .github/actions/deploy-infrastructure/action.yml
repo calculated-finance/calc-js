@@ -11,7 +11,7 @@ inputs:
     description: "OIDC Role Name for AWS authentication"
     required: true
   signer_mnemonics:
-    description: "Comma-separated mnemonics for Lambda consumers (one per consumer)"
+    description: "Comma-separated mnemonics for Lambda executors (one per executor)"
     required: true
   chain-id:
     description: "Chain ID for worker secrets"
@@ -117,6 +117,6 @@ runs:
         # Get service status
         aws ecs describe-services \
           --cluster $CLUSTER_NAME \
-          --services calc-${{ inputs.environment }}-producer \
+          --services calc-${{ inputs.environment }}-scheduler \
           --query 'services[].{Name:serviceName,Status:status,Running:runningCount,Desired:desiredCount}' \
           --output table >> $GITHUB_STEP_SUMMARY || echo "Services not yet available" >> $GITHUB_STEP_SUMMARY

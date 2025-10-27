@@ -42,6 +42,7 @@ export const CosmosChain = Schema.Struct({
   defaultGasPrice: Schema.NonEmptyTrimmedString,
   managerContract: Schema.optional(Schema.NonEmptyTrimmedString),
   schedulerContract: Schema.optional(Schema.NonEmptyTrimmedString),
+  feeCollectorAddress: Schema.optional(Schema.NonEmptyTrimmedString),
 });
 
 export type EvmChain = Schema.Schema.Type<typeof EvmChain>;
@@ -100,6 +101,7 @@ export const RUJIRA_STAGENET = {
     "sthor1sws3r2t5zecjskzh8n5plk8yhpxm2grtm0tthqljl02qgklfemhqhfnkpr",
   schedulerContract:
     "sthor1yya2jk2upk6ncxmr7ugg3mt9dlxy2zgxpea2yxerdje7hr5tmn2qsktr5z",
+  feeCollectorAddress: "sthor17pfp4qvy5vrmtjar7kntachm0cfm9m9azl3jka",
 };
 
 export const RUJIRA = {
@@ -119,6 +121,8 @@ export const RUJIRA = {
     "thor136rwqvwy3flttm9wfnc5xgnlr6mu5k8e2elgzs2hdhuwf50w3l2q0nu2qu",
   schedulerContract:
     "thor1t2cnyn98xusxakgemsenn2p9n3ykd6accr2c0zg22nczh097ln7qeze20f",
+  feeCollectorAddress:
+    "thor17dxtxrne37gguxdeun4n36vqd5jmxxku5tr6gkuhhsh4lz9e8gksck4ygu",
 };
 
 export const CHAINS = [
@@ -138,15 +142,12 @@ export const CHAINS_BY_ID: Record<ChainId, Chain> = CHAINS.reduce(
 );
 
 export const COSMOS_CHAINS_BY_ID: Record<CosmosChainId, CosmosChain> =
-  CHAINS.reduce(
-    (acc, chain) => {
-      if (chain.type === "cosmos") {
-        return {
-          ...acc,
-          [chain.id]: chain,
-        };
-      }
-      return acc;
-    },
-    {} as Record<CosmosChainId, CosmosChain>
-  );
+  CHAINS.reduce((acc, chain) => {
+    if (chain.type === "cosmos") {
+      return {
+        ...acc,
+        [chain.id]: chain,
+      };
+    }
+    return acc;
+  }, {} as Record<CosmosChainId, CosmosChain>);

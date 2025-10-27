@@ -110,7 +110,7 @@ const fetchBlockTriggers = (chain: CosmosChain, client: CosmWasmClient) =>
     );
   });
 
-const producer = Effect.gen(function* () {
+const scheduler = Effect.gen(function* () {
   const chainId = yield* Config.string("CHAIN_ID").pipe(
     Config.withDefault(RUJIRA.id)
   );
@@ -190,4 +190,4 @@ const producer = Effect.gen(function* () {
   });
 });
 
-producer.pipe(Effect.scoped, Effect.runPromise);
+scheduler.pipe(Effect.scoped, Effect.runPromise);

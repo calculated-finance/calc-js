@@ -13,9 +13,9 @@ output "ecs_cluster_name" {
   value       = module.ecs.cluster_name
 }
 
-output "producer_service_name" {
+output "scheduler_service_name" {
   description = "Name of the fetch triggers ECS service"
-  value       = module.ecs.producer_service_name
+  value       = module.ecs.scheduler_service_name
 }
 
 output "cloudwatch_log_group" {

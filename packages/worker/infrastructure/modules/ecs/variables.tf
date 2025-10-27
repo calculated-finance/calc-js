@@ -43,11 +43,7 @@ variable "task_memory" {
   default     = "512"
 }
 
-variable "triggers_queue_url" {
-  description = "URL of the SQS queue for the producer to write to"
-  type        = string
 
-}
 
 variable "chain_id" {
   description = "Chain ID for worker containers"
@@ -61,7 +57,22 @@ variable "fetch_delay" {
   default     = "5000"
 }
 
+variable "triggers_queue_url" {
+  description = "URL of the SQS queue for the scheduler to write to"
+  type        = string
+}
+
 variable "triggers_queue_arn" {
   description = "ARN of the SQS triggers queue"
+  type        = string
+}
+
+variable "transactions_queue_url" {
+  description = "URL of the SQS transactions queue"
+  type        = string
+}
+
+variable "transactions_queue_arn" {
+  description = "ARN of the SQS transactions queue"
   type        = string
 }

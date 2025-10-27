@@ -118,26 +118,27 @@ resource "aws_iam_role_policy" "sqs_policy" {
           "sqs:SendMessage"
         ]
         Resource = [
-          var.triggers_queue_arn
+          var.triggers_queue_arn,
+          var.transactions_queue_arn
         ]
       }
     ]
   })
 }
 
-resource "aws_cloudwatch_log_group" "workers" {
-  name              = "/ecs/${var.project_name}-workers"
+resource "aws_cloudwatch_log_group" "scheduler" {
+  name              = "/ecs/${var.project_name}-scheduler"
   retention_in_days = 7
 
   tags = {
-    Name        = "${var.project_name}-workers-logs"
+    Name        = "${var.project_name}-scheduler-logs"
     Environment = var.environment
     Project     = var.project_name
   }
 }
 
-resource "aws_ecs_task_definition" "producer" {
-  family                   = "${var.project_name}-producer"
+resource "aws_ecs_task_definition" "scheduler" {
+  family                   = "${var.project_name}-scheduler"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   cpu                      = var.task_cpu
@@ -147,9 +148,9 @@ resource "aws_ecs_task_definition" "producer" {
 
   container_definitions = jsonencode([
     {
-      name      = "producer"
+      name      = "scheduler"
       image     = var.container_image
-      command   = ["./build/esm/runners/producer/app.js"]
+      command   = ["./build/esm/runners/scheduler/app.js"]
       essential = true
 
       environment = [
@@ -172,12 +173,12 @@ resource "aws_ecs_task_definition" "producer" {
         options = {
           awslogs-group         = aws_cloudwatch_log_group.workers.name
           awslogs-region        = var.aws_region
-          awslogs-stream-prefix = "producer"
+          awslogs-stream-prefix = "scheduler"
         }
       }
 
       healthCheck = {
-        command     = ["CMD-SHELL", "pgrep -f producer || exit 1"]
+        command     = ["CMD-SHELL", "pgrep -f scheduler || exit 1"]
         interval    = 30
         timeout     = 5
         retries     = 3
@@ -187,16 +188,16 @@ resource "aws_ecs_task_definition" "producer" {
   ])
 
   tags = {
-    Name        = "${var.project_name}-producer-task"
+    Name        = "${var.project_name}-scheduler-task"
     Environment = var.environment
     Project     = var.project_name
   }
 }
 
-resource "aws_ecs_service" "producer" {
-  name            = "${var.project_name}-producer"
+resource "aws_ecs_service" "scheduler" {
+  name            = "${var.project_name}-scheduler"
   cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.producer.arn
+  task_definition = aws_ecs_task_definition.scheduler.arn
   desired_count   = 1
   launch_type     = "FARGATE"
 
@@ -207,7 +208,96 @@ resource "aws_ecs_service" "producer" {
   }
 
   tags = {
-    Name        = "${var.project_name}-producer-service"
+    Name        = "${var.project_name}-scheduler-service"
+    Environment = var.environment
+    Project     = var.project_name
+  }
+}
+
+
+resource "aws_cloudwatch_log_group" "indexer" {
+  name              = "/ecs/${var.project_name}-indexer"
+  retention_in_days = 7
+
+  tags = {
+    Name        = "${var.project_name}-indexer-logs"
+    Environment = var.environment
+    Project     = var.project_name
+  }
+}
+
+resource "aws_ecs_task_definition" "indexer" {
+  family                   = "${var.project_name}-indexer"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = var.task_cpu
+  memory                   = var.task_memory
+  execution_role_arn       = aws_iam_role.ecs_execution_role.arn
+  task_role_arn            = aws_iam_role.ecs_task_role.arn
+
+  container_definitions = jsonencode([
+    {
+      name      = "indexer"
+      image     = var.container_image
+      command   = ["./build/esm/runners/indexer/app.js"]
+      essential = true
+
+      environment = [
+        {
+          name  = "CHAIN_ID"
+          value = var.chain_id
+        },
+        {
+          name  = "QUEUE_URL"
+          value = var.transactions_queue_url
+        },
+        {
+          name  = "FETCH_DELAY"
+          value = var.fetch_delay
+        }
+      ]
+
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          awslogs-group         = aws_cloudwatch_log_group.workers.name
+          awslogs-region        = var.aws_region
+          awslogs-stream-prefix = "indexer"
+        }
+      }
+
+      healthCheck = {
+        command     = ["CMD-SHELL", "pgrep -f indexer || exit 1"]
+        interval    = 30
+        timeout     = 5
+        retries     = 3
+        startPeriod = 60
+      }
+    }
+  ])
+
+  tags = {
+    Name        = "${var.project_name}-indexer-task"
+    Environment = var.environment
+    Project     = var.project_name
+  }
+}
+
+resource "aws_ecs_service" "indexer" {
+  name            = "${var.project_name}-indexer"
+  cluster         = aws_ecs_cluster.main.id
+  task_definition = aws_ecs_task_definition.indexer.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets          = var.subnet_ids
+    security_groups  = [var.security_group_id]
+    assign_public_ip = true
+  }
+
+  tags = {
+    Name        = "${var.project_name}-indexer-service"
     Environment = var.environment
     Project     = var.project_name
   }

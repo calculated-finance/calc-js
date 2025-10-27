@@ -47,20 +47,20 @@ resource "aws_iam_role_policy_attachment" "lambda_attach" {
   policy_arn = aws_iam_policy.lambda_policy.arn
 }
 
-data "archive_file" "consumer_zip" {
+data "archive_file" "executor_zip" {
   type        = "zip"
-  source_dir  = "${path.module}/../../../dist/handlers/consumer"
-  output_path = "${path.module}/${basename(var.source_dir)}-consumer.zip"
+  source_dir  = "${path.module}/../../../dist/handlers/executor"
+  output_path = "${path.module}/${basename(var.source_dir)}-executor.zip"
 }
 
-resource "aws_lambda_function" "consumer" {
+resource "aws_lambda_function" "executor" {
   count                          = length(var.signer_secret_arns)
-  function_name                  = "${local.lambda_name_prefix}-consumer-${count.index + 1}"
+  function_name                  = "${local.lambda_name_prefix}-executor-${count.index + 1}"
   role                           = aws_iam_role.lambda_role.arn
   runtime                        = "nodejs20.x"
   handler                        = "app.handler"
-  filename                       = data.archive_file.consumer_zip.output_path
-  source_code_hash               = filebase64sha256(data.archive_file.consumer_zip.output_path)
+  filename                       = data.archive_file.executor_zip.output_path
+  source_code_hash               = filebase64sha256(data.archive_file.executor_zip.output_path)
   timeout                        = 30
   memory_size                    = 512
   reserved_concurrent_executions = 1
@@ -73,10 +73,10 @@ resource "aws_lambda_function" "consumer" {
   }
 }
 
-resource "aws_lambda_event_source_mapping" "consumer_sqs" {
+resource "aws_lambda_event_source_mapping" "executor_sqs" {
   count            = length(var.signer_secret_arns)
   event_source_arn = var.triggers_queue_arn
-  function_name    = aws_lambda_function.consumer[count.index].arn
+  function_name    = aws_lambda_function.executor[count.index].arn
   batch_size       = 10
 }
 

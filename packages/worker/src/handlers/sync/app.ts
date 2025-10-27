@@ -27,7 +27,7 @@ export const handler = async (event: {
 
   const transactions = event.Records.map((r) => JSON.parse(r.body) as FoundTx);
 
-  console.log(transactions);
+  console.log(JSON.stringify(transactions, null, 2));
 
   return { batchItemFailures: [] };
 };

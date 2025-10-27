@@ -92,7 +92,7 @@ async function txSearchAll(
   return out;
 }
 
-async function searchTxByActionTm(
+async function fetchCalcTransactions(
   tm: Tendermint37Client,
   minHeight: number,
   maxHeight: number,
@@ -181,7 +181,7 @@ const indexer = Effect.gen(function* () {
     const end = Math.min(head, nextHeight + windowBlocks - 1);
 
     const results = yield* Effect.tryPromise(() =>
-      searchTxByActionTm(
+      fetchCalcTransactions(
         tm,
         nextHeight,
         end,

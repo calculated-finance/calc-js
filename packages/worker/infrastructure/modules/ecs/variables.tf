@@ -74,3 +74,8 @@ variable "transactions_queue_arn" {
   description = "ARN of the SQS transactions queue"
   type        = string
 }
+
+variable "indexer_checkpoint_table_name" {
+  description = "Name of the DynamoDB table for indexer checkpoints"
+  type        = string
+}

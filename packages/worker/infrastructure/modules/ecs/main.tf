@@ -254,6 +254,10 @@ resource "aws_ecs_task_definition" "indexer" {
         {
           name  = "FETCH_DELAY"
           value = var.fetch_delay
+        },
+        {
+          name  = "CHECKPOINT_TABLE",
+          value = var.indexer_checkpoint_table_name
         }
       ]
 

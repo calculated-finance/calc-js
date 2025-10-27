@@ -26,7 +26,7 @@ data "aws_iam_policy_document" "lambda_policy" {
 
   statement {
     sid       = "SqsAccess"
-    actions   = ["sqs:SendMessage", "sqs:ReceiveMessage", "sqs:DeleteMessage", "sqs:GetQueueAttributes", "sqs:ChangeMessageVisibility"]
+    actions   = ["sqs:SendMessage", "sqs:ReceiveMessage", "sqs:DeleteMessage", "sqs:GetQueueAttributes", "sqs:ChangeMessageVisibility", "dynamodb:GetItem", "dynamodb:PutItem"]
     resources = [var.triggers_queue_arn]
   }
 

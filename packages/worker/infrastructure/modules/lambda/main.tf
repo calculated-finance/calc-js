@@ -213,7 +213,6 @@ resource "aws_lambda_function" "sync" {
 }
 
 resource "aws_lambda_event_source_mapping" "sync_sqs" {
-  count            = length(var.signer_secret_arns)
   event_source_arn = var.transactions_queue_arn
   function_name    = aws_lambda_function.sync.arn
   batch_size       = 10

@@ -13,9 +13,9 @@ import {
   RUJIRA_STAGENET,
   type CosmosChain,
 } from "@template/domain/chains";
-import { flattenAttributes } from "@template/worker/util";
 import { Config, Duration, Effect, Schedule } from "effect";
 import { FoundTx } from "../../types.js";
+import { flattenAttributes } from "../../util.js";
 
 (BigInt.prototype as any).toJSON = function () {
   return this.toString();

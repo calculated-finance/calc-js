@@ -45,7 +45,17 @@ variable "events_table_name" {
   type        = string
 }
 
+variable "events_table_arn" {
+  description = "The ARN of the DynamoDB table for events"
+  type        = string
+}
+
 variable "strategies_table_name" {
   description = "The name of the DynamoDB table for strategies"
+  type        = string
+}
+
+variable "strategies_table_arn" {
+  description = "The ARN of the DynamoDB table for strategies"
   type        = string
 }

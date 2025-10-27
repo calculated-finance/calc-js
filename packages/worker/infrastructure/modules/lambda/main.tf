@@ -26,8 +26,15 @@ data "aws_iam_policy_document" "lambda_policy" {
 
   statement {
     sid       = "SqsAccess"
-    actions   = ["sqs:SendMessage", "sqs:ReceiveMessage", "sqs:DeleteMessage", "sqs:GetQueueAttributes", "sqs:ChangeMessageVisibility", "dynamodb:GetItem", "dynamodb:PutItem"]
+    actions   = ["sqs:SendMessage", "sqs:ReceiveMessage", "sqs:DeleteMessage", "sqs:GetQueueAttributes", "sqs:ChangeMessageVisibility"]
     resources = [var.triggers_queue_arn, var.transactions_queue_arn]
+  }
+
+  statement {
+    sid       = "DynamoDBAccess"
+    actions   = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem"]
+    resources = [var.events_table_arn, var.strategies_table_arn]
+
   }
 
   statement {

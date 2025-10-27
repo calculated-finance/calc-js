@@ -13,9 +13,9 @@ function init(): Promise<Resources> {
 
   console.log("Initializing sync dependencies...");
 
-  initPromise = (async () => {
-    return { dynamodb: DynamoDBDocumentClient.from(new DynamoDBClient({})) };
-  })();
+  initPromise = (async () => ({
+    dynamodb: DynamoDBDocumentClient.from(new DynamoDBClient({})),
+  }))();
 
   return initPromise;
 }

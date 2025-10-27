@@ -197,6 +197,14 @@ const indexer = Effect.gen(function* () {
 
     console.log({ fetched: txList.length, window: [nextHeight, end] });
 
+    console.log(
+      JSON.stringify(
+        txList.map((t) => t.events),
+        null,
+        2
+      )
+    );
+
     for (let i = 0; i < txList.length; i += 10) {
       yield* Effect.tryPromise({
         try: () =>

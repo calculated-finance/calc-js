@@ -82,7 +82,7 @@ module "ecs" {
   transactions_queue_url        = module.sqs.transactions_queue_url
   transactions_queue_arn        = module.sqs.transactions_queue_arn
   chain_id                      = var.chain_id
-  indexer_checkpoint_table_name = module.dynamodb.checkpoint_table_name
+  indexer_checkpoint_table_name = module.dynamodb.indexer_checkpoint_table_name
 }
 
 module "lambda" {

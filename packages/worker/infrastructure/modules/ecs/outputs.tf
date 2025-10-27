@@ -13,7 +13,17 @@ output "scheduler_service_name" {
   value       = aws_ecs_service.scheduler.name
 }
 
-output "log_group_name" {
-  description = "Name of the CloudWatch log group"
-  value       = aws_cloudwatch_log_group.workers.name
+output "scheduler_log_group_name" {
+  description = "Name of the scheduler CloudWatch log group"
+  value       = aws_cloudwatch_log_group.scheduler.name
+}
+
+output "indexer_service_name" {
+  description = "Name of the indexer ECS service"
+  value       = aws_ecs_service.indexer.name
+}
+
+output "indexer_log_group_name" {
+  description = "Name of the indexer CloudWatch log group"
+  value       = aws_cloudwatch_log_group.indexer.name
 }

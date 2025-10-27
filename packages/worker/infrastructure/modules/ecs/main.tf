@@ -171,7 +171,7 @@ resource "aws_ecs_task_definition" "scheduler" {
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          awslogs-group         = aws_cloudwatch_log_group.workers.name
+          awslogs-group         = aws_cloudwatch_log_group.scheduler.name
           awslogs-region        = var.aws_region
           awslogs-stream-prefix = "scheduler"
         }
@@ -260,7 +260,7 @@ resource "aws_ecs_task_definition" "indexer" {
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          awslogs-group         = aws_cloudwatch_log_group.workers.name
+          awslogs-group         = aws_cloudwatch_log_group.indexer.name
           awslogs-region        = var.aws_region
           awslogs-stream-prefix = "indexer"
         }

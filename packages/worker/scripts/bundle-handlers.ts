@@ -9,10 +9,11 @@ const outdir = "./dist/handlers";
 
     const res = await build({
       entryPoints: [
-        "./src/handlers/executor/app.ts",
         "./src/handlers/counter/app.ts",
-        "./src/handlers/tvl/app.ts",
+        "./src/handlers/executor/app.ts",
         "./src/handlers/prices/app.ts",
+        "./src/handlers/sync/app.ts",
+        "./src/handlers/tvl/app.ts",
       ],
       outdir,
       minify: true,

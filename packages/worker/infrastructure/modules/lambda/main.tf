@@ -165,7 +165,6 @@ resource "aws_lambda_permission" "tvl_events" {
   source_arn    = aws_cloudwatch_event_rule.tvl_schedule.arn
 }
 
-
 data "archive_file" "prices_zip" {
   type        = "zip"
   source_dir  = "${path.module}/../../../dist/handlers/prices"
@@ -187,4 +186,35 @@ resource "aws_lambda_function" "prices" {
       COINGECKO_API_KEY = var.coingecko_api_key
     }
   }
+}
+
+data "archive_file" "sync_zip" {
+  type        = "zip"
+  source_dir  = "${path.module}/../../../dist/handlers/sync"
+  output_path = "${path.module}/${basename(var.source_dir)}-sync.zip"
+}
+
+resource "aws_lambda_function" "sync" {
+  function_name    = "${local.lambda_name_prefix}-sync"
+  role             = aws_iam_role.lambda_role.arn
+  runtime          = "nodejs20.x"
+  handler          = "app.handler"
+  filename         = data.archive_file.sync_zip.output_path
+  source_code_hash = filebase64sha256(data.archive_file.sync_zip.output_path)
+  timeout          = 60
+  memory_size      = 128
+
+  environment {
+    variables = {
+      EVENTS_TABLE     = var.events_table_name
+      STRATEGIES_TABLE = var.strategies_table_name
+    }
+  }
+}
+
+resource "aws_lambda_event_source_mapping" "sync_sqs" {
+  count            = length(var.signer_secret_arns)
+  event_source_arn = var.transactions_queue_arn
+  function_name    = aws_lambda_function.sync.arn
+  batch_size       = 10
 }

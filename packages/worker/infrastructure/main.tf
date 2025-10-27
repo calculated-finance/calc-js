@@ -88,12 +88,15 @@ module "ecs" {
 module "lambda" {
   source = "./modules/lambda"
 
-  project_name       = var.project_name
-  environment        = var.environment
-  signer_secret_arns = module.secrets.signer_secret_arns
-  chain_id           = var.chain_id
-  triggers_queue_arn = module.sqs.triggers_queue_arn
-  source_dir         = "../dist/handlers"
+  project_name           = var.project_name
+  environment            = var.environment
+  signer_secret_arns     = module.secrets.signer_secret_arns
+  chain_id               = var.chain_id
+  triggers_queue_arn     = module.sqs.triggers_queue_arn
+  transactions_queue_arn = module.sqs.transactions_queue_arn
+  source_dir             = "../dist/handlers"
+  events_table_name      = module.dynamodb.events_table_name
+  strategies_table_name  = module.dynamodb.strategies_table_name
 }
 
 module "apigw" {

@@ -34,3 +34,18 @@ variable "coingecko_api_key" {
   type        = string
   default     = "CG-hH9ZLcUMLkAurz4gYHEpb17f"
 }
+
+variable "transactions_queue_arn" {
+  description = "ARN of the SQS transactions queue"
+  type        = string
+}
+
+variable "events_table_name" {
+  description = "The name of the DynamoDB table for events"
+  type        = string
+}
+
+variable "strategies_table_name" {
+  description = "The name of the DynamoDB table for strategies"
+  type        = string
+}

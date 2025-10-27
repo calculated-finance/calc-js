@@ -29,8 +29,6 @@ type CheckpointItem = {
   last_height: number;
 };
 
-let checkpoint = 6_780_500;
-
 async function getCheckpoint(
   tableName: string,
   chainId: string

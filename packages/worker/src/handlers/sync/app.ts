@@ -32,6 +32,11 @@ export const handler = async (event: {
   const transactions = event.Records.map((r) => JSON.parse(r.body) as FoundTx);
   const strategies: Record<string, Record<string, any>> = {};
 
+  console.log(
+    "Processing transactions:",
+    JSON.stringify(transactions, null, 2)
+  );
+
   for (const { events } of transactions) {
     for (const { type, attributes } of events) {
       if (type === EXECUTE_STRATEGY) {

@@ -14,11 +14,21 @@ output "ecs_cluster_name" {
 }
 
 output "scheduler_service_name" {
-  description = "Name of the fetch triggers ECS service"
+  description = "Name of the scheduler ECS service"
   value       = module.ecs.scheduler_service_name
 }
 
 output "cloudwatch_log_group" {
-  description = "Name of the CloudWatch log group"
-  value       = module.ecs.log_group_name
+  description = "Name of the scheduler CloudWatch log group"
+  value       = module.ecs.scheduler_log_group_name
+}
+
+output "indexer_service_name" {
+  description = "Name of the indexer ECS service"
+  value       = module.ecs.indexer_service_name
+}
+
+output "cloudwatch_log_group" {
+  description = "Name of the indexer CloudWatch log group"
+  value       = module.ecs.indexer_log_group_name
 }

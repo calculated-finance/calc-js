@@ -23,7 +23,7 @@ const sqs = new SQSClient({});
 const dynamodb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
 type CheckpointItem = {
-  pk: string; // chain id
+  chain_id: string; // chain id
   last_height: number;
 };
 

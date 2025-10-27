@@ -142,8 +142,6 @@ resource "aws_iam_role_policy" "dynamodb_policy" {
         ]
         Resource = [
           var.indexer_checkpoint_table_arn,
-          var.events_table_arn,
-          var.strategies_table_arn
         ]
       }
     ]

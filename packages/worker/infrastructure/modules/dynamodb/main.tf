@@ -19,6 +19,11 @@ resource "aws_dynamodb_table" "strategies" {
     type = "S"
   }
 
+  attribute {
+    name = "updated_at"
+    type = "N"
+  }
+
   global_secondary_index {
     name            = "strategy_updated_at"
     hash_key        = "strategy_address"

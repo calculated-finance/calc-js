@@ -1,10 +1,3 @@
-import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import { SendMessageBatchCommand, SQSClient } from "@aws-sdk/client-sqs";
-import {
-  DynamoDBDocumentClient,
-  GetCommand,
-  UpdateCommand,
-} from "@aws-sdk/lib-dynamodb";
 import { fromTendermintEvent, StargateClient } from "@cosmjs/stargate";
 import type { TxResponse } from "@cosmjs/tendermint-rpc";
 import { Tendermint37Client } from "@cosmjs/tendermint-rpc";
@@ -13,7 +6,6 @@ import {
   RUJIRA_STAGENET,
   type CosmosChain,
 } from "@template/domain/chains";
-import { FoundTx } from "@template/worker/types";
 import { flattenAttributes } from "@template/worker/util";
 import { Config, Duration, Effect, Schedule } from "effect";
 
@@ -21,28 +13,31 @@ import { Config, Duration, Effect, Schedule } from "effect";
   return this.toString();
 };
 
-const sqs = new SQSClient({});
-const dynamodb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
+// const sqs = new SQSClient({});
+// const dynamodb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
 
 type CheckpointItem = {
   chain_id: string; // chain id
   last_height: number;
 };
 
+let checkpoint = 6_780_500;
+
 async function getCheckpoint(
   tableName: string,
   chainId: string
 ): Promise<number | null> {
-  const out = await dynamodb.send(
-    new GetCommand({
-      TableName: tableName,
-      Key: { chain_id: chainId },
-      ConsistentRead: true,
-    })
-  );
+  return checkpoint;
+  // const out = await dynamodb.send(
+  //   new GetCommand({
+  //     TableName: tableName,
+  //     Key: { chain_id: chainId },
+  //     ConsistentRead: true,
+  //   })
+  // );
 
-  const item = out.Item as CheckpointItem | undefined;
-  return item?.last_height ?? null;
+  // const item = out.Item as CheckpointItem | undefined;
+  // return item?.last_height ?? null;
 }
 
 async function setCheckpoint(
@@ -50,17 +45,25 @@ async function setCheckpoint(
   chainId: string,
   newHeight: number
 ): Promise<void> {
-  await dynamodb.send(
-    new UpdateCommand({
-      TableName: tableName,
-      Key: { chain_id: chainId },
-      UpdateExpression: "SET last_height = :h",
-      ConditionExpression:
-        "attribute_not_exists(last_height) OR :h > last_height",
-      ExpressionAttributeValues: { ":h": newHeight },
-    })
-  );
+  checkpoint = newHeight;
+  // await dynamodb.send(
+  //   new UpdateCommand({
+  //     TableName: tableName,
+  //     Key: { chain_id: chainId },
+  //     UpdateExpression: "SET last_height = :h",
+  //     ConditionExpression:
+  //       "attribute_not_exists(last_height) OR :h > last_height",
+  //     ExpressionAttributeValues: { ":h": newHeight },
+  //   })
+  // );
 }
+
+type FoundTx = {
+  hash: string;
+  height: number;
+  index: number;
+  events: { type: string; attributes: Record<string, string> }[];
+};
 
 async function txSearchAll(
   tm: Tendermint37Client,
@@ -205,26 +208,26 @@ const indexer = Effect.gen(function* () {
       )
     );
 
-    for (let i = 0; i < txList.length; i += 10) {
-      yield* Effect.tryPromise({
-        try: () =>
-          sqs.send(
-            new SendMessageBatchCommand({
-              QueueUrl: queueUrl,
-              Entries: txList.slice(i, i + 10).map((tx) => ({
-                Id: tx.hash,
-                MessageBody: JSON.stringify({
-                  chainId,
-                  ...tx,
-                }),
-                MessageGroupId: chainId,
-                MessageDeduplicationId: tx.hash,
-              })),
-            })
-          ),
-        catch: (e) => new SQSSendMessageError("SQS enqueue failed", e),
-      });
-    }
+    // for (let i = 0; i < txList.length; i += 10) {
+    //   yield* Effect.tryPromise({
+    //     try: () =>
+    //       sqs.send(
+    //         new SendMessageBatchCommand({
+    //           QueueUrl: queueUrl,
+    //           Entries: txList.slice(i, i + 10).map((tx) => ({
+    //             Id: tx.hash,
+    //             MessageBody: JSON.stringify({
+    //               chainId,
+    //               ...tx,
+    //             }),
+    //             MessageGroupId: chainId,
+    //             MessageDeduplicationId: tx.hash,
+    //           })),
+    //         })
+    //       ),
+    //     catch: (e) => new SQSSendMessageError("SQS enqueue failed", e),
+    //   });
+    // }
 
     yield* Effect.tryPromise({
       try: () => setCheckpoint(tableName, chainId, end),

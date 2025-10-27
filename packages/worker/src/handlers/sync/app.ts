@@ -1,5 +1,6 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
+import { FoundTx } from "@template/worker/types";
 
 type Resources = {
   dynamodb: DynamoDBDocumentClient;
@@ -24,7 +25,7 @@ export const handler = async (event: {
 }) => {
   await init();
 
-  const transactions = event.Records.map((r) => r.body);
+  const transactions = event.Records.map((r) => JSON.parse(r.body) as FoundTx);
 
   console.log(transactions);
 

@@ -5,14 +5,16 @@ import {
   GetCommand,
   UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
-import { StargateClient } from "@cosmjs/stargate";
-import type { Event, TxResponse } from "@cosmjs/tendermint-rpc";
+import { fromTendermintEvent, StargateClient } from "@cosmjs/stargate";
+import type { TxResponse } from "@cosmjs/tendermint-rpc";
 import { Tendermint37Client } from "@cosmjs/tendermint-rpc";
 import {
   CHAINS_BY_ID,
-  RUJIRA,
+  RUJIRA_STAGENET,
   type CosmosChain,
 } from "@template/domain/chains";
+import { FoundTx } from "@template/worker/types";
+import { flattenAttributes } from "@template/worker/util";
 import { Config, Duration, Effect, Schedule } from "effect";
 
 (BigInt.prototype as any).toJSON = function () {
@@ -26,6 +28,8 @@ type CheckpointItem = {
   chain_id: string; // chain id
   last_height: number;
 };
+
+let checkpoint = 6_780_500;
 
 async function getCheckpoint(
   tableName: string,
@@ -59,13 +63,6 @@ async function setCheckpoint(
     })
   );
 }
-
-type FoundTx = {
-  hash: string;
-  height: number;
-  index: number;
-  events: readonly Event[];
-};
 
 async function txSearchAll(
   tm: Tendermint37Client,
@@ -112,7 +109,9 @@ async function fetchCalcTransactions(
     results.flat().map((t) => ({
       hash: Buffer.from(t.hash).toString("hex"),
       index: t.index,
-      events: t.result.events,
+      events: t.result.events.map((e) =>
+        flattenAttributes(fromTendermintEvent(e))
+      ),
       height: t.height,
     }))
   );
@@ -126,7 +125,7 @@ export class SQSSendMessageError extends Error {
 
 const indexer = Effect.gen(function* () {
   const chainId = yield* Config.string("CHAIN_ID").pipe(
-    Config.withDefault(RUJIRA.id)
+    Config.withDefault(RUJIRA_STAGENET.id)
   );
 
   const queueUrl = yield* Config.string("QUEUE_URL").pipe(
@@ -190,8 +189,6 @@ const indexer = Effect.gen(function* () {
       )
     );
 
-    console.log({ fetched: results.length, window: [nextHeight, end] });
-
     const byHash = new Map<string, FoundTx>();
 
     for (const tx of results) {
@@ -199,6 +196,16 @@ const indexer = Effect.gen(function* () {
     }
 
     const txList = Array.from(byHash.values());
+
+    console.log({ fetched: txList.length, window: [nextHeight, end] });
+
+    console.log(
+      JSON.stringify(
+        txList.map((t) => t.events),
+        null,
+        2
+      )
+    );
 
     for (let i = 0; i < txList.length; i += 10) {
       yield* Effect.tryPromise({

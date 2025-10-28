@@ -119,34 +119,34 @@ resource "aws_iam_role_policy" "sqs_policy" {
         ]
         Resource = [
           var.triggers_queue_arn,
-          var.transactions_queue_arn
+          # var.transactions_queue_arn
         ]
       }
     ]
   })
 }
 
-resource "aws_iam_role_policy" "dynamodb_policy" {
-  name = "${var.project_name}-ecs-dynamodb-policy"
-  role = aws_iam_role.ecs_task_role.id
+# resource "aws_iam_role_policy" "dynamodb_policy" {
+#   name = "${var.project_name}-ecs-dynamodb-policy"
+#   role = aws_iam_role.ecs_task_role.id
 
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "dynamodb:GetItem",
-          "dynamodb:PutItem",
-          "dynamodb:UpdateItem"
-        ]
-        Resource = [
-          var.indexer_checkpoint_table_arn,
-        ]
-      }
-    ]
-  })
-}
+#   policy = jsonencode({
+#     Version = "2012-10-17"
+#     Statement = [
+#       {
+#         Effect = "Allow"
+#         Action = [
+#           "dynamodb:GetItem",
+#           "dynamodb:PutItem",
+#           "dynamodb:UpdateItem"
+#         ]
+#         Resource = [
+#           var.indexer_checkpoint_table_arn,
+#         ]
+#       }
+#     ]
+#   })
+# }
 
 
 resource "aws_cloudwatch_log_group" "scheduler" {
@@ -237,95 +237,94 @@ resource "aws_ecs_service" "scheduler" {
   }
 }
 
+# resource "aws_cloudwatch_log_group" "indexer" {
+#   name              = "/ecs/${var.project_name}-indexer"
+#   retention_in_days = 7
 
-resource "aws_cloudwatch_log_group" "indexer" {
-  name              = "/ecs/${var.project_name}-indexer"
-  retention_in_days = 7
+#   tags = {
+#     Name        = "${var.project_name}-indexer-logs"
+#     Environment = var.environment
+#     Project     = var.project_name
+#   }
+# }
 
-  tags = {
-    Name        = "${var.project_name}-indexer-logs"
-    Environment = var.environment
-    Project     = var.project_name
-  }
-}
+# resource "aws_ecs_task_definition" "indexer" {
+#   family                   = "${var.project_name}-indexer"
+#   network_mode             = "awsvpc"
+#   requires_compatibilities = ["FARGATE"]
+#   cpu                      = var.task_cpu
+#   memory                   = var.task_memory
+#   execution_role_arn       = aws_iam_role.ecs_execution_role.arn
+#   task_role_arn            = aws_iam_role.ecs_task_role.arn
 
-resource "aws_ecs_task_definition" "indexer" {
-  family                   = "${var.project_name}-indexer"
-  network_mode             = "awsvpc"
-  requires_compatibilities = ["FARGATE"]
-  cpu                      = var.task_cpu
-  memory                   = var.task_memory
-  execution_role_arn       = aws_iam_role.ecs_execution_role.arn
-  task_role_arn            = aws_iam_role.ecs_task_role.arn
+#   container_definitions = jsonencode([
+#     {
+#       name      = "indexer"
+#       image     = var.container_image
+#       command   = ["./build/esm/runners/indexer/app.js"]
+#       essential = true
 
-  container_definitions = jsonencode([
-    {
-      name      = "indexer"
-      image     = var.container_image
-      command   = ["./build/esm/runners/indexer/app.js"]
-      essential = true
+#       environment = [
+#         {
+#           name  = "CHAIN_ID"
+#           value = var.chain_id
+#         },
+#         {
+#           name  = "QUEUE_URL"
+#           value = var.transactions_queue_url
+#         },
+#         {
+#           name  = "FETCH_DELAY"
+#           value = var.fetch_delay
+#         },
+#         {
+#           name  = "CHECKPOINT_TABLE",
+#           value = var.indexer_checkpoint_table_name
+#         }
+#       ]
 
-      environment = [
-        {
-          name  = "CHAIN_ID"
-          value = var.chain_id
-        },
-        {
-          name  = "QUEUE_URL"
-          value = var.transactions_queue_url
-        },
-        {
-          name  = "FETCH_DELAY"
-          value = var.fetch_delay
-        },
-        {
-          name  = "CHECKPOINT_TABLE",
-          value = var.indexer_checkpoint_table_name
-        }
-      ]
+#       logConfiguration = {
+#         logDriver = "awslogs"
+#         options = {
+#           awslogs-group         = aws_cloudwatch_log_group.indexer.name
+#           awslogs-region        = var.aws_region
+#           awslogs-stream-prefix = "indexer"
+#         }
+#       }
 
-      logConfiguration = {
-        logDriver = "awslogs"
-        options = {
-          awslogs-group         = aws_cloudwatch_log_group.indexer.name
-          awslogs-region        = var.aws_region
-          awslogs-stream-prefix = "indexer"
-        }
-      }
+#       healthCheck = {
+#         command     = ["CMD-SHELL", "pgrep -f indexer || exit 1"]
+#         interval    = 30
+#         timeout     = 5
+#         retries     = 3
+#         startPeriod = 60
+#       }
+#     }
+#   ])
 
-      healthCheck = {
-        command     = ["CMD-SHELL", "pgrep -f indexer || exit 1"]
-        interval    = 30
-        timeout     = 5
-        retries     = 3
-        startPeriod = 60
-      }
-    }
-  ])
+#   tags = {
+#     Name        = "${var.project_name}-indexer-task"
+#     Environment = var.environment
+#     Project     = var.project_name
+#   }
+# }
 
-  tags = {
-    Name        = "${var.project_name}-indexer-task"
-    Environment = var.environment
-    Project     = var.project_name
-  }
-}
+# resource "aws_ecs_service" "indexer" {
+#   name            = "${var.project_name}-indexer"
+#   cluster         = aws_ecs_cluster.main.id
+#   task_definition = aws_ecs_task_definition.indexer.arn
+#   desired_count   = 1
+#   launch_type     = "FARGATE"
 
-resource "aws_ecs_service" "indexer" {
-  name            = "${var.project_name}-indexer"
-  cluster         = aws_ecs_cluster.main.id
-  task_definition = aws_ecs_task_definition.indexer.arn
-  desired_count   = 1
-  launch_type     = "FARGATE"
+#   network_configuration {
+#     subnets          = var.subnet_ids
+#     security_groups  = [var.security_group_id]
+#     assign_public_ip = true
+#   }
 
-  network_configuration {
-    subnets          = var.subnet_ids
-    security_groups  = [var.security_group_id]
-    assign_public_ip = true
-  }
-
-  tags = {
-    Name        = "${var.project_name}-indexer-service"
-    Environment = var.environment
-    Project     = var.project_name
-  }
-}
+#   tags = {
+#     Name        = "${var.project_name}-indexer-service"
+#     Environment = var.environment
+#     Project     = var.project_name
+#   }
+# }

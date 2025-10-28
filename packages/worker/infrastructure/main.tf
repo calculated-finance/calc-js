@@ -45,12 +45,12 @@ module "secrets" {
   signer_mnemonics = var.signer_mnemonics
 }
 
-module "dynamodb" {
-  source = "./modules/dynamodb"
+# module "dynamodb" {
+#   source = "./modules/dynamodb"
 
-  project_name = var.project_name
-  environment  = var.environment
-}
+#   project_name = var.project_name
+#   environment  = var.environment
+# }
 
 module "sqs" {
   source = "./modules/sqs"
@@ -69,39 +69,39 @@ module "ecr" {
 module "ecs" {
   source = "./modules/ecs"
 
-  project_name                  = var.project_name
-  environment                   = var.environment
-  aws_region                    = var.aws_region
-  subnet_ids                    = module.vpc.public_subnet_ids
-  security_group_id             = module.vpc.security_group_id
-  container_image               = var.container_image
-  task_cpu                      = var.task_cpu
-  task_memory                   = var.task_memory
-  triggers_queue_url            = module.sqs.triggers_queue_url
-  triggers_queue_arn            = module.sqs.triggers_queue_arn
-  transactions_queue_url        = module.sqs.transactions_queue_url
-  transactions_queue_arn        = module.sqs.transactions_queue_arn
-  chain_id                      = var.chain_id
-  indexer_checkpoint_table_name = module.dynamodb.indexer_checkpoint_table_name
-  indexer_checkpoint_table_arn  = module.dynamodb.indexer_checkpoint_table_arn
-  events_table_arn              = module.dynamodb.events_table_arn
-  strategies_table_arn          = module.dynamodb.strategies_table_arn
+  project_name       = var.project_name
+  environment        = var.environment
+  aws_region         = var.aws_region
+  subnet_ids         = module.vpc.public_subnet_ids
+  security_group_id  = module.vpc.security_group_id
+  container_image    = var.container_image
+  task_cpu           = var.task_cpu
+  task_memory        = var.task_memory
+  triggers_queue_url = module.sqs.triggers_queue_url
+  triggers_queue_arn = module.sqs.triggers_queue_arn
+  # transactions_queue_url        = module.sqs.transactions_queue_url
+  # transactions_queue_arn        = module.sqs.transactions_queue_arn
+  chain_id = var.chain_id
+  # indexer_checkpoint_table_name = module.dynamodb.indexer_checkpoint_table_name
+  # indexer_checkpoint_table_arn  = module.dynamodb.indexer_checkpoint_table_arn
+  # events_table_arn              = module.dynamodb.events_table_arn
+  # strategies_table_arn          = module.dynamodb.strategies_table_arn
 }
 
 module "lambda" {
   source = "./modules/lambda"
 
-  project_name           = var.project_name
-  environment            = var.environment
-  signer_secret_arns     = module.secrets.signer_secret_arns
-  chain_id               = var.chain_id
-  triggers_queue_arn     = module.sqs.triggers_queue_arn
-  transactions_queue_arn = module.sqs.transactions_queue_arn
-  source_dir             = "../dist/handlers"
-  events_table_name      = module.dynamodb.events_table_name
-  events_table_arn       = module.dynamodb.events_table_arn
-  strategies_table_name  = module.dynamodb.strategies_table_name
-  strategies_table_arn   = module.dynamodb.strategies_table_arn
+  project_name       = var.project_name
+  environment        = var.environment
+  signer_secret_arns = module.secrets.signer_secret_arns
+  chain_id           = var.chain_id
+  triggers_queue_arn = module.sqs.triggers_queue_arn
+  # transactions_queue_arn = module.sqs.transactions_queue_arn
+  source_dir = "../dist/handlers"
+  # events_table_name      = module.dynamodb.events_table_name
+  # events_table_arn       = module.dynamodb.events_table_arn
+  # strategies_table_name  = module.dynamodb.strategies_table_name
+  # strategies_table_arn   = module.dynamodb.strategies_table_arn
 }
 
 module "apigw" {

@@ -65,32 +65,32 @@ variable "triggers_queue_arn" {
   type        = string
 }
 
-variable "transactions_queue_url" {
-  description = "URL of the SQS transactions queue"
-  type        = string
-}
+# variable "transactions_queue_url" {
+#   description = "URL of the SQS transactions queue"
+#   type        = string
+# }
 
-variable "transactions_queue_arn" {
-  description = "ARN of the SQS transactions queue"
-  type        = string
-}
+# variable "transactions_queue_arn" {
+#   description = "ARN of the SQS transactions queue"
+#   type        = string
+# }
 
-variable "indexer_checkpoint_table_name" {
-  description = "Name of the DynamoDB table for indexer checkpoints"
-  type        = string
-}
+# variable "indexer_checkpoint_table_name" {
+#   description = "Name of the DynamoDB table for indexer checkpoints"
+#   type        = string
+# }
 
-variable "indexer_checkpoint_table_arn" {
-  description = "ARN of the DynamoDB table for indexer checkpoints"
-  type        = string
-}
+# variable "indexer_checkpoint_table_arn" {
+#   description = "ARN of the DynamoDB table for indexer checkpoints"
+#   type        = string
+# }
 
-variable "events_table_arn" {
-  description = "ARN of the DynamoDB table for events"
-  type        = string
-}
+# variable "events_table_arn" {
+#   description = "ARN of the DynamoDB table for events"
+#   type        = string
+# }
 
-variable "strategies_table_arn" {
-  description = "ARN of the DynamoDB table for strategies"
-  type        = string
-}
+# variable "strategies_table_arn" {
+#   description = "ARN of the DynamoDB table for strategies"
+#   type        = string
+# }

@@ -25,17 +25,19 @@ data "aws_iam_policy_document" "lambda_policy" {
   }
 
   statement {
-    sid       = "SqsAccess"
-    actions   = ["sqs:SendMessage", "sqs:ReceiveMessage", "sqs:DeleteMessage", "sqs:GetQueueAttributes", "sqs:ChangeMessageVisibility"]
-    resources = [var.triggers_queue_arn, var.transactions_queue_arn]
+    sid     = "SqsAccess"
+    actions = ["sqs:SendMessage", "sqs:ReceiveMessage", "sqs:DeleteMessage", "sqs:GetQueueAttributes", "sqs:ChangeMessageVisibility"]
+    resources = [
+      var.triggers_queue_arn,
+      # var.transactions_queue_arn
+    ]
   }
 
-  statement {
-    sid       = "DynamoDBAccess"
-    actions   = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem"]
-    resources = [var.events_table_arn, var.strategies_table_arn]
-
-  }
+  # statement {
+  #   sid       = "DynamoDBAccess"
+  #   actions   = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem"]
+  #   resources = [var.events_table_arn, var.strategies_table_arn]
+  # }
 
   statement {
     sid       = "SecretsRead"
@@ -195,32 +197,32 @@ resource "aws_lambda_function" "prices" {
   }
 }
 
-data "archive_file" "sync_zip" {
-  type        = "zip"
-  source_dir  = "${path.module}/../../../dist/handlers/sync"
-  output_path = "${path.module}/${basename(var.source_dir)}-sync.zip"
-}
+# data "archive_file" "sync_zip" {
+#   type        = "zip"
+#   source_dir  = "${path.module}/../../../dist/handlers/sync"
+#   output_path = "${path.module}/${basename(var.source_dir)}-sync.zip"
+# }
 
-resource "aws_lambda_function" "sync" {
-  function_name    = "${local.lambda_name_prefix}-sync"
-  role             = aws_iam_role.lambda_role.arn
-  runtime          = "nodejs20.x"
-  handler          = "app.handler"
-  filename         = data.archive_file.sync_zip.output_path
-  source_code_hash = filebase64sha256(data.archive_file.sync_zip.output_path)
-  timeout          = 60
-  memory_size      = 128
+# resource "aws_lambda_function" "sync" {
+#   function_name    = "${local.lambda_name_prefix}-sync"
+#   role             = aws_iam_role.lambda_role.arn
+#   runtime          = "nodejs20.x"
+#   handler          = "app.handler"
+#   filename         = data.archive_file.sync_zip.output_path
+#   source_code_hash = filebase64sha256(data.archive_file.sync_zip.output_path)
+#   timeout          = 60
+#   memory_size      = 128
 
-  environment {
-    variables = {
-      EVENTS_TABLE     = var.events_table_name
-      STRATEGIES_TABLE = var.strategies_table_name
-    }
-  }
-}
+#   environment {
+#     variables = {
+#       EVENTS_TABLE     = var.events_table_name
+#       STRATEGIES_TABLE = var.strategies_table_name
+#     }
+#   }
+# }
 
-resource "aws_lambda_event_source_mapping" "sync_sqs" {
-  event_source_arn = var.transactions_queue_arn
-  function_name    = aws_lambda_function.sync.arn
-  batch_size       = 10
-}
+# resource "aws_lambda_event_source_mapping" "sync_sqs" {
+#   event_source_arn = var.transactions_queue_arn
+#   function_name    = aws_lambda_function.sync.arn
+#   batch_size       = 10
+# }

@@ -39,13 +39,26 @@ function init(): Promise<Resources> {
       hdPaths: [stringToPath(chain.hdPath)],
     });
 
-    const signers = await Promise.all(
-      chain.rpcUrls.map((rpcUrl) =>
-        SigningCosmWasmClient.connectWithSigner(rpcUrl, wallet, {
-          gasPrice: GasPrice.fromString(chain.defaultGasPrice),
-        })
-      )
-    );
+    const signers = [];
+
+    for (const rpcUrl of chain.rpcUrls) {
+      try {
+        const signer = await SigningCosmWasmClient.connectWithSigner(
+          rpcUrl,
+          wallet,
+          {
+            gasPrice: GasPrice.fromString(chain.defaultGasPrice),
+          }
+        );
+        signers.push(signer);
+      } catch (error) {
+        console.error(`Failed to connect to RPC URL ${rpcUrl}: ${error}`);
+      }
+    }
+
+    if (signers.length === 0) {
+      throw new Error("No available RPC URLs to connect to");
+    }
 
     const [{ address }] = await wallet.getAccounts();
 

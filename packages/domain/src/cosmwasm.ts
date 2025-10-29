@@ -78,7 +78,17 @@ export class CosmWasmQueryError extends Schema.TaggedError<CosmWasmQueryError>()
 export const getCosmWasmClient = (chain: CosmosChain) =>
   Effect.acquireRelease(
     Effect.tryPromise({
-      try: () => CosmWasmClient.connect(chain.rpcUrls[0]),
+      try: async () => {
+        for (const rpcUrl of chain.rpcUrls) {
+          try {
+            return await CosmWasmClient.connect(rpcUrl);
+          } catch (error) {
+            console.error(`Failed to connect to RPC URL ${rpcUrl}: ${error}`);
+          }
+        }
+
+        throw new Error("No available RPC URLs to connect to");
+      },
       catch: (error) => new CosmWasmConnectionError({ cause: error }),
     }),
     (client) => Effect.sync(client.disconnect)

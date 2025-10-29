@@ -23,12 +23,12 @@ output "scheduler_cloudwatch_log_group" {
   value       = module.ecs.scheduler_log_group_name
 }
 
-output "indexer_service_name" {
-  description = "Name of the indexer ECS service"
-  value       = module.ecs.indexer_service_name
-}
+# output "indexer_service_name" {
+#   description = "Name of the indexer ECS service"
+#   value       = module.ecs.indexer_service_name
+# }
 
-output "indexer_cloudwatch_log_group" {
-  description = "Name of the indexer CloudWatch log group"
-  value       = module.ecs.indexer_log_group_name
-}
+# output "indexer_cloudwatch_log_group" {
+#   description = "Name of the indexer CloudWatch log group"
+#   value       = module.ecs.indexer_log_group_name
+# }

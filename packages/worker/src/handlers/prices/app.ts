@@ -4,6 +4,9 @@ const ORIGINS = new Set([
   "https://staging.yumdao.org",
   "https://yumdao.org",
   "http://localhost:3000",
+  "http://localhost:5173",
+  "https://cacaoswap.app",
+  "https://test.cacaoswap.app",
 ]);
 
 export const handler = async (event: any) => {

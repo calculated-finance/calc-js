@@ -81,7 +81,9 @@ export const getCosmWasmClient = (chain: CosmosChain) =>
       try: async () => {
         for (const rpcUrl of chain.rpcUrls) {
           try {
-            return await CosmWasmClient.connect(rpcUrl);
+            const client = await CosmWasmClient.connect(rpcUrl);
+            console.log(`Connected to RPC URL ${rpcUrl} for chain ${chain.id}`);
+            return client;
           } catch (error) {
             console.error(`Failed to connect to RPC URL ${rpcUrl}: ${error}`);
           }

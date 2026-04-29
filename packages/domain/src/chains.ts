@@ -112,7 +112,7 @@ export const RUJIRA = {
   bech32AddressPrefix: "thor",
   hdPath: "m/44'/931'/0'/0/0",
   rpcUrls: [
-    "https://rpc.ninerealms.com",
+    "https://thornode.thorchain.network",
     "https://rpc-thorchain.rorcual.xyz",
     "https://thorchain-rpc.ibs.team",
   ],

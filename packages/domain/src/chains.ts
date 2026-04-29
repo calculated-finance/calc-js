@@ -113,6 +113,7 @@ export const RUJIRA = {
   hdPath: "m/44'/931'/0'/0/0",
   rpcUrls: [
     "https://thornode.thorchain.network",
+    "https://gateway.liquify.com/chain/thorchain_rpc",
     "https://rpc-thorchain.rorcual.xyz",
     "https://thorchain-rpc.ibs.team",
   ],

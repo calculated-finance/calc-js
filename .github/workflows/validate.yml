@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - "infrastructure/**"
+      - "packages/worker/infrastructure/**"
       - "packages/worker/**"
       - ".github/workflows/**"
 
@@ -33,7 +33,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile
+          file: packages/worker/Dockerfile
           push: false
           load: true
           tags: calc-worker:validation
@@ -42,9 +42,11 @@ jobs:
 
       - name: Test Docker image
         run: |
-          # Test that the image starts and validates environment variables
+          # Test that the image starts and validates environment variables.
+          # The image ENTRYPOINT (entrypoint.sh) expects a JS file path as its
+          # first arg, so override it to invoke pnpm directly.
           echo "Testing Docker image startup..."
-          docker run --rm calc-worker:validation pnpm --version
+          docker run --rm --entrypoint pnpm calc-worker:validation --version
           echo "✅ Docker image validation passed"
 
   validate-terraform:
@@ -53,7 +55,7 @@ jobs:
 
     defaults:
       run:
-        working-directory: infrastructure
+        working-directory: packages/worker/infrastructure
 
     steps:
       - name: Checkout

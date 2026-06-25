@@ -3,7 +3,7 @@ import { GasPrice } from "@cosmjs/stargate"
 import type { Window as KeplrWindow } from "@keplr-wallet/types"
 import { Effect, Schedule, Stream, SubscriptionRef } from "effect"
 import type { Chain, ChainId, CosmosChain, EvmChain, EvmChainId } from "../chains.js"
-import { BINANCE_SMART_CHAIN, COSMOS_HUB, ETHEREUM, RUJIRA_STAGENET } from "../chains.js"
+import { BINANCE_SMART_CHAIN, COSMOS_HUB, ETHEREUM, RUJIRA } from "../chains.js"
 import type { Connection, CosmosTransactionMsgs, Transaction, TransactionData, Wallet } from "../clients.js"
 import {
     AccountsNotAvailableError,
@@ -29,7 +29,7 @@ const KEPLR_CONNECTION_KEY = "calc_keplr_connection"
 
 const SUPPORTED_COSMOS_CHAINS: ReadonlyArray<CosmosChain> = [
     COSMOS_HUB,
-    RUJIRA_STAGENET
+    RUJIRA
 ] as const
 
 const SUPPORTED_EVM_CHAINS: ReadonlyArray<EvmChain> = [
@@ -207,7 +207,7 @@ export class KeplrService extends Effect.Service<KeplrService>()(
                         if (chain?.type === "evm") {
                             yield* connectEvm(provider, connectionRef, chainId as EvmChainId)
                         } else {
-                            yield* connectCosmos(connectionRef, chain as CosmosChain || RUJIRA_STAGENET)
+                            yield* connectCosmos(connectionRef, chain as CosmosChain || RUJIRA)
                         }
                     }),
 

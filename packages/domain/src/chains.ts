@@ -88,22 +88,6 @@ export const COSMOS_HUB = {
   defaultGasPrice: "0.025uatom",
 };
 
-export const RUJIRA_STAGENET = {
-  type: "cosmos" as const,
-  id: "thorchain-stagenet-2" as const,
-  displayName: "Rujira Stagenet",
-  color: "#ab3ddb",
-  bech32AddressPrefix: "sthor",
-  hdPath: "m/44'/931'/0'/0/0",
-  rpcUrls: ["https://stagenet-rpc.ninerealms.com"],
-  defaultGasPrice: "0.0rune",
-  managerContract:
-    "sthor1sws3r2t5zecjskzh8n5plk8yhpxm2grtm0tthqljl02qgklfemhqhfnkpr",
-  schedulerContract:
-    "sthor1yya2jk2upk6ncxmr7ugg3mt9dlxy2zgxpea2yxerdje7hr5tmn2qsktr5z",
-  feeCollectorAddress: "sthor17pfp4qvy5vrmtjar7kntachm0cfm9m9azl3jka",
-};
-
 export const RUJIRA = {
   type: "cosmos" as const,
   id: "thorchain" as const,
@@ -112,10 +96,9 @@ export const RUJIRA = {
   bech32AddressPrefix: "thor",
   hdPath: "m/44'/931'/0'/0/0",
   rpcUrls: [
-    "https://thornode.thorchain.network",
     "https://gateway.liquify.com/chain/thorchain_rpc",
     "https://rpc-thorchain.rorcual.xyz",
-    "https://thorchain-rpc.ibs.team",
+    "https://thorchain.ibs.team/rpc/",
   ],
   defaultGasPrice: "0.0rune",
   managerContract:
@@ -126,13 +109,7 @@ export const RUJIRA = {
     "thor17dxtxrne37gguxdeun4n36vqd5jmxxku5tr6gkuhhsh4lz9e8gksck4ygu",
 };
 
-export const CHAINS = [
-  ETHEREUM,
-  BINANCE_SMART_CHAIN,
-  COSMOS_HUB,
-  RUJIRA_STAGENET,
-  RUJIRA,
-];
+export const CHAINS = [ETHEREUM, BINANCE_SMART_CHAIN, COSMOS_HUB, RUJIRA];
 
 export const CHAINS_BY_ID: Record<ChainId, Chain> = CHAINS.reduce(
   (acc, chain) => ({

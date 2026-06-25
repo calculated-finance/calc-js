@@ -46,7 +46,7 @@ variable "task_memory" {
 variable "chain_id" {
   description = "Chain ID for worker containers"
   type        = string
-  default     = "thorchain-stagenet-2"
+  default     = "thorchain"
 }
 
 variable "fetch_delay" {

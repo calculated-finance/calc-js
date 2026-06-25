@@ -66,7 +66,7 @@ export const TransactionData = Schema.Union(
 
 export const CosmosChainId = Schema.Literal(
   "cosmoshub-4", // Cosmos Hub
-  "thorchain-stagenet-2" // Rujira Stagenet
+  "thorchain" // Rujira
 );
 
 export const EvmChainId = Schema.Literal(

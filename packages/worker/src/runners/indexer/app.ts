@@ -10,7 +10,7 @@ import type { TxResponse } from "@cosmjs/tendermint-rpc";
 import { Tendermint37Client } from "@cosmjs/tendermint-rpc";
 import {
   CHAINS_BY_ID,
-  RUJIRA_STAGENET,
+  RUJIRA,
   type CosmosChain,
 } from "@template/domain/chains";
 import { Config, Duration, Effect, Schedule } from "effect";
@@ -123,7 +123,7 @@ export class SQSSendMessageError extends Error {
 
 const indexer = Effect.gen(function* () {
   const chainId = yield* Config.string("CHAIN_ID").pipe(
-    Config.withDefault(RUJIRA_STAGENET.id)
+    Config.withDefault(RUJIRA.id)
   );
 
   const queueUrl = yield* Config.string("QUEUE_URL").pipe(

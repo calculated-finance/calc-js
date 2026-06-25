@@ -18,6 +18,10 @@ type Resources = {
 
 let initPromise: Promise<Resources> | null = null;
 
+// Rotating start index so a persistently-flaky signers[0] doesn't penalize
+// every call. Module scope persists across warm Lambda invocations.
+let rrCursor = 0;
+
 function init(): Promise<Resources> {
   if (initPromise) return initPromise;
 
@@ -74,7 +78,12 @@ const roundRobinSignTx = async (
   scheduler: string,
   triggers: string[]
 ) => {
-  for (const signer of signers) {
+  const n = signers.length;
+  const start = rrCursor;
+  rrCursor = (rrCursor + 1) % n;
+
+  for (let i = 0; i < n; i++) {
+    const signer = signers[(start + i) % n];
     try {
       return await signer.execute(
         address,

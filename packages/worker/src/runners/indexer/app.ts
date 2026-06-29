@@ -157,16 +157,14 @@ const indexer = Effect.gen(function* () {
   });
 
   const tick = Effect.gen(function* () {
-    const latest = yield* client.use((c) => c.stargate.getHeight());
+    const head = yield* client.use((c) => c.stargate.getHeight());
 
     const saved = yield* Effect.tryPromise({
       try: () => getCheckpoint(tableName, chainId),
       catch: (e) => e as unknown,
     });
 
-    let nextHeight = saved != null ? saved + 1 : Math.max(1, latest - 1000);
-
-    const head = yield* client.use((c) => c.stargate.getHeight());
+    let nextHeight = saved != null ? saved + 1 : Math.max(1, head - 1000);
 
     if (nextHeight > head) {
       yield* Effect.sleep(Duration.millis(fetchDelayMs));

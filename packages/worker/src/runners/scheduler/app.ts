@@ -88,13 +88,11 @@ const fetchBlockTriggers = (
   client: RotatingClient<CosmWasmClient>
 ) =>
   Effect.gen(function* () {
-    const height = yield* client.use((c) =>
-      c.getBlock().then((b) => b.header.height)
-    );
+    const block = yield* client.use((c) => c.getBlock());
 
     return yield* getCosmosChainTriggers(
       chain,
-      { block_height: { end: height } },
+      { block_height: { end: block.header.height } },
       client
     );
   });

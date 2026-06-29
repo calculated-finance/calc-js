@@ -75,27 +75,6 @@ export class CosmWasmQueryError extends Schema.TaggedError<CosmWasmQueryError>()
   }
 ) {}
 
-export const getCosmWasmClient = (chain: CosmosChain) =>
-  Effect.acquireRelease(
-    Effect.tryPromise({
-      try: async () => {
-        for (const rpcUrl of chain.rpcUrls) {
-          try {
-            const client = await CosmWasmClient.connect(rpcUrl);
-            console.log(`Connected to RPC URL ${rpcUrl} for chain ${chain.id}`);
-            return client;
-          } catch (error) {
-            console.error(`Failed to connect to RPC URL ${rpcUrl}: ${error}`);
-          }
-        }
-
-        throw new Error("No available RPC URLs to connect to");
-      },
-      catch: (error) => new CosmWasmConnectionError({ cause: error }),
-    }),
-    (client) => Effect.sync(client.disconnect)
-  );
-
 export interface RotatingClient<C> {
   /**
    * Runs `f` against the current client. On failure, disconnects, rotates to
@@ -155,33 +134,28 @@ export const makeRotatingClient = <C>(opts: {
       Effect.flatMap(Ref.get(stateRef), (s) => disconnectQuietly(s.client))
     );
 
+    const run = <A>(client: C, f: (client: C) => Promise<A>) =>
+      Effect.tryPromise({
+        try: () => f(client),
+        catch: (cause) => new CosmWasmQueryError({ cause }),
+      });
+
     const use = <A>(f: (client: C) => Promise<A>) =>
       Effect.gen(function* () {
         const current = yield* Ref.get(stateRef);
 
-        return yield* Effect.tryPromise({
-          try: () => f(current.client),
-          catch: (cause) => new CosmWasmQueryError({ cause }),
-        }).pipe(
+        return yield* run(current.client, f).pipe(
           Effect.catchAll(() =>
             Effect.gen(function* () {
-              const latest = yield* Ref.get(stateRef);
+              let next = yield* Ref.get(stateRef);
               // Another concurrent caller may already have rotated; only
               // reconnect if we are still pointed at the failed client.
-              const next =
-                latest.client === current.client
-                  ? yield* Effect.gen(function* () {
-                      yield* disconnectQuietly(current.client);
-                      const reconnected = yield* connectFrom(current.idx + 1);
-                      yield* Ref.set(stateRef, reconnected);
-                      return reconnected;
-                    })
-                  : latest;
-
-              return yield* Effect.tryPromise({
-                try: () => f(next.client),
-                catch: (cause) => new CosmWasmQueryError({ cause }),
-              });
+              if (next.client === current.client) {
+                yield* disconnectQuietly(current.client);
+                next = yield* connectFrom(current.idx + 1);
+                yield* Ref.set(stateRef, next);
+              }
+              return yield* run(next.client, f);
             })
           )
         );

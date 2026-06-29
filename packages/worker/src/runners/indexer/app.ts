@@ -13,6 +13,7 @@ import {
   RUJIRA,
   type CosmosChain,
 } from "@template/domain/chains";
+import { makeRotatingClient } from "@template/domain/cosmwasm";
 import { Config, Duration, Effect, Schedule } from "effect";
 import { FoundTx } from "../../types.js";
 import { flattenAttributes } from "../../util.js";
@@ -143,23 +144,20 @@ const indexer = Effect.gen(function* () {
   );
 
   const chain = CHAINS_BY_ID[chainId] as CosmosChain;
-  const rpc = chain.rpcUrls[0];
-
-  const client = yield* Effect.tryPromise({
-    try: () => StargateClient.connect(rpc),
-    catch: (e) => e as unknown,
-  });
-
-  const tm = yield* Effect.tryPromise({
-    try: () => Tendermint37Client.connect(rpc),
-    catch: (e) => e as unknown,
+  const client = yield* makeRotatingClient({
+    rpcUrls: chain.rpcUrls,
+    connect: async (rpcUrl) => ({
+      stargate: await StargateClient.connect(rpcUrl),
+      tm: await Tendermint37Client.connect(rpcUrl),
+    }),
+    disconnect: (c) => {
+      c.stargate.disconnect();
+      c.tm.disconnect();
+    },
   });
 
   const tick = Effect.gen(function* () {
-    const latest = yield* Effect.tryPromise({
-      try: () => client.getHeight(),
-      catch: (e) => e as unknown,
-    });
+    const latest = yield* client.use((c) => c.stargate.getHeight());
 
     const saved = yield* Effect.tryPromise({
       try: () => getCheckpoint(tableName, chainId),
@@ -168,7 +166,7 @@ const indexer = Effect.gen(function* () {
 
     let nextHeight = saved != null ? saved + 1 : Math.max(1, latest - 1000);
 
-    const head = yield* Effect.tryPromise(() => client.getHeight());
+    const head = yield* client.use((c) => c.stargate.getHeight());
 
     if (nextHeight > head) {
       yield* Effect.sleep(Duration.millis(fetchDelayMs));
@@ -177,9 +175,9 @@ const indexer = Effect.gen(function* () {
 
     const end = Math.min(head, nextHeight + windowBlocks - 1);
 
-    const results = yield* Effect.tryPromise(() =>
+    const results = yield* client.use((c) =>
       fetchCalcTransactions(
-        tm,
+        c.tm,
         nextHeight,
         end,
         chain.managerContract!,

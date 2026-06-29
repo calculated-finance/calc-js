@@ -4,7 +4,7 @@ import {
 } from "@cosmjs/cosmwasm-stargate";
 import type { OfflineSigner } from "@cosmjs/proto-signing";
 import { GasPrice, StargateClient } from "@cosmjs/stargate";
-import { BigDecimal, Config, Effect, Schedule, Schema } from "effect";
+import { BigDecimal, Config, Effect, Ref, Schedule, Schema } from "effect";
 import type { ChainId, CosmosChain } from "./chains.js";
 import { CHAINS } from "./chains.js";
 import { SignerNotAvailableError } from "./clients.js";
@@ -75,26 +75,94 @@ export class CosmWasmQueryError extends Schema.TaggedError<CosmWasmQueryError>()
   }
 ) {}
 
-export const getCosmWasmClient = (chain: CosmosChain) =>
-  Effect.acquireRelease(
-    Effect.tryPromise({
-      try: async () => {
-        for (const rpcUrl of chain.rpcUrls) {
-          try {
-            const client = await CosmWasmClient.connect(rpcUrl);
-            console.log(`Connected to RPC URL ${rpcUrl} for chain ${chain.id}`);
-            return client;
-          } catch (error) {
-            console.error(`Failed to connect to RPC URL ${rpcUrl}: ${error}`);
-          }
-        }
+export interface RotatingClient<C> {
+  /**
+   * Runs `f` against the current client. On failure, disconnects, rotates to
+   * the next RPC URL (looping through all until one connects), and retries `f`
+   * once. If another concurrent caller has already rotated, reuses that client
+   * instead of reconnecting.
+   */
+  use: <A>(
+    f: (client: C) => Promise<A>
+  ) => Effect.Effect<A, CosmWasmConnectionError | CosmWasmQueryError>;
+}
 
-        throw new Error("No available RPC URLs to connect to");
-      },
-      catch: (error) => new CosmWasmConnectionError({ cause: error }),
-    }),
-    (client) => Effect.sync(client.disconnect)
-  );
+/**
+ * A long-lived client that fails over to the next RPC URL on error. Intended
+ * for long-running processes (scheduler/indexer) where the single connection
+ * picked at startup can go bad mid-run. Must be used within a Scope; the
+ * connection is closed on scope exit.
+ */
+export const makeRotatingClient = <C>(opts: {
+  rpcUrls: readonly string[];
+  connect: (rpcUrl: string) => Promise<C>;
+  disconnect: (client: C) => void;
+}) =>
+  Effect.gen(function* () {
+    const connectFrom = (startIdx: number) =>
+      Effect.tryPromise({
+        try: async () => {
+          const n = opts.rpcUrls.length;
+          for (let i = 0; i < n; i++) {
+            const idx = (startIdx + i) % n;
+            const rpcUrl = opts.rpcUrls[idx];
+            try {
+              const client = await opts.connect(rpcUrl);
+              console.log(`Connected to RPC URL ${rpcUrl}`);
+              return { client, idx };
+            } catch (error) {
+              console.error(`Failed to connect to RPC URL ${rpcUrl}: ${error}`);
+            }
+          }
+          throw new Error("No available RPC URLs to connect to");
+        },
+        catch: (cause) => new CosmWasmConnectionError({ cause }),
+      });
+
+    const disconnectQuietly = (client: C) =>
+      Effect.sync(() => {
+        try {
+          opts.disconnect(client);
+        } catch {
+          // ignore disconnect errors
+        }
+      });
+
+    const stateRef = yield* Ref.make(yield* connectFrom(0));
+
+    yield* Effect.addFinalizer(() =>
+      Effect.flatMap(Ref.get(stateRef), (s) => disconnectQuietly(s.client))
+    );
+
+    const run = <A>(client: C, f: (client: C) => Promise<A>) =>
+      Effect.tryPromise({
+        try: () => f(client),
+        catch: (cause) => new CosmWasmQueryError({ cause }),
+      });
+
+    const use = <A>(f: (client: C) => Promise<A>) =>
+      Effect.gen(function* () {
+        const current = yield* Ref.get(stateRef);
+
+        return yield* run(current.client, f).pipe(
+          Effect.catchAll(() =>
+            Effect.gen(function* () {
+              let next = yield* Ref.get(stateRef);
+              // Another concurrent caller may already have rotated; only
+              // reconnect if we are still pointed at the failed client.
+              if (next.client === current.client) {
+                yield* disconnectQuietly(current.client);
+                next = yield* connectFrom(current.idx + 1);
+                yield* Ref.set(stateRef, next);
+              }
+              return yield* run(next.client, f);
+            })
+          )
+        );
+      });
+
+    return { use } as RotatingClient<C>;
+  });
 
 export const getStargateClient = (chain: CosmosChain) =>
   Effect.acquireRelease(

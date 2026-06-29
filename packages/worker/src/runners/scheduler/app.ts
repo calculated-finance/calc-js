@@ -8,7 +8,8 @@ import {
 } from "@template/domain/chains";
 import {
   CosmWasmQueryError,
-  getCosmWasmClient,
+  makeRotatingClient,
+  type RotatingClient,
 } from "@template/domain/cosmwasm";
 import type {
   ConditionFilter,
@@ -32,7 +33,7 @@ const sqs = new SQSClient({});
 const getCosmosChainTriggers = (
   chain: CosmosChain,
   filter: ConditionFilter,
-  client: CosmWasmClient
+  client: RotatingClient<CosmWasmClient>
 ) =>
   Effect.gen(function* () {
     if (!chain.schedulerContract) {
@@ -43,41 +44,35 @@ const getCosmosChainTriggers = (
       );
     }
 
-    const triggers = yield* Effect.tryPromise<
-      Array<Trigger>,
-      CosmWasmQueryError
-    >({
-      try: () =>
-        client.queryContractSmart(chain.schedulerContract!, {
+    return yield* client
+      .use<Array<Trigger>>((c) =>
+        c.queryContractSmart(chain.schedulerContract!, {
           filtered: {
             limit: 5,
             filter,
           },
-        } as SchedulerQueryMsg),
-      catch: (error: any) => {
-        console.log(
-          `Failed to fetch triggers from chain ${
-            chain.id
-          } with filter ${JSON.stringify(filter)}: ${error.message}`
-        );
-        return new CosmWasmQueryError({ cause: error });
-      },
-    }).pipe(Effect.retry(Schedule.exponential("500 millis")));
-
-    return triggers;
+        } as SchedulerQueryMsg)
+      )
+      .pipe(
+        Effect.tapError((error) =>
+          Effect.sync(() =>
+            console.log(
+              `Failed to fetch triggers from chain ${
+                chain.id
+              } with filter ${JSON.stringify(filter)}: ${error}`
+            )
+          )
+        ),
+        Effect.retry(Schedule.exponential("500 millis"))
+      );
   });
 
-const fetchTimeTriggers = (chain: CosmosChain, client: CosmWasmClient) =>
+const fetchTimeTriggers = (
+  chain: CosmosChain,
+  client: RotatingClient<CosmWasmClient>
+) =>
   Effect.gen(function* () {
-    const block = yield* Effect.tryPromise({
-      try: async () => client.getBlock(),
-      catch: (error: any) => {
-        console.log(
-          `Failed to fetch block height from chain ${chain.id}: ${error.message}`
-        );
-        return new CosmWasmQueryError({ cause: error });
-      },
-    });
+    const block = yield* client.use((c) => c.getBlock());
 
     const blockTime = DateTime.unsafeFromDate(
       new Date(Date.parse(block.header.time))
@@ -88,24 +83,16 @@ const fetchTimeTriggers = (chain: CosmosChain, client: CosmWasmClient) =>
     return yield* getCosmosChainTriggers(chain, { timestamp: { end } }, client);
   });
 
-const fetchBlockTriggers = (chain: CosmosChain, client: CosmWasmClient) =>
+const fetchBlockTriggers = (
+  chain: CosmosChain,
+  client: RotatingClient<CosmWasmClient>
+) =>
   Effect.gen(function* () {
-    const block = yield* Effect.tryPromise({
-      try: async () => {
-        const block = await client.getBlock();
-        return block.header.height;
-      },
-      catch: (error: any) => {
-        console.log(
-          `Failed to fetch block height from chain ${chain.id}: ${error.message}`
-        );
-        return new CosmWasmQueryError({ cause: error });
-      },
-    });
+    const block = yield* client.use((c) => c.getBlock());
 
     return yield* getCosmosChainTriggers(
       chain,
-      { block_height: { end: block } },
+      { block_height: { end: block.header.height } },
       client
     );
   });
@@ -124,7 +111,11 @@ const scheduler = Effect.gen(function* () {
   );
 
   const chain = CHAINS_BY_ID[chainId] as CosmosChain;
-  const client = yield* getCosmWasmClient(chain);
+  const client = yield* makeRotatingClient({
+    rpcUrls: chain.rpcUrls,
+    connect: (rpcUrl) => CosmWasmClient.connect(rpcUrl),
+    disconnect: (c) => c.disconnect(),
+  });
 
   const enqueueTriggers = (triggers: Trigger[]) =>
     Effect.tryPromise({

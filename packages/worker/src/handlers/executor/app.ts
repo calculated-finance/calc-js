@@ -10,8 +10,13 @@ import { CHAINS_BY_ID, CosmosChain } from "@template/domain/chains";
 
 const secrets = new SecretsManagerClient({});
 
+type Signer = {
+  client: SigningCosmWasmClient;
+  rpcUrl: string;
+};
+
 type Resources = {
-  signers: SigningCosmWasmClient[];
+  signers: Signer[];
   address: string;
   scheduler: string;
 };
@@ -43,18 +48,18 @@ function init(): Promise<Resources> {
       hdPaths: [stringToPath(chain.hdPath)],
     });
 
-    const signers = [];
+    const signers: Signer[] = [];
 
     for (const rpcUrl of chain.rpcUrls) {
       try {
-        const signer = await SigningCosmWasmClient.connectWithSigner(
+        const client = await SigningCosmWasmClient.connectWithSigner(
           rpcUrl,
           wallet,
           {
             gasPrice: GasPrice.fromString(chain.defaultGasPrice),
           }
         );
-        signers.push(signer);
+        signers.push({ client, rpcUrl });
       } catch (error) {
         console.error(`Failed to connect to RPC URL ${rpcUrl}: ${error}`);
       }
@@ -69,11 +74,19 @@ function init(): Promise<Resources> {
     return { signers, address, scheduler };
   })();
 
+  // Don't cache a rejected init: a transient failure (RPCs down, Secrets
+  // Manager blip) would otherwise poison every invocation on this warm
+  // container until it recycles.
+  initPromise = initPromise.catch((error) => {
+    initPromise = null;
+    throw error;
+  });
+
   return initPromise;
 }
 
 const roundRobinSignTx = async (
-  signers: SigningCosmWasmClient[],
+  signers: Signer[],
   address: string,
   scheduler: string,
   triggers: string[]
@@ -83,9 +96,9 @@ const roundRobinSignTx = async (
   rrCursor = (rrCursor + 1) % n;
 
   for (let i = 0; i < n; i++) {
-    const signer = signers[(start + i) % n];
+    const { client, rpcUrl } = signers[(start + i) % n];
     try {
-      return await signer.execute(
+      return await client.execute(
         address,
         scheduler,
         {
@@ -94,7 +107,9 @@ const roundRobinSignTx = async (
         "auto"
       );
     } catch (error) {
-      console.error(`Signer failed to sign transaction: ${error}`);
+      console.error(
+        `Signer for RPC URL ${rpcUrl} failed to sign transaction: ${error}`
+      );
     }
   }
 
@@ -110,7 +125,16 @@ export const handler = async (event: {
 
   console.log("Processing triggers:", JSON.stringify(triggers, null, 2));
 
-  const result = await roundRobinSignTx(signers, address, scheduler, triggers);
+  let result;
+  try {
+    result = await roundRobinSignTx(signers, address, scheduler, triggers);
+  } catch (error) {
+    // Every connected signer failed, so the cached signer set may be stale
+    // (built from whichever RPCs were healthy at cold start). Drop it so the
+    // retried invocation reconnects fresh across all RPC URLs.
+    initPromise = null;
+    throw error;
+  }
 
   for (const event of result.events) {
     console.log(JSON.stringify(event, null, 2));

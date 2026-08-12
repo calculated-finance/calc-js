@@ -520,6 +520,7 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
                                       <div className="flex rounded bg-zinc-900">
                                         <Input
                                           type="number"
+                                          step={0.1}
                                           placeholder="0.00"
                                           id={field.name}
                                           name={field.name}

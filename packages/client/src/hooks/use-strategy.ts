@@ -1,4 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
 import type { StrategyHandle } from "@template/domain/calc";
 import { useChainStrategy } from "./use-chain-strategy";
 import { useDraftStrategies } from "./use-draft-strategies";
@@ -9,32 +8,16 @@ import { useDraftStrategies } from "./use-draft-strategies";
 
 export const useStrategy = (handle: StrategyHandle | undefined) => {
   const { strategies } = useDraftStrategies(handle?.chainId);
-  const { data: strategy } = useChainStrategy(handle);
+  const chainQuery = useChainStrategy(handle);
 
-  return useQuery({
-    queryKey: [
-      "strategy",
-      handle?.status === "draft" ? handle.id : handle?.contract_address,
-    ],
-    enabled: handle?.status === "draft" || !!strategy,
-    placeholderData: (previous) =>
-      previous !== undefined && previous.id === handle?.id && previous.status === "draft" ? previous : undefined,
-    queryFn: () => {
-      if (!handle) {
-        throw new Error("No strategy handle provided");
-      }
+  // Drafts live in the zustand store, which re-renders subscribers on every
+  // update. Reading through a react-query cache here would serve stale data:
+  // the query key never changes when a draft is edited, so the cached
+  // (pre-edit) strategy would be returned until an unrelated refetch.
+  if (handle?.status === "draft") {
+    const draft = strategies[handle.id];
+    return { data: draft, isPending: !draft };
+  }
 
-      if (handle.status === "draft") {
-        const strategy = strategies[handle.id];
-
-        if (!strategy) {
-          throw new Error(`No strategy found for handle ${handle.id}`);
-        }
-
-        return strategy;
-      }
-
-      return strategy;
-    },
-  });
+  return { data: chainQuery.data, isPending: chainQuery.isPending };
 };

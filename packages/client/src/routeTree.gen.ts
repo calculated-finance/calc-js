@@ -25,7 +25,7 @@ const CreateIndexRoute = CreateIndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/create': typeof CreateIndexRoute
+  '/create/': typeof CreateIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -38,7 +38,7 @@ export interface FileRoutesById {
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/create'
+  fullPaths: '/' | '/create/'
   fileRoutesByTo: FileRoutesByTo
   to: '/' | '/create'
   id: '__root__' | '/' | '/create/'
@@ -61,7 +61,7 @@ declare module '@tanstack/react-router' {
     '/create/': {
       id: '/create/'
       path: '/create'
-      fullPath: '/create'
+      fullPath: '/create/'
       preLoaderRoute: typeof CreateIndexRouteImport
       parentRoute: typeof rootRouteImport
     }

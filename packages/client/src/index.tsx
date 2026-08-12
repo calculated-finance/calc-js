@@ -23,7 +23,7 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
     <MemoMapProvider>
-      <ThemeProvider>
+      <ThemeProvider defaultTheme="dark">
         <WalletProvider>
           <RouterProvider router={router} />
         </WalletProvider>

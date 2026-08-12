@@ -1,7 +1,10 @@
 import { Schema } from "effect"
 
+// A strict filter, not a clamp: the client form validates via decode and
+// commits the raw value, so a clamp would let out-of-range input pass
+// validation and then fail on the encode round-trip.
 export const BasisPoints = Schema.NonNegativeInt.pipe(
-    Schema.clamp(0, 10_000)
+    Schema.between(0, 10_000)
 ).pipe(
     Schema.annotations({
         message: () => ({

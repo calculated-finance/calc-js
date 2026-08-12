@@ -17,7 +17,10 @@ export const LinearScalarSwapAdjustment = Schema.Struct({
     linear_scalar: Schema.Struct({
         base_receive_amount: Amount,
         minimum_swap_amount: Schema.NullOr(Amount),
-        scalar: Schema.Positive.pipe(Schema.clamp(0, 10)).pipe(
+        // A strict filter, not a clamp: the client form validates via decode
+        // and commits the raw value, so a clamp would let out-of-range input
+        // pass validation and then fail on the encode round-trip.
+        scalar: Schema.Positive.pipe(Schema.between(0, 10)).pipe(
             Schema.annotations({
                 message: () => ({
                     message: "Please provide a multiplier between 0 and 10",

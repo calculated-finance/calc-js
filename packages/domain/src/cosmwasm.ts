@@ -1,7 +1,7 @@
 import {
   CosmWasmClient,
   SigningCosmWasmClient,
-} from "@cosmjs/cosmwasm-stargate";
+} from "@cosmjs/cosmwasm";
 import type { OfflineSigner } from "@cosmjs/proto-signing";
 import { GasPrice, StargateClient } from "@cosmjs/stargate";
 import { BigDecimal, Config, Effect, Ref, Schedule, Schema } from "effect";

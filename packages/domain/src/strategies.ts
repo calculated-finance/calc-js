@@ -1,4 +1,4 @@
-import { CosmWasmClient } from "@cosmjs/cosmwasm-stargate"
+import { CosmWasmClient } from "@cosmjs/cosmwasm"
 import { Effect } from "effect"
 import { type ChainId, CHAINS_BY_ID } from "./chains.js"
 

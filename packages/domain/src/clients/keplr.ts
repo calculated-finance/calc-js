@@ -1,4 +1,4 @@
-import { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate"
+import { SigningCosmWasmClient } from "@cosmjs/cosmwasm"
 import { GasPrice } from "@cosmjs/stargate"
 import type { Window as KeplrWindow } from "@keplr-wallet/types"
 import { Effect, Schedule, Stream, SubscriptionRef } from "effect"

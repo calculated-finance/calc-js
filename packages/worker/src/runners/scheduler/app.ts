@@ -1,5 +1,5 @@
 import { SendMessageBatchCommand, SQSClient } from "@aws-sdk/client-sqs";
-import { CosmWasmClient } from "@cosmjs/cosmwasm-stargate";
+import { CosmWasmClient } from "@cosmjs/cosmwasm";
 import type { Trigger } from "@template/domain/calc2";
 import {
   CHAINS_BY_ID,

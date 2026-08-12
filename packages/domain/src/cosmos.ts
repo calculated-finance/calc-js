@@ -1,5 +1,5 @@
 import { decodeTxRaw, type OfflineSigner } from "@cosmjs/proto-signing";
-import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx.js";
+import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx";
 import { Data, Effect, Schedule } from "effect";
 
 import type { CosmosChain } from "./chains.js";

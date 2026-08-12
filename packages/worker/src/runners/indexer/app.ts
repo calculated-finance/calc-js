@@ -6,8 +6,7 @@ import {
   UpdateCommand,
 } from "@aws-sdk/lib-dynamodb";
 import { fromTendermintEvent, StargateClient } from "@cosmjs/stargate";
-import type { TxResponse } from "@cosmjs/tendermint-rpc";
-import { Tendermint37Client } from "@cosmjs/tendermint-rpc";
+import { Tendermint37Client, tendermint37 } from "@cosmjs/tendermint-rpc";
 import {
   CHAINS_BY_ID,
   RUJIRA,
@@ -67,9 +66,9 @@ async function txSearchAll(
   tm: Tendermint37Client,
   query: string,
   perPage = 100
-): Promise<TxResponse[]> {
+): Promise<tendermint37.TxResponse[]> {
   let page = 1;
-  const out: TxResponse[] = [];
+  const out: tendermint37.TxResponse[] = [];
 
   while (true) {
     const res = await tm.txSearch({

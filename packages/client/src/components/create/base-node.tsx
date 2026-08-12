@@ -67,7 +67,8 @@ export function BaseNode({
   return (
     <div className="group">
       <div
-        className={`flex h-[150px] w-[${width}px] cursor-pointer items-center justify-center rounded-lg border border-gray-300 bg-black p-4 text-center shadow transition-opacity duration-300 ${
+        style={{ width }}
+        className={`flex h-[150px] cursor-pointer items-center justify-center overflow-hidden rounded-lg border border-gray-300 bg-black p-4 text-center shadow transition-opacity duration-300 ${
           isVisible ? "opacity-100" : "opacity-0"
         } `}
         onClick={(e: React.MouseEvent) => {

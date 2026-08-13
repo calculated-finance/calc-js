@@ -30,7 +30,7 @@ const METAMASK_WALLET: Wallet = {
 }
 
 export class MetaMaskService extends Effect.Service<MetaMaskService>()("MetaMaskService", {
-    effect: Effect.gen(function*() {
+    scoped: Effect.gen(function*() {
         const providersRef = yield* EIP1193Providers
         const { ref: connectionRef, stored } = yield* makeConnectionStore(METAMASK_CONNECTION_KEY)
 

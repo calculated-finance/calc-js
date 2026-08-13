@@ -28,7 +28,10 @@ export const makeConnectionStore = (storageKey: string) =>
 
         const ref = yield* SubscriptionRef.make<Connection>(stored)
 
-        yield* Effect.fork(
+        // forkScoped: a plain fork would parent to the layer-build fiber and be
+        // interrupted the moment construction finishes, silently killing
+        // persistence. Scoped to the layer's lifetime instead.
+        yield* Effect.forkScoped(
             Stream.runForEach(ref.changes, (connection) =>
                 connection.status === "connected"
                     ? storage.set(storageKey, JSON.stringify(Schema.encodeSync(Connection)(connection)))

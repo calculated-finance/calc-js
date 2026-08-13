@@ -52,7 +52,7 @@ const KEPLR_WALLET: Wallet = {
 export class KeplrService extends Effect.Service<KeplrService>()(
     "KeplrService",
     {
-        effect: Effect.gen(function*() {
+        scoped: Effect.gen(function*() {
             const providersRef = yield* EIP1193Providers
             const { ref: connectionRef, stored } = yield* makeConnectionStore(KEPLR_CONNECTION_KEY)
 

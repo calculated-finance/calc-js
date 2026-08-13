@@ -1,0 +1,11 @@
+.pair {
+  display: flex;
+  flex-shrink: 0;
+  .icon-denom {
+    display: block;
+    flex-shrink: 0;
+    &:nth-child(2) {
+      margin-left: -10%;
+    }
+  }
+}

@@ -1,0 +1,92 @@
+.group-column-table {
+  border-collapse: separate;
+  border-spacing: 0;
+
+  &__group-start {
+    border-left: 1px solid rgba($grey, 0.4);
+  }
+
+  &__group-end {
+    border-right: 1px solid rgba($grey, 0.4);
+  }
+
+  tbody tr:last-child {
+    .group-column-table__group-start {
+      border-bottom: 1px solid rgba($grey, 0.4);
+      border-bottom-left-radius: 10px;
+    }
+    .group-column-table__group-end {
+      border-bottom: 1px solid rgba($grey, 0.4);
+      border-bottom-right-radius: 10px;
+    }
+
+    // Close the bottom of every grouped column
+    td.bg-grey-1:not(.group-column-table__group-start):not(
+        .group-column-table__group-end
+      ) {
+      border-bottom: 1px solid rgba($grey, 0.4);
+    }
+  }
+
+  &:not(:has(.popout--open)):not(.table--no-hover) tbody:hover tr:hover {
+    .group-column-table__group-start,
+    .group-column-table__group-end,
+    .group-column-table__group-header {
+      border-color: rgba($grey, 0.2);
+    }
+    .bg-grey-1 {
+      background-color: rgba($grey, 0.025);
+    }
+
+    &:last-child
+      td.bg-grey-1:not(.group-column-table__group-start):not(
+        .group-column-table__group-end
+      ) {
+      border-bottom-color: rgba($grey, 0.2);
+    }
+  }
+
+  &:has(tbody:first-of-type:hover):not(:has(.popout--open)):not(
+      .table--no-hover
+    ) {
+    thead .group-column-table__group-start,
+    thead .group-column-table__group-end,
+    thead .group-column-table__group-header {
+      border-color: rgba($grey, 0.2);
+    }
+    thead .bg-grey-1 {
+      background-color: rgba($grey, 0.025);
+    }
+  }
+
+  .table-sticky--right &.table {
+    thead th:last-child,
+    tbody td:last-child {
+      box-shadow: none;
+    }
+  }
+
+  &__group-header {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 0.75rem 0.5rem 0.75rem;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+    border: 1px solid rgba($grey, 0.4);
+    border-bottom: none;
+    font-size: 14px;
+    font-weight: 500;
+  }
+
+  &__group-label {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 0.75rem 0.5rem 0.75rem;
+  }
+}

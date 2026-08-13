@@ -1,0 +1,33 @@
+html {
+  background-color: #0C0A0F;
+  color: #D9D5E2;
+}
+
+.rujira {
+  padding: 0 2rem;
+  position: relative;
+
+  &__background {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 864px;
+    background-position: center center;
+    background-size: auto 865px;
+    background-repeat: no-repeat;
+    
+    &.ruji {
+      height: 718px;
+      background-position: center bottom;
+      background-size: auto 718px;
+    }
+  }
+
+  &__inner {
+    max-width: 1180px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 2;
+  }
+}

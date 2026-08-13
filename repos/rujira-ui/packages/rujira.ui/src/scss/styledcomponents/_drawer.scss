@@ -1,0 +1,91 @@
+.drawer {
+  &__overlay {
+    position: fixed;
+    inset: 0;
+    -webkit-backdrop-filter: brightness(40%);
+    -moz-backdrop-filter: brightness(40%);
+    backdrop-filter: brightness(40%);
+    z-index: 200;
+  }
+  &__content {
+    z-index: 201;
+    position: fixed;
+    display: flex;
+
+    &--left,
+    &--right {
+      --initial-transform: calc(100% + 8px);
+      top: 0.5rem;
+      bottom: 0.5rem;
+      max-width: calc(100% - 1rem);
+      border: 0 !important;
+      outline: none !important;
+    }
+
+    &--left {
+      left: 0.5rem;
+    }
+
+    &--right {
+      right: 0.5rem;
+    }
+
+    &--bottom {
+      left: 0.5rem;
+      right: 0.5rem;
+      bottom: 0.5rem;
+    }
+
+    &--bottom .drawer__card {
+      width: 100%;
+    }
+
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+      position: relative;
+      margin-right: 16px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+      border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: $darkGrey;
+      border-radius: 4px;
+      border: 2px solid $black;
+    }
+
+    ::-webkit-scrollbar-corner {
+      background: transparent;
+    }
+
+    *:hover {
+      ::-webkit-scrollbar-thumb {
+        background: $grey;
+        //border: 2px solid transparent;
+      }
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: $grey;
+      //border: 2px solid transparent;
+      //border-width: 1px;
+    }
+    &::-webkit-scrollbar-corner {
+      background: transparent;
+    }
+  }
+  &__card {
+    border-radius: 1rem;
+    background-color: $black;
+    color: $white;
+    padding: 1.5rem;
+
+    &.trade__markets {
+      padding-right: 0.5rem;
+      padding-bottom: 0.5rem;
+    }
+  }
+}

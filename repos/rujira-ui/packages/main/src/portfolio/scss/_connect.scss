@@ -1,0 +1,67 @@
+.connect {
+  max-width: 108rem;
+  margin: 0 auto;
+
+  &__header {
+    margin-bottom: 4rem;
+  }
+  &__container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+    //justify-content: center;
+  }
+
+  &__left {
+    display: none;
+    @media screen and (min-width: 128rem) {
+      display: block;
+      width: 24rem;
+    }
+  }
+
+  &__main {
+    max-width: 80rem;
+    flex: 1;
+    order: 1;
+
+    @media screen and (max-width: ($large - 1px)) {
+      width: 100%;
+      order: 2;
+    }
+  }
+
+  &__connected {
+    flex-shrink: 0;
+    width: 100%;
+    order: 1;
+    //box-shadow: 0 0 0 4px rgba($grey, 0.25), 0 0 0 1px rgba($grey, 0.25);
+    outline: 1px solid rgba($darkGrey, 1);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    
+    @media screen and (min-width: $large) {
+      //padding-left: 2rem;
+      margin-top: -1.5rem;
+      width: 26rem;
+      order: 2;
+    }
+  }
+
+  &__vault {
+    border-radius: 0.5rem;
+    background: rgba($deepBlack, 0.75);
+    padding: 0.75rem;
+    width: 100%;
+
+    .table {
+      font-family: "Montserrat", Verdana, sans-serif;
+
+      thead th {
+        font-family: "Montserrat", Verdana, sans-serif;
+        font-weight: 400;
+        padding-bottom: 0.25rem;
+      }
+    }
+  }
+}

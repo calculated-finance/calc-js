@@ -1,0 +1,89 @@
+.slider {
+  height: 16px;
+  transition: opacity 0.2s;
+
+  &__track {
+    top: 6px;
+    height: 4px;
+    background: rgba($grey, 0.5);
+    border-radius: 2px;
+
+    /* &-0 {
+      background: linear-gradient(90deg, $primary2, $primary1 100%);
+    } */
+  }
+
+  // Range (two-thumb) slider: highlight the track between the thumbs.
+  &:has(.slider__track-2) .slider__track-1 {
+    background: linear-gradient(90deg, $primary2, $primary1 100%);
+  }
+
+  // Single-thumb slider: highlight the filled track up to the thumb.
+  &:not(:has(.slider__track-2)) .slider__track-0 {
+    background: linear-gradient(90deg, $primary2, $primary1 100%);
+  }
+
+  &__thumb {
+    cursor: pointer;
+    background: $primary1;
+    width: 16px;
+    height: 16px;
+    border-radius: 100%;
+    outline: none;
+    transition: box-shadow 0.15s;
+    box-shadow: 0 0 6px 0 rgba($black, 0.75);
+
+    &:hover {
+      box-shadow: 0 0 0 4px rgba($primary1, 0.25);
+    }
+
+    &:after {
+      width: 36px;
+      height: 36px;
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      display: block;
+      content: "";
+    }
+
+    span {
+      display: block;
+      font-size: 0.75rem;
+      color: $white;
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translate(-50%, 4px);
+    }
+  }
+
+  &.disabled {
+    opacity: 0.5;
+  }
+
+  &__mark {
+    width: 8px;
+    height: 8px;
+    top: 4px;
+    position: absolute;
+    background-color: $black;
+    border: 2px solid rgba($grey, 0.5);
+    border-radius: 50%;
+
+    &--100 {
+      right: 0;
+      left: auto !important;
+    }
+
+    &:not(.slider__mark--100):not(.slider__mark--0) {
+      transform: translateX(4px);
+    }
+
+    &--completed {
+      border-color: $primary1;
+      background-color: $primary1;
+    }
+  }
+}

@@ -1,0 +1,127 @@
+.stake-overview {
+  &__hero {
+    max-width: 64rem;
+  }
+
+  &__table {
+    max-width: 88rem;
+
+    .table {
+      min-width: 62rem;
+      table-layout: fixed;
+    }
+  }
+
+  &__col {
+    &--token {
+      width: 15%;
+    }
+
+    &--tvl {
+      width: 16%;
+    }
+
+    &--apr {
+      width: 11%;
+    }
+
+    &--yearly-rewards {
+      width: 18%;
+    }
+
+    &--auto-compound {
+      width: 18%;
+    }
+
+    &--balance {
+      width: 11%;
+    }
+
+    &--action {
+      width: 10%;
+    }
+  }
+
+  &__sort-header {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    white-space: nowrap;
+    cursor: pointer;
+
+    &--center {
+      justify-content: center;
+      text-align: center;
+    }
+
+    &--right {
+      justify-content: flex-end;
+      text-align: right;
+    }
+
+    &:focus-visible {
+      outline: 1px solid $teal;
+      outline-offset: 0.25rem;
+      border-radius: 0.125rem;
+    }
+  }
+
+  &__sort-label {
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
+  }
+
+  &__sort-info {
+    display: inline-flex;
+    align-items: center;
+    margin-left: 0.375rem;
+    cursor: help;
+  }
+
+  &__token {
+    display: inline-flex;
+    align-items: center;
+    color: $white;
+  }
+
+  &__auto-compound {
+    width: 3.75rem;
+    height: 3.75rem;
+    margin: 0 auto;
+  }
+
+  &__auto-compound-cell {
+    text-align: center;
+  }
+
+  &__action {
+    display: inline-flex;
+    width: 4.75rem;
+    flex-shrink: 0;
+    white-space: nowrap;
+  }
+
+  &__action-cell {
+    text-align: left;
+  }
+
+  &__balance-tooltip {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    width: max-content;
+    max-width: calc(90vw - 2rem);
+  }
+
+  &__balance-tooltip-row {
+    white-space: nowrap;
+  }
+}

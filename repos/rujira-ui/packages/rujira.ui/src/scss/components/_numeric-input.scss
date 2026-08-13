@@ -1,0 +1,128 @@
+/// ADD a white color focus option
+
+.numeric-input {
+  display: flex;
+  //flex-wrap: wrap;
+  background: $darkGrey;
+  border: 1px solid rgba($grey, 0.5);
+  padding: 0 0.75rem;
+  border-radius: 0.375rem;
+  position: relative;
+  min-height: 2.5rem;
+  align-items: center;
+  color: $white;
+
+  // default font
+  font-family: "Barlow Semi Condensed", Verdana, sans-serif;
+  font-size: 1rem;
+  line-height: 1em;
+  color: $white;
+
+  &--sm {
+    font-size: 0.875rem;
+    line-height: 1em;
+    min-height: 2rem;
+  }
+
+  &--lg {
+    line-height: 1em;
+    min-height: 2.875rem;
+  }
+
+  &--full {
+    width: 100%;
+  }
+
+  &--disabled {
+    opacity: 0.5;
+  }
+
+  &__content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+
+  &:has(input:focus),
+  &:focus {
+    border: 1px solid rgba($primary1, 0.5);
+    box-shadow: 0 0 0 0.25rem rgba($primary1, 0.25);
+  }
+
+  &:hover:not(&--disabled):not(&--error):not(&:has(input:focus)):not(:focus) {
+    border: 1px solid rgba($grey, 0.75);
+    box-shadow: 0 0 0 0.25rem rgba($grey, 0.25);
+  }
+
+  &--white {
+    &:has(input:focus) {
+      border: 1px solid rgba($white, 0.75);
+      box-shadow: 0 0 0 0.25rem rgba($grey, 0.25);
+    }
+  }
+
+  label {
+    color: $grey;
+    display: block;
+    flex-wrap: wrap;
+  }
+
+  input,
+  .val {
+    //flex-grow: 1;
+    flex: 1;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    text-align: right;
+    //font-size: 1.125rem;
+    color: inherit;
+    max-width: 100%;
+    width: 100%;
+
+    &:active,
+    &:focus {
+      outline: none !important;
+    }
+  }
+
+  &:active,
+  &:focus {
+    outline: none !important;
+  }
+
+  &--error {
+    border: 1px solid rgba($red, 0.75);
+    box-shadow: 0 0 0 0.25rem rgba($red, 0.25);
+
+    label {
+      color: $red;
+    }
+  }
+
+  /* &--sm {
+    input,
+    .val {
+      font-size: 1rem;
+    }
+  } */
+
+  input::placeholder {
+    color: $grey;
+  }
+
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover,
+  input:-webkit-autofill:focus,
+  textarea:-webkit-autofill,
+  textarea:-webkit-autofill:hover,
+  textarea:-webkit-autofill:focus,
+  select:-webkit-autofill,
+  select:-webkit-autofill:hover,
+  select:-webkit-autofill:focus {
+    -webkit-box-shadow: 0 0 0px 1000px $black inset !important;
+    box-shadow: 0 0 0px 1000px $black inset !important;
+    -webkit-text-fill-color: $white !important;
+  }
+}

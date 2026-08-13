@@ -1,0 +1,234 @@
+.home {
+  &__banner {
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    //padding-bottom: 15vh;
+    height: calc(100vh - 96px);
+    min-height: calc(420px + 15vh);
+    max-height: 950px;
+
+    & > div {
+      margin-left: auto;
+      margin-right: auto;
+      @media screen and (min-width: 35.625rem) {
+        margin-left: 2rem;
+      }
+    }
+  }
+  &__intro {
+    padding-top: 5rem;
+    max-width: 35.1875rem;
+    margin-left: auto;
+    margin-right: auto;
+    
+    @media screen and (min-width: 55.25rem) {
+      margin-left: 8rem;
+    }
+  }
+
+  &__why {
+    text-align: center;
+    margin-top: 223px;
+
+    & > div:first-child {
+      max-width: 761px;
+      margin: 0 auto;
+    }
+
+    h2 {
+      color: #EEECF2;
+    }
+
+    &-points {
+      margin-top: 5.25rem;
+    }
+
+    &-point {
+      display: flex;
+      height: 100%;
+      border-radius: 20px;
+      background: url(../assets/why-1.png);
+      background-size: 100% 100%;
+      padding: 3px;
+
+      &.bg2 {
+        background-image: url(../assets/why-2.png);
+      }
+      &.bg3 {
+        background-image: url(../assets/why-3.png);
+      }
+      &.bg4 {
+        background-image: url(../assets/why-4.png);
+      }
+      
+      div {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background: rgba(#181921, 0.95);
+        padding: 30px 20px;
+        width: 100%;
+        height: 100%;
+        border-radius: 17px;
+      }
+
+      svg {
+        height: 3rem;
+        width: auto;
+        display: block;
+        
+        @media screen and (min-width: $medium) {
+          height: 4rem;
+        }
+      }
+
+      h3 {
+        font-size: 1.125rem;
+        line-height: 1.25rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        margin: 0.875rem 0;
+        text-align: center;
+        color: $white;
+
+        @media screen and (min-width: $medium) {
+          font-size: 1.25rem;
+          line-height: 1.5rem;
+        }
+      }
+
+      p {
+        font-size: 1rem;
+        line-height: 1.25rem;
+      }
+    }
+  }
+
+  &__explore {
+    margin-top: 7.125rem;
+    text-align: center;
+
+    & > div:first-child {
+      max-width: 761px;
+      margin: 0 auto;
+    }
+
+    h2 {
+      color: #EEECF2;
+    }
+
+    &-points {
+      .col-6 {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      img {
+        display: block;
+        height: 3rem;
+        width: auto;
+        
+        @media screen and (min-width: $medium) {
+          height: 4rem;
+        }
+      }
+
+      h3 {
+        font-size: 1.125rem;
+        line-height: 1.25rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        margin: 1.25rem 0 0;
+        text-align: center;
+        color: #EEECF2;
+        
+        @media screen and (min-width: $medium) {
+          font-size: 1.25rem;
+          line-height: 1.5rem;
+        }
+      }
+    }
+  }
+
+  &__powered {
+    margin-top: 7.25rem;
+    background: url(../assets/powered.jpg);
+    background-position: right bottom;
+    background-size: 1180px 539px;
+    border-radius: 60px;
+    min-height: 539px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+
+    h2 {
+      color: #EEECF2;
+    }
+
+    p {
+      max-width: 38.25rem;
+    }
+  }
+
+  &__figures {
+    h3 {
+      color: #8F85AB;
+      font-size: 0.875rem;
+      line-height: 1rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      
+      @media screen and (min-width: $large) {
+        font-size: 1rem;
+        line-height: 1.25rem;
+      }
+    }
+    p {
+      font-size: 2rem;
+      line-height: 2.5rem;
+      font-weight: 600;
+      color: $white;
+
+      @media screen and (min-width: $large) {
+        font-size: 2.5rem;
+        line-height: 3rem;
+      }
+    }
+  }
+
+  &__ready {
+    background: url(../assets/ready.jpg);
+    background-size: 2560px 718px;
+    background-position: center top;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 718px;
+    margin-left: -2rem;
+    margin-right: -2rem;
+    text-align: center;
+    padding: 0 2rem;
+
+    h2 {
+      color: #EEECF2;
+      margin-bottom: 1.25rem;
+    }
+
+    p {
+      font-size: 1.125rem;
+      line-height: 1.25rem;
+      max-width: 584px;
+      margin-bottom: 3.875rem;
+      
+      
+      @media screen and (min-width: $medium) {
+        font-size: 1.25rem;
+        line-height: 1.5rem;
+      }
+    }
+  }
+}

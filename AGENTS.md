@@ -12,6 +12,11 @@ generated guesses or web search.
   differ from what this repo uses.
   - Library source: `repos/effect/packages/effect/src`
   - Real-world usage patterns: `repos/effect/packages/*/test`
+- `repos/rujira-ui` — the Rujira web app (GitLab: thorchain/rujira-ui),
+  vendored from `main`. Reference for how the official UI talks to FIN,
+  staking, and the Rujira GraphQL indexer (`api.rujira.network/api/graphql` —
+  the source of truth for FIN pair addresses; see `finV2`/`finV3` queries and
+  `packages/main/data/schema.graphql`).
 - Never import from `repos/**` in application code; dependencies come from
   npm via pnpm. The vendored tree exists purely for reading.
 
@@ -20,6 +25,7 @@ bumped (replace the tag to match the new version):
 
 ```bash
 git subtree pull --prefix=repos/effect https://github.com/Effect-TS/effect.git effect@<version> --squash
+git subtree pull --prefix=repos/rujira-ui https://gitlab.com/thorchain/rujira-ui.git main --squash
 ```
 
 ## Pattern references (`agent-patterns/`)

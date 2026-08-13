@@ -16,6 +16,7 @@ import {
   AllRpcEndpointsFailedError,
   calculateAttemptTimeoutMs,
   classifyRpcFailure,
+  deduplicateTriggerIds,
   errorMessage,
   executeWithRpcFailover,
   ExecutionBudgetExhaustedError,
@@ -26,9 +27,9 @@ import {
 } from "./resilience.js";
 
 const RPC_CONNECT_TIMEOUT_MS = 5_000;
-const RPC_EXECUTE_TIMEOUT_MS = 25_000;
+const RPC_EXECUTE_TIMEOUT_MS = 50_000;
 const RPC_MIN_ATTEMPT_MS = 3_000;
-const LAMBDA_TIMEOUT_HEADROOM_MS = 2_000;
+const LAMBDA_TIMEOUT_HEADROOM_MS = 5_000;
 const RPC_CIRCUIT_FAILURE_THRESHOLD = 2;
 const RPC_CIRCUIT_COOLDOWN_MS = 5 * 60_000;
 const RESOURCE_TTL_MS = 5 * 60_000;
@@ -279,7 +280,10 @@ export const handler = metricScope(
   (metrics) => async (event: ExecutorEvent, context: LambdaContext) => {
     const startedAt = Date.now();
     const chainId = process.env.CHAIN_ID!;
-    const triggerIds = event.Records.map((record) => record.body);
+    const receivedTriggerIds = event.Records.map((record) => record.body);
+    const triggerIds = deduplicateTriggerIds(receivedTriggerIds);
+    const duplicateTriggerCount =
+      receivedTriggerIds.length - triggerIds.length;
     const logContext: LogContext = {
       chainId,
       functionName: process.env.AWS_LAMBDA_FUNCTION_NAME ?? "unknown",
@@ -295,9 +299,19 @@ export const handler = metricScope(
     metrics.setProperty("RequestId", context.awsRequestId);
     metrics.setProperty("TriggerIds", triggerIds);
     metrics.putMetric("ExecutorInvocation", 1, Unit.Count);
+    if (duplicateTriggerCount > 0) {
+      metrics.putMetric("DuplicateTrigger", duplicateTriggerCount, Unit.Count);
+      structuredLog("WARN", "executor_duplicate_triggers_removed", logContext, {
+        duplicateTriggerCount,
+        receivedTriggerCount: receivedTriggerIds.length,
+        uniqueTriggerCount: triggerIds.length,
+      });
+    }
     structuredLog("INFO", "executor_invocation_started", logContext, {
       batchSize: event.Records.length,
+      duplicateTriggerCount,
       remainingTimeMs: context.getRemainingTimeInMillis(),
+      uniqueTriggerCount: triggerIds.length,
     });
 
     try {

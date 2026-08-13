@@ -120,13 +120,18 @@ export class RpcCircuitBreaker {
     };
   }
 
-  recordFailure(rpcUrl: string): CircuitFailure {
+  recordFailure(
+    rpcUrl: string,
+    options: { openImmediately?: boolean } = {}
+  ): CircuitFailure {
     const previous = this.states.get(rpcUrl) ?? {
       consecutiveFailures: 0,
       openUntilMs: 0,
     };
     const consecutiveFailures = previous.consecutiveFailures + 1;
-    const opened = consecutiveFailures >= this.options.failureThreshold;
+    const opened =
+      options.openImmediately === true ||
+      consecutiveFailures >= this.options.failureThreshold;
     const next = {
       consecutiveFailures,
       openUntilMs: opened
@@ -149,6 +154,10 @@ export class RpcCircuitBreaker {
 
 export const errorMessage = (error: unknown) =>
   error instanceof Error ? error.message : String(error);
+
+export const deduplicateTriggerIds = (triggerIds: readonly string[]) => [
+  ...new Set(triggerIds),
+];
 
 export type RpcFailureCategory =
   | "ambiguous_timeout"
@@ -296,9 +305,14 @@ export const executeWithRpcFailover = async <T, A>(options: {
       return result;
     } catch (error) {
       lastError = error;
-      const category = classifyRpcFailure(error);
-      const circuit = options.circuitBreaker.recordFailure(endpoint.rpcUrl);
       const timedOut = error instanceof RpcAttemptTimeoutError;
+      const category = classifyRpcFailure(error);
+      const circuit = options.circuitBreaker.recordFailure(endpoint.rpcUrl, {
+        // An execute timeout consumes nearly the entire Lambda budget and has
+        // an ambiguous broadcast outcome. Avoid selecting the same endpoint
+        // again on the next warm-container invocation.
+        openImmediately: timedOut,
+      });
       options.hooks?.onFailure?.({
         attempt,
         category,

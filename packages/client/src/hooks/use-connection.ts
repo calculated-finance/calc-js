@@ -1,19 +1,19 @@
-import type { Wallet } from "@template/domain/clients";
-import { useEffect, useMemo } from "react";
+import type { Wallet, WalletType } from "@template/domain/clients";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { useWallets } from "./use-wallets";
 
 interface ConnectionStore {
-  wallet?: Wallet;
-  setConnectedWallet: (wallet?: Wallet) => void;
+  /** The user's preferred wallet; the live Wallet object is always derived. */
+  selectedWalletType?: WalletType;
+  setSelectedWalletType: (type?: WalletType) => void;
 }
 
 export const useConnectionStore = create<ConnectionStore>()(
   persist(
     (set) => ({
-      wallet: undefined,
-      setConnectedWallet: (wallet) => set({ wallet: wallet }),
+      selectedWalletType: undefined,
+      setSelectedWalletType: (selectedWalletType) => set({ selectedWalletType }),
     }),
     {
       name: "calc_current_connection",
@@ -21,33 +21,21 @@ export const useConnectionStore = create<ConnectionStore>()(
   ),
 );
 
+/**
+ * The active wallet, derived from the live wallet stream: the selected wallet
+ * if it is currently connected, otherwise the first connected wallet.
+ */
 export const useConnectedWallet = () => {
   const { wallets } = useWallets();
-  const { wallet, setConnectedWallet } = useConnectionStore();
+  const { selectedWalletType, setSelectedWalletType } = useConnectionStore();
 
-  const connectedWallets = useMemo(
-    () => wallets.filter((wallet) => wallet.connection.status === "connected"),
-    [wallets],
-  );
+  const connected = wallets.filter((wallet) => wallet.connection.status === "connected");
+  const wallet = connected.find((w) => w.type === selectedWalletType) ?? (connected[0]);
 
-  const connectedWallet = useMemo(() => {
-    return connectedWallets.find(
-      (w) =>
-        w.connection.status === "connected" &&
-        wallet?.connection.status === "connected" &&
-        w.connection.address === wallet.connection.address &&
-        w.connection.address === wallet.connection.address,
-    );
-  }, [connectedWallets, wallet]);
-
-  useEffect(() => {
-    if (wallet && connectedWallet) {
-      setConnectedWallet(connectedWallet);
-      return;
-    }
-
-    setConnectedWallet(connectedWallets.find((w) => w.connection.status === "connected"));
-  }, [connectedWallets, connectedWallet, wallet, setConnectedWallet]);
-
-  return { wallet, setConnectedWallet };
+  return {
+    wallet,
+    setConnectedWallet: (wallet?: Wallet) => {
+      setSelectedWalletType(wallet?.type);
+    },
+  };
 };

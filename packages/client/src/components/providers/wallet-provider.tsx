@@ -2,7 +2,7 @@ import type { Chain, ChainId } from "@template/domain/chains";
 import { TransactionData, Wallet, WalletService } from "@template/domain/clients";
 import { Effect, Fiber, Stream } from "effect";
 import React, { useEffect } from "react";
-import { useRuntime } from "../../hooks/use-runtime";
+import { useWalletRuntime } from "../../hooks/use-runtime";
 
 interface WalletProviderProps {
   children: React.ReactNode;
@@ -40,7 +40,7 @@ export const WalletProviderContext = React.createContext<WalletProviderState>(in
 
 export const WalletProvider = ({ children }: WalletProviderProps) => {
   const [state, setState] = React.useState<WalletProviderState>(initialState);
-  const runtime = useRuntime();
+  const runtime = useWalletRuntime();
 
   useEffect(() => {
     const fiber = runtime.runFork(
@@ -51,18 +51,20 @@ export const WalletProvider = ({ children }: WalletProviderProps) => {
           Effect.sync(() => {
             setState(() => ({
               wallets,
-              connect: (wallet: Wallet) => Effect.runPromise(walletService.connect(wallet)),
+              connect: (wallet: Wallet) => Effect.runPromise(Effect.asVoid(walletService.connect(wallet))),
               switchChain: (wallet: Wallet, chainId: ChainId) =>
-                Effect.runPromise(walletService.switchChain(wallet, chainId)),
-              disconnect: (wallet: Wallet) => Effect.runPromise(walletService.disconnect(wallet)),
+                Effect.runPromise(Effect.asVoid(walletService.switchChain(wallet, chainId))),
+              disconnect: (wallet: Wallet) => Effect.runPromise(Effect.asVoid(walletService.disconnect(wallet))),
               simulateTransaction: (wallet: Wallet, chain: Chain, data: TransactionData) =>
                 Effect.runPromise(walletService.simulateTransaction(wallet, chain, data).pipe(Effect.scoped)),
               signTransaction: (wallet: Wallet, chain: Chain, data: TransactionData) =>
-                Effect.runPromise(walletService.signTransaction(wallet, chain, data).pipe(Effect.scoped)),
+                Effect.runPromise(walletService.signTransaction(wallet, chain, data).pipe(Effect.asVoid, Effect.scoped)),
             }));
           }),
         );
-      }),
+      }).pipe(
+        Effect.tapErrorCause((cause) => Effect.logError("wallet stream failed", cause)),
+      ),
     );
 
     return () => {

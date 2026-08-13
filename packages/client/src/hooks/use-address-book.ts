@@ -49,9 +49,9 @@ export function useAddressBook() {
 
   useEffect(() => {
     wallets.forEach((wallet) => {
-      if (wallet.connection.status === "connected" && typeof wallet.connection.chain !== "string") {
+      if (wallet.connection.status === "connected" && wallet.connection.chain.status === "ready") {
         addEntry({
-          chainId: wallet.connection.chain.id,
+          chainId: wallet.connection.chain.chain.id,
           address: wallet.connection.address,
           label: wallet.connection.label,
         });

@@ -24,8 +24,8 @@ export function SignTransactionForm({
     const viableConnections = wallets.filter(
       (wallet) =>
         wallet.connection.status === "connected" &&
-        typeof wallet.connection.chain !== "string" &&
-        wallet.connection.chain.id === chain.id,
+        wallet.connection.chain.status === "ready" &&
+        wallet.connection.chain.chain.id === chain.id,
     );
 
     const viableConnectionsByWalletType = viableConnections.reduce<Partial<Record<string, Wallet>>>(

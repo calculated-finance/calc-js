@@ -1,6 +1,12 @@
-import type { Wallet } from "@template/domain/clients";
+import type { Wallet, WalletType } from "@template/domain/clients";
 import { useMemo, useState } from "react";
 import { useWallets } from "../../hooks/use-wallets";
+
+const WALLET_ICONS: Partial<Record<WalletType, string>> = {
+  Keplr: "images/keplr.png",
+  MetaMask: "images/metamask.svg",
+  "Rabby Wallet": "images/rabby.svg",
+};
 
 function ConnectWallet({ wallet, connect }: { wallet: Wallet; connect: () => void }) {
   return (
@@ -13,7 +19,7 @@ function ConnectWallet({ wallet, connect }: { wallet: Wallet; connect: () => voi
       onClick={connect}
     >
       {wallet.type}
-      <img src={wallet.icon} alt={wallet.type} className="mt-[-4px] ml-3 inline h-5 w-5" />
+      <img src={WALLET_ICONS[wallet.type]} alt={wallet.type} className="mt-[-4px] ml-3 inline h-5 w-5" />
     </code>
   );
 }
@@ -76,16 +82,16 @@ function ConnectionItem({ wallet }: { wallet: Wallet }) {
         )
       )}
       {wallet.connection.status === "connected" &&
-        (typeof wallet.connection.chain !== "string" ? (
+        (wallet.connection.chain.status === "ready" ? (
           <div className="flex flex-col items-end gap-2">
             {!isSwitchingWalletChain ? (
               <code className="text-right text-lg">
                 <code
                   style={{
-                    color: wallet.connection.chain.color,
+                    color: wallet.connection.chain.chain.color,
                   }}
                 >
-                  {wallet.connection.chain.displayName}
+                  {wallet.connection.chain.chain.displayName}
                 </code>
                 <code> | </code>
                 <code
@@ -114,9 +120,9 @@ function ConnectionItem({ wallet }: { wallet: Wallet }) {
               ))
             )}
           </div>
-        ) : wallet.connection.chain === "switching_chain" ? (
+        ) : wallet.connection.chain.status === "switching" ? (
           <code className="text-right text-lg">Switching Chain...</code>
-        ) : wallet.connection.chain === "adding_chain" ? (
+        ) : wallet.connection.chain.status === "adding" ? (
           <code className="text-right text-lg">Adding Chain...</code>
         ) : (
           <code

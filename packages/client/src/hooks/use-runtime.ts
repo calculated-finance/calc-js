@@ -1,10 +1,10 @@
 import React from "react";
 import { RuntimeContext } from "../components/providers/runtime-provider";
 
-export const useRuntime = () => {
-  const runtime = React.useContext(RuntimeContext);
+const useRuntimes = () => React.useContext(RuntimeContext);
 
-  if (!runtime) throw new Error("useRuntime must be used within a RuntimeProvider");
+/** Runtime for chain-query services (CalcService). */
+export const useRuntime = () => useRuntimes().calc;
 
-  return runtime;
-};
+/** Runtime for wallet services (WalletService). */
+export const useWalletRuntime = () => useRuntimes().wallet;

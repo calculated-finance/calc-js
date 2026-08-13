@@ -325,7 +325,7 @@ export function StrategyList({
   const { ref, onScroll, maskImage } = useScrollFade();
   const { data: balancesByAddress } = useStrategiesBalances(Object.values(handles));
   const [sortBy, setSortBy] = useState<SortKey>("recent");
-  const [statuses, setStatuses] = useState<Set<StatusKey>>(new Set(["active", "completed", "paused"]));
+  const [statuses, setStatuses] = useState<Set<StatusKey>>(new Set(["active"]));
 
   const valueOf = (handle: StrategyHandle) =>
     handle.status !== "draft" ? (balancesByAddress?.[handle.contract_address]?.valueUsd ?? 0) : 0;

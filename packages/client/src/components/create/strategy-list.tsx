@@ -4,7 +4,7 @@ import type { StrategyHandle } from "@template/domain/calc";
 import { type Chain, COSMOS_CHAINS_BY_ID } from "@template/domain/chains";
 import type { TransactionData } from "@template/domain/clients";
 import { formatNumber } from "@template/domain/numbers";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { useDraftStrategies } from "../../hooks/use-draft-strategies";
 import { useNodeModalStore } from "../../hooks/use-node-modal-store";
 import { useScrollFade } from "../../hooks/use-scroll-fade";
@@ -15,12 +15,22 @@ import { Code } from "./code";
 import { SignTransactionForm } from "./sign-transaction-form";
 import { StartStrategyForm } from "./start-strategy-form";
 
-/** A compact one-line balances summary, e.g. "32,207 RUNE · 12 TCY". */
+/**
+ * A compact one-line balances summary, e.g. "32,207 RUNE | 12 TCY".
+ * Inherits the row's font size; denoms take their asset colours, matching
+ * the wallet balances panel.
+ */
 export function BalancesSummary({ balances }: { balances: Amount[] | undefined }) {
   if (!balances?.length) return null;
   return (
-    <code className="text-sm text-zinc-500">
-      {balances.map((b) => `${formatNumber(b.amount)} ${b.displayName.toUpperCase()}`).join(" · ")}
+    <code className="flex items-baseline gap-2">
+      {balances.map((balance, index) => (
+        <Fragment key={balance.denom}>
+          {index > 0 && <span>|</span>}
+          <span className="text-zinc-200">{formatNumber(balance.amount)}</span>
+          <span style={{ color: balance.color }}>{balance.displayName.toUpperCase()}</span>
+        </Fragment>
+      ))}
     </code>
   );
 }
@@ -190,11 +200,17 @@ function ActiveStrategyHandle({
       <code key={handle.id} className={`flex gap-2 text-lg text-zinc-200 ${!isSelected ? "opacity-35" : ""}`}>
         {isSelected ? "* " : ""}
         <Code onClick={onSelect} className={isSelected ? "" : "ml-[18.5px] cursor-pointer hover:underline"}>
-          {`${handle.label}${isSelected ? " |" : ""}`}
+          {handle.label}
         </Code>
-        {!isSelected && <BalancesSummary balances={balances} />}
+        {!!balances?.length && (
+          <>
+            <code>|</code>
+            <BalancesSummary balances={balances} />
+          </>
+        )}
         {isSelected && (
           <>
+            <code>|</code>
             <code
               onClick={() => {
                 openTransaction(
@@ -250,7 +266,6 @@ function ActiveStrategyHandle({
               Copy
             </code>
             {" 📋"}
-            <BalancesSummary balances={balances} />
           </>
         )}
       </code>
@@ -277,6 +292,13 @@ function ActiveStrategyHandle({
   );
 }
 
+type SortKey = "recent" | "valuable";
+
+const SORT_LABELS: Record<SortKey, string> = {
+  recent: "Most recent",
+  valuable: "Most valuable",
+};
+
 export function StrategyList({
   handles,
   filter,
@@ -290,19 +312,44 @@ export function StrategyList({
 }) {
   const { ref, onScroll, maskImage } = useScrollFade();
   const { data: balancesByAddress } = useStrategiesBalances(Object.values(handles));
+  const [sortBy, setSortBy] = useState<SortKey>("recent");
+
+  const valueOf = (handle: StrategyHandle) =>
+    handle.status !== "draft" ? (balancesByAddress?.[handle.contract_address]?.valueUsd ?? 0) : 0;
+  const createdAt = (handle: StrategyHandle) => (handle.status !== "draft" ? (handle.created_at ?? 0) : 0);
+
+  const rows = Object.values(handles)
+    .filter((handle) => handle.status === filter)
+    .sort((a, b) => (sortBy === "valuable" ? valueOf(b) - valueOf(a) : createdAt(b) - createdAt(a)));
 
   return (
-    // nowheel keeps wheel events scrolling this list instead of zooming the
-    // React Flow canvas underneath.
-    <div
-      ref={ref}
-      onScroll={onScroll}
-      className="nowheel flex max-h-[33vh] flex-col items-start gap-4 overflow-y-auto pr-4 pb-2 pl-[10px]"
-      style={{ scrollbarWidth: "thin", maskImage, WebkitMaskImage: maskImage }}
-    >
-      {Object.values(handles)
-        .filter((handle) => handle.status === filter)
-        .map((handle) => {
+    <div className="flex flex-col gap-3">
+      {filter !== "draft" && (
+        <div className="flex gap-4 pl-[10px]">
+          {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => (
+            <code
+              key={key}
+              onClick={() => {
+                setSortBy(key);
+              }}
+              className={`cursor-pointer text-sm hover:underline ${
+                sortBy === key ? "text-zinc-200 underline" : "text-zinc-600"
+              }`}
+            >
+              {SORT_LABELS[key]}
+            </code>
+          ))}
+        </div>
+      )}
+      {/* nowheel keeps wheel events scrolling this list instead of zooming
+          the React Flow canvas underneath. */}
+      <div
+        ref={ref}
+        onScroll={onScroll}
+        className="nowheel flex max-h-[33vh] flex-col items-start gap-4 overflow-y-auto pr-4 pb-2 pl-[10px]"
+        style={{ scrollbarWidth: "thin", maskImage, WebkitMaskImage: maskImage }}
+      >
+        {rows.map((handle) => {
           const isSelected = selectedId === handle.id;
           return handle.status === "draft" ? (
             <DraftStrategyHandle
@@ -317,7 +364,7 @@ export function StrategyList({
             <ActiveStrategyHandle
               key={handle.id}
               handle={handle}
-              balances={balancesByAddress?.[handle.contract_address]}
+              balances={balancesByAddress?.[handle.contract_address]?.balances}
               isSelected={isSelected}
               onSelect={() => {
                 onSelect(handle);
@@ -325,6 +372,7 @@ export function StrategyList({
             />
           );
         })}
+      </div>
     </div>
   );
 }

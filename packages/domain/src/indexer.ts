@@ -116,6 +116,8 @@ export const calcOrderNodeId = (address: string): string => btoa(`CalcOrder:${ad
 
 const IndexerBalance = Schema.Struct({
     amount: Schema.NonEmptyTrimmedString,
+    /** USD value scaled to 8 decimals. */
+    valueUsd: Schema.NonEmptyTrimmedString,
     asset: IndexerAsset
 })
 
@@ -130,7 +132,7 @@ export const CALC_ORDERS_BALANCES_QUERY = `query ($ids: [ID!]!) {
   nodes(ids: $ids) {
     ... on CalcOrder {
       address
-      balances { amount asset { variants { native { denom } } } }
+      balances { amount valueUsd asset { variants { native { denom } } } }
     }
   }
 }`
@@ -303,22 +305,29 @@ export class RujiraIndexer extends Effect.Service<RujiraIndexer>()("RujiraIndexe
 
         /**
          * Balances for many strategies in one batched Relay nodes lookup,
-         * keyed by strategy address.
+         * keyed by strategy address. valueUsd is the summed USD value in
+         * whole dollars — precise enough for sorting and display.
          */
         const strategiesBalances = (addresses: ReadonlyArray<string>) =>
             addresses.length === 0
-                ? Effect.succeed({} as Record<string, Array<Amount>>)
+                ? Effect.succeed({} as Record<string, { balances: Array<Amount>; valueUsd: number }>)
                 : query(CalcOrdersBalancesResult, CALC_ORDERS_BALANCES_QUERY, {
                     ids: addresses.map(calcOrderNodeId)
                 }).pipe(
                     Effect.map(({ nodes }) =>
-                        nodes.reduce<Record<string, Array<Amount>>>((acc, node) => {
+                        nodes.reduce<Record<string, { balances: Array<Amount>; valueUsd: number }>>((acc, node) => {
                             if (!node?.address) return acc
                             return {
                                 ...acc,
-                                [node.address]: node.balances.flatMap((balance) =>
-                                    toAmount(balance.amount, balance.asset.variants.native?.denom)
-                                )
+                                [node.address]: {
+                                    balances: node.balances.flatMap((balance) =>
+                                        toAmount(balance.amount, balance.asset.variants.native?.denom)
+                                    ),
+                                    valueUsd: node.balances.reduce(
+                                        (total, balance) => total + Number(balance.valueUsd) / 1e8,
+                                        0
+                                    )
+                                }
                             }
                         }, {})
                     )
@@ -326,7 +335,7 @@ export class RujiraIndexer extends Effect.Service<RujiraIndexer>()("RujiraIndexe
 
         /** A single strategy contract's balances. */
         const strategyBalances = (address: string) =>
-            strategiesBalances([address]).pipe(Effect.map((balances) => balances[address] ?? []))
+            strategiesBalances([address]).pipe(Effect.map((balances) => balances[address]?.balances ?? []))
 
         /** A THORChain account's app-layer balances (bank + secured assets). */
         const accountBalances = (address: string) =>

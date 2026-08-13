@@ -20,13 +20,9 @@ import "@xyflow/react/dist/style.css";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { v4 } from "uuid";
 import { Code } from "../../components/create/code";
-import { DistributeNode } from "../../components/create/distribute-node";
-import { ManyNode } from "../../components/create/many-node";
-import { ScheduleNode } from "../../components/create/schedule-node";
+import { actionNodeTypes } from "../../components/create/actions";
 import { SignTransactionForm } from "../../components/create/sign-transaction-form";
 import { StartStrategyForm } from "../../components/create/start-strategy-form";
-import { StrategyNode } from "../../components/create/strategy-node";
-import { SwapNode } from "../../components/create/swap-node";
 import { Modal, ModalContent, ModalHeader, ModalTitle } from "../../components/ui/modal";
 import { useConnectedWallet } from "../../hooks/use-connection";
 import { useDraftStrategies } from "../../hooks/use-draft-strategies";
@@ -314,11 +310,7 @@ function ActiveStrategyHandle({
 }
 
 const nodeTypes = {
-  scheduleNode: ScheduleNode,
-  swapNode: SwapNode,
-  manyNode: ManyNode,
-  strategyNode: StrategyNode,
-  distributeNode: DistributeNode,
+  ...actionNodeTypes,
   loadingStrategies: ({ data: { status } }: { data: { status: "draft" | "active" | "paused" | "archived" } }) => (
     <code className="text-lg text-zinc-500">Fetching {status} strategies...</code>
   ),

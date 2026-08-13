@@ -1,6 +1,7 @@
 import type { Action, Strategy } from "@template/domain/calc";
 import type { Wallet } from "@template/domain/clients";
 import type { Edge, Node } from "@xyflow/react";
+import { NODE_HEIGHT, NODE_WIDTH } from "./constants";
 import { layoutDistributeAction } from "./layout-distribute";
 import { layoutManyAction } from "./layout-many";
 import { layoutScheduleAction } from "./layout-schedule";
@@ -53,23 +54,41 @@ export type LayoutFunction<T extends Record<string, any>> = (
   layout: LayoutFunction<T>,
 ) => LayoutResult<T>;
 
-const layoutFunctions: Partial<Record<string, LayoutFunction<ActionNodeParams>>> = {
+/** The discriminant key identifying each action variant. */
+export type ActionKey = "swap" | "many" | "schedule" | "distribute";
+
+export const actionKeyOf = (action: Action): ActionKey =>
+  "swap" in action ? "swap" : "many" in action ? "many" : "schedule" in action ? "schedule" : "distribute";
+
+const layoutFunctions: Record<ActionKey, LayoutFunction<ActionNodeParams>> = {
   swap: layoutSwapAction,
   many: layoutManyAction,
   schedule: layoutScheduleAction,
   distribute: layoutDistributeAction,
 };
 
-export const layoutAction = (
-  { action, ...params }: ActionNodeParams,
+/**
+ * Lays out a single node with no children — the shape shared by every leaf
+ * action type.
+ */
+export const layoutLeafNode = (
+  nodeType: string,
+  params: ActionNodeParams,
   context: LayoutContext,
-): LayoutResult<ActionNodeParams> => {
-  const actionType = Object.keys(action)[1];
-  const layoutFunction = layoutFunctions[actionType];
+): LayoutResult<ActionNodeParams> => ({
+  nodes: [
+    {
+      id: params.action.id,
+      type: nodeType,
+      position: { x: context.startX, y: context.startY },
+      data: params,
+    },
+  ],
+  edges: [],
+  bounds: { width: NODE_WIDTH, height: NODE_HEIGHT },
+});
 
-  if (!layoutFunction) {
-    throw new Error(`No layout function found for action type: ${actionType}`);
-  }
-
-  return layoutFunction({ action, ...params }, context, layoutAction);
-};
+export const layoutAction = (
+  params: ActionNodeParams,
+  context: LayoutContext,
+): LayoutResult<ActionNodeParams> => layoutFunctions[actionKeyOf(params.action)](params, context, layoutAction);

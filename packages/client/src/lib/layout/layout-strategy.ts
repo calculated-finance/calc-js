@@ -1,5 +1,5 @@
 import { type Action } from "@template/domain/calc";
-import type { BuiltInEdge } from "@xyflow/react";
+import { CHILD_OFFSET_X, makeEdge, NODE_HEIGHT, NODE_WIDTH } from "./constants";
 import {
   layoutAction,
   type LayoutContext,
@@ -26,34 +26,36 @@ export const layoutStrategy = (
         },
       ],
       edges: [],
-      bounds: { width: 200, height: 150 },
+      bounds: { width: NODE_WIDTH, height: NODE_HEIGHT },
     };
   }
 
   const layoutContext = {
-    startX: 300,
-    startY: -100,
-    nodeSpacing: 50,
+    startX: context.startX + CHILD_OFFSET_X,
+    startY: context.startY - 100,
+    nodeSpacing: context.nodeSpacing,
   };
 
   const layout = layoutAction(
     {
       action: strategy.action,
-      update: (action: Action) =>
-        { update({
+      update: (action: Action) => {
+        update({
           ...strategy,
           action,
-        }); },
-      remove: () =>
-        { update({
+        });
+      },
+      remove: () => {
+        update({
           ...strategy,
           action: undefined,
-        }); },
+        });
+      },
     },
     layoutContext,
   );
 
-  const strategyNodeY = layoutContext.startY + layout.bounds.height / 2 - 75;
+  const strategyNodeY = layoutContext.startY + layout.bounds.height / 2 - NODE_HEIGHT / 2;
 
   return {
     ...layout,
@@ -62,25 +64,13 @@ export const layoutStrategy = (
       {
         id: `${strategy.id}`,
         type: "strategyNode",
-        position: { x: 0, y: strategyNodeY },
+        position: { x: context.startX, y: strategyNodeY },
         data: {
           strategy,
           update,
         },
       },
     ],
-    edges: [
-      ...layout.edges,
-      {
-        id: `${strategy.id}-to-${layout.nodes[0].id}`,
-        source: `${strategy.id}`,
-        target: layout.nodes[0].id,
-        style: { stroke: "#9CCCF0", strokeWidth: 2 },
-        type: "smoothstep",
-        pathOptions: {
-          borderRadius: 16,
-        },
-      } as BuiltInEdge,
-    ],
+    edges: [...layout.edges, makeEdge(`${strategy.id}`, layout.nodes[0].id)],
   };
 };

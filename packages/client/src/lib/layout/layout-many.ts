@@ -1,5 +1,6 @@
 import type { Action } from "@template/domain/calc";
-import type { BuiltInEdge, Edge } from "@xyflow/react";
+import type { Edge } from "@xyflow/react";
+import { CHILD_OFFSET_X, makeEdge, MULTI_CHILD_OFFSET_X, NODE_HEIGHT, NODE_WIDTH } from "./constants";
 import type { ActionNodeParams, LayoutContext, LayoutFunction, LayoutResult } from "./layout";
 
 export const layoutManyAction: LayoutFunction<ActionNodeParams> = (
@@ -14,61 +15,28 @@ export const layoutManyAction: LayoutFunction<ActionNodeParams> = (
   const actions = params.action.many;
 
   if (actions.length === 0) {
-    const containerNode = {
-      id: params.action.id,
-      type: "manyNode",
-      position: { x: context.startX, y: context.startY },
-      data: params,
-    };
-
     return {
-      nodes: [containerNode],
+      nodes: [
+        {
+          id: params.action.id,
+          type: "manyNode",
+          position: { x: context.startX, y: context.startY },
+          data: params,
+        },
+      ],
       edges: [],
-      bounds: { width: 200, height: 150 },
+      bounds: { width: NODE_WIDTH, height: NODE_HEIGHT },
     };
   }
 
-  const tempChildLayoutResults = [];
-  let tempCurrentChildY = context.startY;
-  const tempChildrenStartX = context.startX + 550;
-
-  actions.forEach((childAction) => {
-    const tempChildContext = {
-      ...context,
-      startX: tempChildrenStartX,
-      startY: tempCurrentChildY,
-    };
-
-    const tempChildLayout = layoutAction(
-      {
-        action: childAction,
-        update: () => {},
-        remove: () => {},
-      },
-      tempChildContext,
-      layoutAction,
-    );
-
-    tempChildLayoutResults.push(tempChildLayout);
-    tempCurrentChildY += tempChildLayout.bounds.height + context.nodeSpacing;
-  });
-
-  const totalChildrenHeight = tempCurrentChildY - context.startY - context.nodeSpacing;
-
-  const childrenStartX = context.startX + (actions.length > 1 ? 400 : 300);
+  const childrenStartX = context.startX + (actions.length > 1 ? MULTI_CHILD_OFFSET_X : CHILD_OFFSET_X);
 
   let allChildNodes: LayoutResult<ActionNodeParams>["nodes"] = [];
   let allChildEdges: Edge[] = [];
-  const childLayoutResults: LayoutResult<ActionNodeParams>[] = [];
+  const parentEdges: Edge[] = [];
   let currentChildY = context.startY;
 
   actions.forEach((childAction, index) => {
-    const childContext = {
-      ...context,
-      startX: childrenStartX,
-      startY: currentChildY,
-    };
-
     const childLayout = layoutAction(
       {
         action: childAction,
@@ -85,18 +53,21 @@ export const layoutManyAction: LayoutFunction<ActionNodeParams> = (
           params.update({ id: params.action.id, many: newActions });
         },
       },
-      childContext,
+      { ...context, startX: childrenStartX, startY: currentChildY },
       layoutAction,
     );
 
-    childLayoutResults.push(childLayout);
+    if (childLayout.nodes.length > 0) {
+      parentEdges.push(makeEdge(params.action.id, childLayout.nodes[0].id));
+    }
+
     allChildNodes = [...allChildNodes, ...childLayout.nodes];
     allChildEdges = [...allChildEdges, ...childLayout.edges];
-
     currentChildY += childLayout.bounds.height + context.nodeSpacing;
   });
 
-  const manyNodeY = context.startY + totalChildrenHeight / 2 - 75;
+  const totalChildrenHeight = currentChildY - context.startY - context.nodeSpacing;
+  const manyNodeY = context.startY + totalChildrenHeight / 2 - NODE_HEIGHT / 2;
 
   const containerNode: LayoutResult<ActionNodeParams>["nodes"][number] = {
     id: params.action.id,
@@ -105,40 +76,20 @@ export const layoutManyAction: LayoutFunction<ActionNodeParams> = (
     data: params,
   };
 
-  const parentEdges: BuiltInEdge[] = [];
-
-  childLayoutResults.forEach((childLayout) => {
-    if (childLayout.nodes.length > 0) {
-      const childRootId = childLayout.nodes[0].id;
-      parentEdges.push({
-        id: `${params.action.id}-to-${childRootId}`,
-        source: params.action.id,
-        target: childRootId,
-        style: { stroke: "#9CCCF0", strokeWidth: 2 },
-        type: "smoothstep",
-        pathOptions: {
-          borderRadius: 16,
-        },
-      });
-    }
-  });
-
-  const allNodes = [containerNode, ...allChildNodes];
-
   let minX = context.startX;
-  let maxX = context.startX + 300;
+  let maxX = context.startX + CHILD_OFFSET_X;
   let minY = Math.min(manyNodeY, context.startY);
-  let maxY = Math.max(manyNodeY + 120, currentChildY - context.nodeSpacing);
+  let maxY = Math.max(manyNodeY + NODE_HEIGHT, currentChildY - context.nodeSpacing);
 
   allChildNodes.forEach((node) => {
     minX = Math.min(minX, node.position.x);
-    maxX = Math.max(maxX, node.position.x + (node.width ?? 300));
+    maxX = Math.max(maxX, node.position.x + (node.width ?? CHILD_OFFSET_X));
     minY = Math.min(minY, node.position.y);
-    maxY = Math.max(maxY, node.position.y + (node.height ?? 120));
+    maxY = Math.max(maxY, node.position.y + (node.height ?? NODE_HEIGHT));
   });
 
   return {
-    nodes: allNodes,
+    nodes: [containerNode, ...allChildNodes],
     edges: [...allChildEdges, ...parentEdges],
     bounds: {
       width: maxX - minX,

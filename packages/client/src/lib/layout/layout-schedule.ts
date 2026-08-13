@@ -1,5 +1,5 @@
 import { type Action, type Schedule } from "@template/domain/calc";
-import type { BuiltInEdge } from "@xyflow/react";
+import { CHILD_OFFSET_X, makeEdge, NODE_HEIGHT, NODE_WIDTH } from "./constants";
 import { type ActionNodeParams, type LayoutContext, type LayoutFunction, type LayoutResult } from "./layout";
 
 export const layoutScheduleAction: LayoutFunction<ActionNodeParams> = (
@@ -24,14 +24,13 @@ export const layoutScheduleAction: LayoutFunction<ActionNodeParams> = (
         },
       ],
       edges: [],
-      bounds: { width: 200, height: 150 },
+      bounds: { width: NODE_WIDTH, height: NODE_HEIGHT },
     };
   }
 
   const childContext = {
-    startX: context.startX + 300,
-    startY: context.startY,
-    nodeSpacing: 50,
+    ...context,
+    startX: context.startX + CHILD_OFFSET_X,
   };
 
   const layout = layoutAction(
@@ -49,20 +48,21 @@ export const layoutScheduleAction: LayoutFunction<ActionNodeParams> = (
           },
         });
       },
-      remove: () =>
-        { params.update({
+      remove: () => {
+        params.update({
           id: params.action.id,
           schedule: {
             ...schedule,
             action: undefined,
           },
-        }); },
+        });
+      },
     },
     childContext,
     layoutAction,
   );
 
-  const scheduleNodeY = context.startY + layout.bounds.height / 2 - 75;
+  const scheduleNodeY = context.startY + layout.bounds.height / 2 - NODE_HEIGHT / 2;
 
   return {
     ...layout,
@@ -75,18 +75,6 @@ export const layoutScheduleAction: LayoutFunction<ActionNodeParams> = (
       },
       ...layout.nodes,
     ],
-    edges: [
-      {
-        id: `${params.action.id}-to-${layout.nodes[0].id}`,
-        source: params.action.id,
-        target: layout.nodes[0].id,
-        style: { stroke: "#9CCCF0", strokeWidth: 2 },
-        type: "smoothstep",
-        pathOptions: {
-          borderRadius: 16,
-        },
-      } as BuiltInEdge,
-      ...layout.edges,
-    ],
+    edges: [makeEdge(params.action.id, layout.nodes[0].id), ...layout.edges],
   };
 };

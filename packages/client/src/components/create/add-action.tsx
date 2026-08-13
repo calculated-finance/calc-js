@@ -1,8 +1,23 @@
 import type { Action } from "@template/domain/calc";
-import { RUJIRA } from "@template/domain/chains";
+import { Fragment } from "react";
 import { v4 } from "uuid";
 import { useAssets } from "../../hooks/use-assets";
 import { useNodeModalStore } from "../../hooks/use-node-modal-store";
+import type { ActionKey } from "../../lib/layout/layout";
+import { ACTION_TYPES, type ActionTypeDefinition } from "./actions";
+
+interface ComingSoon {
+  label: string;
+  colorClassName: string;
+}
+
+/** Picker rows: implemented action types mixed with not-yet-wired stubs. */
+const PICKER_ROWS: (ActionTypeDefinition | ComingSoon)[][] = [
+  [ACTION_TYPES.swap, { label: "Limit Order", colorClassName: "text-green-300" }, ACTION_TYPES.distribute],
+  [ACTION_TYPES.schedule, ACTION_TYPES.many, { label: "Conditional", colorClassName: "text-orange-300" }],
+];
+
+const isImplemented = (entry: ActionTypeDefinition | ComingSoon): entry is ActionTypeDefinition => "key" in entry;
 
 export function AddAction({
   onAdd,
@@ -12,7 +27,7 @@ export function AddAction({
   helpMessage,
 }: {
   onAdd: (action: Action) => void;
-  disabledActions?: string[];
+  disabledActions?: ActionKey[];
   denoms?: string[];
   isHelpOpen?: boolean;
   helpMessage?: string;
@@ -20,11 +35,11 @@ export function AddAction({
   const { setOpenId } = useNodeModalStore();
   const { assets } = useAssets();
 
-  const addAction = (action: Omit<Action, "id">) => {
+  const addAction = (definition: ActionTypeDefinition) => {
     const actionId = v4();
     const newAction = {
       id: actionId,
-      ...action,
+      ...definition.makeDefault({ assets, denoms }),
     } as Action;
     onAdd(newAction);
     setOpenId(actionId);
@@ -47,87 +62,29 @@ export function AddAction({
         >
           <code className="text-sm text-zinc-400">action</code>
         </div>
-        <div className="flex justify-around pt-2">
-          <code
-            onClick={() => {
-              addAction({
-                swap: {
-                  adjustment: "fixed",
-                  maximum_slippage_bps: 300,
-                  routes: [
-                    {
-                      thorchain: {},
-                    },
-                  ],
-                  minimum_receive_amount: {
-                    amount: 100,
-                    ...assets[0],
-                  },
-                  swap_amount: {
-                    amount: 0.001,
-                    ...assets[1],
-                  },
-                },
-              });
-            }}
-            className="cursor-pointer text-purple-300 hover:underline"
-          >
-            Swap
-          </code>
-          <code>|</code>
-          <code className="cursor-pointer text-green-300 hover:underline">Limit Order</code>
-          <code>|</code>
-          <code
-            onClick={
-              disabledActions?.includes("distribute")
-                ? () => {}
-                : () => {
-                    addAction({
-                      distribute: {
-                        denoms: denoms ?? [],
-                        destinations: [],
-                      },
-                    });
-                  }
-            }
-            className="cursor-pointer text-blue-300 hover:underline"
-          >
-            Distribute
-          </code>
-        </div>
-        <div className="flex justify-around pt-4">
-          <code
-            onClick={
-              disabledActions?.includes("schedule")
-                ? () => {}
-                : () => {
-                    addAction({
-                      schedule: {
-                        cadence: { cron: { expr: "0 23 12 * * SUN#2" } },
-                        execution_rebate: [],
-                        scheduler: RUJIRA.schedulerContract,
-                        contract_address: RUJIRA.managerContract,
-                        executors: [],
-                      },
-                    });
-                  }
-            }
-            className={`cursor-pointer text-yellow-300 hover:underline ${disabledActions?.includes("schedule") ? "cursor-not-allowed opacity-50" : ""}`}
-          >
-            Schedule
-          </code>
-          <code>|</code>
-          <code
-            onClick={() => {
-              addAction({ many: [] });
-            }}
-            className="cursor-pointer text-red-300 hover:underline"
-          >
-            Group
-          </code>
-          <code>|</code>
-          <code className="cursor-pointer text-orange-300 hover:underline">Conditional</code>
-        </div>
+        {PICKER_ROWS.map((row, rowIndex) => (
+          <div key={rowIndex} className={`flex justify-around ${rowIndex === 0 ? "pt-2" : "pt-4"}`}>
+            {row.map((entry, entryIndex) => {
+              const notYetWired = !isImplemented(entry);
+              const disabled = isImplemented(entry) && (disabledActions?.includes(entry.key) ?? false);
+              return (
+                <Fragment key={entry.label}>
+                  {entryIndex > 0 && <code>|</code>}
+                  <code
+                    onClick={() => {
+                      if (isImplemented(entry) && !disabled) addAction(entry);
+                    }}
+                    className={`${entry.colorClassName} ${
+                      disabled ? "cursor-not-allowed opacity-50" : notYetWired ? "opacity-40" : "cursor-pointer hover:underline"
+                    }`}
+                  >
+                    {entry.label}
+                  </code>
+                </Fragment>
+              );
+            })}
+          </div>
+        ))}
       </div>
     </div>
   );

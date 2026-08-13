@@ -1,29 +1,13 @@
 import type { ActionNodeParams, LayoutContext, LayoutFunction, LayoutResult } from "./layout";
+import { layoutLeafNode } from "./layout";
 
 export const layoutDistributeAction: LayoutFunction<ActionNodeParams> = (
-  { action, ...params }: ActionNodeParams,
+  params: ActionNodeParams,
   context: LayoutContext,
 ): LayoutResult<ActionNodeParams> => {
-  if (!("distribute" in action)) {
+  if (!("distribute" in params.action)) {
     throw new Error("Data must contain 'distribute' property for layoutDistributeAction");
   }
 
-  return {
-    nodes: [
-      {
-        id: action.id,
-        type: "distributeNode",
-        position: { x: context.startX, y: context.startY },
-        data: {
-          action,
-          ...params,
-        },
-      },
-    ],
-    edges: [],
-    bounds: {
-      width: 200,
-      height: 150,
-    },
-  };
+  return layoutLeafNode("distributeNode", params, context);
 };

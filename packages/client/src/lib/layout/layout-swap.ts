@@ -1,29 +1,13 @@
 import type { ActionNodeParams, LayoutContext, LayoutFunction, LayoutResult } from "./layout";
+import { layoutLeafNode } from "./layout";
 
 export const layoutSwapAction: LayoutFunction<ActionNodeParams> = (
-  { action, ...params }: ActionNodeParams,
+  params: ActionNodeParams,
   context: LayoutContext,
 ): LayoutResult<ActionNodeParams> => {
-  if (!("swap" in action)) {
+  if (!("swap" in params.action)) {
     throw new Error("Data must contain 'swap' property for layoutSwapAction");
   }
 
-  return {
-    nodes: [
-      {
-        id: action.id,
-        type: "swapNode",
-        position: { x: context.startX, y: context.startY },
-        data: {
-          action,
-          ...params,
-        },
-      },
-    ],
-    edges: [],
-    bounds: {
-      width: 200,
-      height: 150,
-    },
-  };
+  return layoutLeafNode("swapNode", params, context);
 };

@@ -271,7 +271,12 @@ export function StrategyList({
   onSelect: (handle: StrategyHandle) => void;
 }) {
   return (
-    <div className="flex flex-col items-start gap-4 pb-2 pl-[10px]">
+    // nowheel keeps wheel events scrolling this list instead of zooming the
+    // React Flow canvas underneath.
+    <div
+      className="nowheel flex max-h-[33vh] flex-col items-start gap-4 overflow-y-auto pr-4 pb-2 pl-[10px]"
+      style={{ scrollbarWidth: "thin" }}
+    >
       {Object.values(handles)
         .filter((handle) => handle.status === filter)
         .map((handle) => {

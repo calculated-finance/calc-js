@@ -25,7 +25,7 @@ export const EvmChain = Schema.Struct({
   nativeCurrency: Schema.Struct({
     name: Schema.NonEmptyTrimmedString,
     symbol: Schema.NonEmptyTrimmedString,
-    decimals: Schema.Positive.pipe(Schema.clamp(6, 18)),
+    decimals: Schema.Positive.pipe(Schema.between(6, 18)),
   }),
 });
 

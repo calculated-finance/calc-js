@@ -1,0 +1,103 @@
+.trade {
+  display: flex;
+  flex-direction: column;
+  padding-top: 5rem;
+
+  @media only screen and (min-width: $tradeBreak) {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 0.25rem;
+    grid-template-columns: 16rem auto 22rem 23rem;
+    grid-template-rows: 4rem minmax(25rem, auto) minmax(25rem, 35dvh);
+    min-height: 100dvh;
+  }
+
+  &__select {
+    @media only screen and (max-width: ($tradeBreak - 1px)) {
+      //order: 1;
+      grid-column-start: 4;
+      grid-row-start: 1;
+    }
+  }
+
+  &__selector {
+    grid-column-start: 1;
+    grid-row-start: 1;
+  }
+
+  &__submit {
+    grid-row: span 2 / span 2;
+    grid-column-start: 4;
+    grid-row-start: 2;
+
+    @media only screen and (max-width: ($tradeBreak - 1px)) {
+      order: 7;
+    }
+  }
+
+  &__summary,
+  &__header {
+    grid-column: span 3 / span 3;
+    grid-column-start: 2;
+    @media only screen and (max-width: ($tradeBreak - 1px)) {
+      order: 2;
+    }
+  }
+
+  &__tabs {
+    @media only screen and (max-width: ($tradeBreak - 1px)) {
+      order: 3;
+    }
+  }
+
+  &__graph {
+    grid-column-start: 1;
+    grid-row-start: 2;
+    grid-column-end: 3;
+
+    @media only screen and (max-width: ($tradeBreak - 1px)) {
+      order: 4;
+    }
+  }
+
+  &__orders {
+    grid-column-start: 1;
+    grid-row-start: 3;
+    grid-column-end: 3;
+
+    @media only screen and (max-width: ($tradeBreak - 1px)) {
+      order: 5;
+    }
+  }
+
+  &__book {
+    //grid-row: span 2 / span 2;
+    grid-column-start: 3;
+    grid-row-start: 2;
+
+    @media only screen and (max-width: ($tradeBreak - 1px)) {
+      order: 4;
+    }
+  }
+
+  &__history {
+    grid-column-start: 3;
+    grid-row-start: 3;
+
+    @media only screen and (max-width: ($tradeBreak - 1px)) {
+      order: 4;
+    }
+  }
+
+  &__range {
+    grid-column-start: 3;
+    grid-row-start: 2;
+    grid-column-end: 5;
+    grid-row-end: 4;
+    overflow-y: scroll;
+    @media only screen and (max-width: ($tradeBreak - 1px)) {
+      order: 5;
+    }
+  }
+}

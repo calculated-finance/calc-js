@@ -1,4 +1,4 @@
-import { CosmWasmClient } from "@cosmjs/cosmwasm-stargate";
+import { CosmWasmClient } from "@cosmjs/cosmwasm";
 import { CHAINS_BY_ID, CosmosChain } from "@template/domain/chains";
 import { metricScope, Unit } from "aws-embedded-metrics";
 

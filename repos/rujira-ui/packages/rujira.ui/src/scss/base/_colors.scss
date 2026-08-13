@@ -1,0 +1,49 @@
+@each $l, $c in $colors {
+  *.color-#{$l} {
+    color: $c;
+  }
+  .hover-#{$l} {
+    transition: color 0.1s;
+    &:hover {
+      color: $c;
+    }
+  }
+  .bg-#{$l} {
+    background-color: $c;
+    &.transparent:active, &.transparent:focus {
+      background-color: $c;
+    }
+  }
+  @for $i from 0 through 20 {
+    $o: $i * 0.05;
+    .bg-#{$l}-#{$i} {
+       background-color: rgba($c, $o);
+       &.transparent:active, &.transparent:focus {
+        background-color: rgba($c, $o);
+      }
+    }
+  }
+  .bg-hover-#{$l} {
+    transition: background-color 0.1s;
+    &:hover {
+      background-color: $c;
+    }
+  }
+  @for $i from 0 through 20 {
+    $o: $i * 0.05;
+    .bg-hover-#{$l}-#{$i} {
+      transition: background-color 0.1s;
+      &:hover, &:focus, &:active {
+        background-color: rgba($c, $o);
+      }
+    }
+  }
+  .b-#{$l} {
+    border: 1px solid $c;
+  }
+  .b-hover-#{$l} {
+    &:hover {
+      border: 1px solid $c;
+    }
+  }
+}

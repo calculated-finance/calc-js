@@ -1,0 +1,45 @@
+.fiat {
+  font-family: "mono", monospace;
+  font-weight: 400;
+  display: inline-flex;
+  align-items: baseline;
+
+  & > span {
+    display: block;
+  }
+
+  &__dec {
+    font-size: 0.85em;
+  }
+
+  // Leads the number in every layout, including &--symbol-right.
+  &__less-than {
+    order: 0;
+  }
+  &__int {
+    order: 2;
+  }
+  &__dec {
+    order: 3;
+  }
+  &__symbol {
+    order: 1;
+  }
+
+  &--symbol-right &__int {
+    order: 1;
+  }
+  &--symbol-right &__dec {
+    order: 2;
+  }
+  &--symbol-right &__symbol {
+    order: 3;
+  }
+
+  &__symbol--small {
+    font-size: 0.85em;
+  }
+  &__less-than--small {
+    font-size: 0.85em;
+  }
+}

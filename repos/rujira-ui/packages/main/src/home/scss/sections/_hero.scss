@@ -1,0 +1,45 @@
+.home {
+  &__banner {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    pointer-events: none;
+    height: 100vh;
+    color: $primary5;
+
+    .button {
+      pointer-events: all;
+
+      &--outline {
+        -webkit-backdrop-filter: brightness(50%) blur(5px);
+        -moz-backdrop-filter: brightness(50%) blur(5px);
+        backdrop-filter: brightness(50%) blur(5px);
+      }
+    }
+
+    &-title {
+      width: 100%;
+      max-width: min(100%, 74rem);
+      text-align: center;
+    }
+  }
+
+  &__omnichain-copy {
+    max-width: 47.5rem;
+  }
+
+  @media screen and (max-width: ($medium - 1px)) {
+    &__banner {
+      min-height: 38rem;
+      height: min(100svh, 44rem);
+      padding: 6rem 1rem 4rem;
+    }
+
+    &__omnichain-copy {
+      max-width: min(100%, 22rem);
+      text-wrap: pretty;
+    }
+  }
+}

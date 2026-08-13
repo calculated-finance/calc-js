@@ -1,7 +1,10 @@
 import { Schema } from "effect"
 
+// A strict filter, not a clamp: the client form validates via decode and
+// commits the raw value, so a clamp would let out-of-range input pass
+// validation and then fail on the encode round-trip.
 export const BasisPoints = Schema.NonNegativeInt.pipe(
-    Schema.clamp(0, 10_000)
+    Schema.between(0, 10_000)
 ).pipe(
     Schema.annotations({
         message: () => ({
@@ -10,23 +13,6 @@ export const BasisPoints = Schema.NonNegativeInt.pipe(
         })
     })
 )
-
-export const PercentageFromBasisPoints = Schema.transform(
-    BasisPoints,
-    Schema.NonNegativeInt.pipe(
-        Schema.clamp(0, 100)
-    ),
-    {
-        strict: true,
-        decode: (value) => Math.round(value / 10_000),
-        encode: (value) => Math.round(value * 10_000)
-    }
-).pipe(Schema.annotations({
-    message: () => ({
-        message: "Please provide a % value",
-        override: true
-    })
-}))
 
 export const formatNumber = (value: number, options?: Intl.NumberFormatOptions) =>
     (new Intl.NumberFormat("en-US", {

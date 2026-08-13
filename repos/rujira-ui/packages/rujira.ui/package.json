@@ -1,0 +1,94 @@
+{
+  "name": "rujira.ui",
+  "version": "1.0.22",
+  "type": "module",
+  "main": "./lib/cjs/index.js",
+  "module": "./lib/esm/index.js",
+  "types": "./lib/esm/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/esm/index.d.ts",
+      "import": "./lib/esm/index.js",
+      "require": "./lib/cjs/index.js",
+      "development": "./src/index.ts",
+      "default": "./lib/esm/index.js"
+    },
+    "./scss/index.scss": {
+      "development": "./src/scss/index.scss",
+      "default": "./src/scss/index.scss"
+    },
+    "./scss/*": {
+      "development": "./src/scss/*",
+      "default": "./src/scss/*"
+    },
+    "./assets/*": {
+      "development": "./src/assets/*",
+      "default": "./src/assets/*"
+    }
+  },
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "test": "vitest run",
+    "build": "tsc -p tsconfig.json && tsc -p tsconfig.cjs.json && node ./scripts/write-package-types.cjs && node ./scripts/copy-assets.cjs && node ./scripts/inline-images.cjs",
+    "prepack": "pnpm run build"
+  },
+  "dependencies": {
+    "@cosmjs/encoding": "^0.32.4",
+    "@cosmjs/math": "^0.32.4",
+    "@dao-dao/cosmiframe": "^1.0.0",
+    "@keplr-wallet/types": "^0.12.219",
+    "@ledgerhq/device-management-kit": "^0.6.4",
+    "@ledgerhq/device-signer-kit-bitcoin": "0.0.0-20250218001045",
+    "@ledgerhq/device-transport-kit-web-hid": "^1.1.0",
+    "@ledgerhq/signer-utils": "^1.0.4",
+    "@tonconnect/sdk": "^3.3.1",
+    "@vultisig/sdk": "0.22.7",
+    "bitcoinjs-lib": "7.0.0-rc.0",
+    "buffer": "^6.0.3",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "ethers": "^6.13.4",
+    "i18next": "^23.16.4",
+    "jsdom": "^24.0.0",
+    "motion": "^11.12.0",
+    "process": "^0.11.10",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-hot-toast": "^2.4.1",
+    "react-i18next": "^15.1.1",
+    "react-number-format": "^5.4.2",
+    "react-router-dom": "^6.26.2",
+    "react-slider": "^2.0.6",
+    "react-tooltip": "^5.28.0",
+    "rujira.js": "workspace:*",
+    "rxjs": "^7.8.2",
+    "ton": "^13.9.0",
+    "ton-core": "^0.53.0",
+    "tronweb": "^6.0.4",
+    "vaul": "^1.1.1",
+    "xrpl": "^4.3.0",
+    "xumm": "^1.8.0",
+    "xumm-oauth2-pkce": "^2.8.7"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6.5.0",
+    "@testing-library/react": "^16.0.1",
+    "@types/react": "^18.3.4",
+    "@types/react-dom": "^18.3.0",
+    "@types/react-slider": "^1.3.6",
+    "@typescript-eslint/eslint-plugin": "^8.2.0",
+    "@typescript-eslint/parser": "^8.2.0",
+    "@vitejs/plugin-react-swc": "^3.5.0",
+    "eslint": "^8.57.0",
+    "eslint-plugin-i18next-no-undefined-translation-keys": "^3.4.0",
+    "eslint-plugin-react-hooks": "^4.6.2",
+    "eslint-plugin-react-refresh": "^0.4.6",
+    "sass": "^1.77.8",
+    "typescript": "^5.5.4",
+    "vite": "^5.2.0",
+    "vitest": "^1.5.0"
+  }
+}

@@ -1,0 +1,288 @@
+.merge {
+  padding-top: 11rem;
+
+  &__background {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 900px;
+    background-color: $deepBlack;
+    background-position: center center;
+    background-size: auto 900px;
+    background-repeat: no-repeat;
+    z-index: 0;
+  }
+
+  &__logos {
+    position: relative;
+    --m: 5;
+    --d: 2rem; /* image size */
+    --rel: 1; /* how much extra space we want between images, 1 = 1 image size */
+    --ba: 1turn/var(--m);
+    --r: calc(.75*(1 + var(--rel))*var(--d)/tan(.5*var(--ba))); /* circle radius */
+    display: grid;
+    width: calc(2*var(--r) + var(--d)); /* container size */
+    height: calc(2*var(--r) + var(--d)); /* container size */
+
+    img:not(:last-child) {
+      position: relative;
+      z-index: 1;
+      display: block;
+      grid-area: 1/ 1;
+      place-self: center;
+	    width: var(--d);
+      height: var(--d);
+      --ca: calc(var(--i)*var(--ba));
+      transform: 
+        rotate(var(--ca)) 
+        translate(var(--r))
+        rotate(calc(-1*var(--ca)))
+    }
+
+    img:last-child {
+      display: block;
+      position: absolute;
+      width: calc(2.5*var(--d));
+      height: calc(2.5*var(--d));
+      left: 50%;
+      top: 50%;
+      margin-top: calc(-1.25*var(--d));
+      margin-left: calc(-1.25*var(--d));
+    }
+  }
+
+  &__step {
+    opacity: 0.35;
+    margin: 0 auto;
+    max-width: 32rem;
+
+    @media screen and (min-width: $large) {
+      transform: scale(0.95);
+      transition: all 0.15s;
+
+      &--right {
+        transform: scale(0.95) translateX(5%);
+      }
+  
+      &--right2x {
+        transform: scale(0.95) translateX(12.5%);
+      }
+  
+      &--left {
+        transform: scale(0.95) translateX(-5%);
+      }
+  
+      &--left2x {
+        transform: scale(0.95) translateX(-12.5%);
+      }
+    }
+
+
+    
+
+    &:hover:not(&--selected) {
+      opacity: 0.75;
+    }
+
+    &--selected {
+      opacity: 1;
+
+      @media screen and (min-width: $large) {
+        transform: scale(1);
+      }
+    }
+  }
+
+  $w: 100px;
+
+  &__stat {
+    display: flex;
+    width: 340px;
+    max-width: 100%;
+  }
+
+  &__graph-container, &__graph-timer {
+    & > svg, & > div > svg {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+      transition: all 1s ease-in-out;
+      fill: none;
+      overflow: visible;
+      
+      stroke-width: 5;
+      stroke-linecap: round;
+      stroke-dasharray: 0 999;
+
+      circle:first-child {
+        stroke: $grey;
+        opacity: 0.25;
+      }
+    }
+  }
+
+  &__graph-container {
+    width: $w;
+    height: $w;
+    position: relative;
+
+    & > svg {
+      circle:last-child {
+        stroke: $primary1;
+        -webkit-filter: drop-shadow(0px 0px 4px rgba($primary1, 1));
+        filter: drop-shadow(0px 0px 4px rgba($primary1, 1));
+      }
+    }
+
+    & > img {
+      display: block;
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: $w - 24px;
+      height: $w - 24px;
+    }
+
+    &-pct {
+      position: absolute;
+      right: 0;
+      top: 0;
+      width: 2rem;
+      height: 2rem;
+      border-radius: 1rem;
+      background: $primary1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-family: "Barlow Semi Condensed", Verdana, sans-serif;
+      font-weight: 500;
+      color: $white;
+      padding-left: 0.25rem;
+      box-shadow: 0px 0px 8px rgba($black, 1);
+      user-select: none;
+    }
+  }
+
+  &__graph-timer {
+    max-width: 100%;
+
+    & > div {
+      width: 100%;
+      padding-top: 100%;
+      position: relative;
+
+      & > svg {
+        circle:last-child {
+          stroke: $primary2;
+          -webkit-filter: drop-shadow(0px 0px 4px rgba($primary2, 1));
+          filter: drop-shadow(0px 0px 4px rgba($primary2, 1));
+        }
+      }
+
+      h3 {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+        font-size: 0.875rem;
+        font-weight: 400;
+        color: $white;
+
+        svg {
+          display: inline-block;
+          width: 1em;
+          height: 1em;
+          vertical-align: bottom;
+          color: $primary2;
+          margin-bottom: 1px;
+        }
+
+        @media screen and (min-width: $large) {
+          font-size: 1.125rem;
+        }
+
+        span {
+          display: block;
+          font-weight: 500;
+          font-size: 1.125rem;
+          margin-top: 0.25rem;
+
+          @media screen and (min-width: $large) {
+            font-size: 1.375rem;
+          }
+        }
+
+        small {
+          display: block;
+          font-size: 0.75rem;
+          margin-top: 0.25rem;
+          
+          b {
+            font-weight: 600;
+          }
+
+          @media screen and (min-width: $large) {
+            font-size: 0.875rem;
+          }
+        }
+      }
+    }
+  }
+
+  .break {
+    height: 0.5rem;
+    @media screen and (min-width: $small) {
+      display: none;
+    }
+  }
+
+  &__graph-stat {
+    width: 33.33%;
+    
+    @media screen and (min-width: $small) {
+      padding-left: 1rem;
+      width: calc((100% - 100px) / 3);
+    }
+  }
+
+  &__stats {
+    .col-12 {
+      transition: opacity 0.2s;
+    }
+    &:has(> .col-12:hover) {
+      .col-12:not(:hover) {
+        opacity: 0.5;
+      }
+    }
+  }
+
+
+  .gradient-card {
+    background-color: $deepBlack;
+  }
+
+  &__icons {
+    display: flex;
+    align-items: flex-end;
+    width: 100%;
+    justify-content: center;
+
+    img:nth-child(1) {
+      width: 3rem;
+      height: 3rem;
+    }
+
+    img:nth-child(2) {
+      width: 2rem;
+      height: 2rem;
+      margin-left: -1rem;
+    }
+  }
+}

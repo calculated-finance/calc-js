@@ -1,0 +1,6 @@
+{
+  "title": "Automated Trading",
+  "description": "Put your assets to work in automated trading strategies and earn yield by providing liquidity to the orderbook. Choose a market below to create your own strategy, or copy a top-performing position from the leaderboard.",
+  "createStrategy": "Create Strategy",
+  "leaderboard": "Strategies Leaderboard"
+}

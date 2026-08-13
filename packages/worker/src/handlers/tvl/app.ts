@@ -1,4 +1,4 @@
-import { CosmWasmClient } from "@cosmjs/cosmwasm-stargate";
+import { CosmWasmClient } from "@cosmjs/cosmwasm";
 import { ASSETS_BY_COINGECKO_ID } from "@template/domain/assets";
 import { CHAINS_BY_ID, CosmosChain } from "@template/domain/chains";
 import type { Strategy } from "@template/domain/types";

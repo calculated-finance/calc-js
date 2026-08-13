@@ -1,0 +1,42 @@
+.trade, .trade__book-overflow {
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: $black;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 4px;
+    border: 2px solid $black;
+  }
+
+  *:hover {
+    ::-webkit-scrollbar-thumb {
+      background: $grey;
+    }
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: $primary1;
+    border-width: 1px;
+  }
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  #book-tip {
+    z-index: 2 !important;
+  }
+
+  & > .trade__tabs {
+    @media screen and (max-width: ($tradeBreak - 1px)) {
+      width: 100%;
+      justify-content: center;
+      margin: 1rem 0;
+    }
+  }
+}

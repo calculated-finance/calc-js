@@ -1,0 +1,55 @@
+.leaderboard {
+  background-color: $deepBlack;
+
+  &__background {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 900px;
+    background-position: center center;
+    background-size: auto 900px;
+    background-repeat: no-repeat;
+    z-index: 0;
+  }
+
+  &__wallet {
+    border: 1px solid $primary1;
+  }
+
+  .gold {
+    color: #D6AF36;
+  }
+  .bronze {
+    color: #A77044;
+  }
+  .silver {
+    color: #D7D7D7;
+  }
+
+  &__table {
+    &:has(.row:hover) {
+      & > .row:not(:hover) {
+        opacity: 0.5;
+      }
+    }
+  }
+
+  &__share {
+    width: 350px;
+    height: 250px;
+    background: $black;
+    position: fixed;
+    left: -500px;
+    top: -500px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 1rem;
+
+    &-logo {
+      height: 2rem;
+      width: auto;
+    }
+  }
+}

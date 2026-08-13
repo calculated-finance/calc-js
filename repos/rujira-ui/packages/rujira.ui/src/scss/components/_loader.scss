@@ -1,0 +1,28 @@
+.loader {
+  position: relative;
+  
+  &__blob {
+    position: absolute;
+    left: -15%;
+    top: -15%;
+    width: 130%;
+    height: 130%;
+    opacity: 0.45;
+  }
+
+  &__spinner {
+    position: absolute;
+    left: 20%;
+    top: 20%;
+    width: 60%;
+    height: 60%;
+  }
+}
+
+.spinner {
+  &__spinner {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+}

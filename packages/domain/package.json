@@ -24,14 +24,14 @@
     "coverage": "vitest --coverage"
   },
   "dependencies": {
-    "@cosmjs/cosmwasm-stargate": "^0.34.0",
-    "@cosmjs/crypto": "^0.34.0",
-    "@cosmjs/encoding": "^0.34.0",
-    "@cosmjs/proto-signing": "^0.34.0",
-    "@cosmjs/stargate": "^0.34.0",
-    "cosmjs-types": "0.9.0",
+    "@cosmjs/cosmwasm": "^0.39.0",
+    "@cosmjs/crypto": "^0.39.0",
+    "@cosmjs/encoding": "^0.39.0",
+    "@cosmjs/proto-signing": "^0.39.0",
+    "@cosmjs/stargate": "^0.39.0",
+    "cosmjs-types": "^0.11.0",
     "effect": "latest",
-    "uuid": "^11.1.0"
+    "uuid": "^14.0.1"
   },
   "effect": {
     "generateExports": {
@@ -46,6 +46,6 @@
     }
   },
   "devDependencies": {
-    "@keplr-wallet/types": "^0.12.269"
+    "@keplr-wallet/types": "^0.12.313"
   }
 }

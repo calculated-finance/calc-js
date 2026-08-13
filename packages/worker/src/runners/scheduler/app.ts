@@ -1,5 +1,5 @@
 import { SendMessageBatchCommand, SQSClient } from "@aws-sdk/client-sqs";
-import { CosmWasmClient } from "@cosmjs/cosmwasm-stargate";
+import { CosmWasmClient } from "@cosmjs/cosmwasm";
 import type { Trigger } from "@template/domain/calc2";
 import {
   CHAINS_BY_ID,
@@ -16,10 +16,7 @@ import type {
   SchedulerQueryMsg,
 } from "@template/domain/types";
 import { Config, DateTime, Effect, Schedule, Schema, Stream } from "effect";
-
-(BigInt.prototype as any).toJSON = function () {
-  return this.toString();
-};
+import "@template/domain/bigint-json";
 
 export class SQSSendMessageError extends Schema.TaggedError<SQSSendMessageError>()(
   "SQSSendMessageError",

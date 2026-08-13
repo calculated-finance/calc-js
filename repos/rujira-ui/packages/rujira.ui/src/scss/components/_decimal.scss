@@ -1,0 +1,58 @@
+.decimal {
+  font-family: "mono", monospace;
+  font-weight: 400;
+  display: inline-flex;
+  align-items: baseline;
+  white-space: nowrap;
+
+  & > span {
+    display: inline;
+  }
+
+  &__dec {
+    font-size: 0.85em;
+  }
+
+  &__symbol {
+    margin-left: 0.25rem;
+
+    &--small {
+      font-size: 0.85em;
+    }
+  }
+
+  &--no-pad &__symbol {
+    margin-left: 0;
+  }
+
+  &--symbol-small &__symbol {
+    font-size: 0.85em;
+    margin-left: 0;
+  }
+
+  &__int {
+    order: 1;
+  }
+  &__dec {
+    order: 2;
+  }
+  &__symbol {
+    order: 3;
+  }
+
+  &--label-left &__int {
+    order: 2;
+  }
+  &--label-left &__dec {
+    order: 3;
+  }
+  &--label-left &__symbol {
+    order: 1;
+    margin-left: 0;
+    margin-right: 0.25rem;
+  }
+
+  &--label-left.decimal--no-pad &__symbol {
+    margin-right: 0;
+  }
+}

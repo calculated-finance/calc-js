@@ -1,0 +1,23 @@
+@import "rujira.ui/scss/base/variables";
+
+@import "common/scss/general";
+@import "common/scss/health";
+@import "common/scss/lp";
+
+@import "algorithmic/scss/algorithmic";
+@import "ecosystem/scss/ecosystem";
+@import "home/scss/home";
+@import "merge/scss/merge";
+@import "strategies/scss/strategies";
+@import "strategies/scss/ccl";
+@import "staking/scss/stake-overview";
+@import "index/scss/index";
+@import "portfolio/scss/connect";
+@import "portfolio/scss/portfolio";
+@import "swap/scss/swap";
+@import "trade/scss/trade";
+@import "leagues/scss/leaderboard";
+@import "sharing/scss/share-card";
+@import "borrow/scss/borrow";
+@import "lending/scss/lending";
+@import "liquidate/scss/liquidate";

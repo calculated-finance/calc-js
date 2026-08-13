@@ -1,0 +1,147 @@
+.select-container {
+  position: relative;
+
+  // default font
+  font-family: "Barlow Semi Condensed", Verdana, sans-serif;
+  font-size: 1rem;
+  line-height: 1.25em;
+  color: $white;
+
+  &:has(> .select--inline) {
+    display: inline-flex;
+    gap: 0.5rem;
+  }
+
+  & > .select {
+    appearance: none;
+    display: flex;
+    align-items: center;
+    color: inherit;
+    
+    &:not(.select--inline) {
+      width: 100%;
+      background: $darkGrey;
+      border-radius: 0.375rem;
+      padding: 0 2.5rem 0 0.75rem;
+      border: 1px solid rgba($grey, 0.5);
+      min-height: 2.875rem;
+      line-height: 1.125em;
+    }
+    
+    &--inline {
+      background: transparent;
+      border: none;
+      padding: 0 1.25em 0 0;
+      min-height: initial;
+    }
+
+    &--nolabel:not(.select--inline) {
+      padding: 0 2.5rem 0 0.75rem;
+    }
+
+    &--md {
+      min-height: 2.5rem;
+    }
+
+    &--sm {
+      font-size: 0.875rem;
+      min-height: 2rem !important;
+    }
+  }
+
+  &:has(> .label) {
+    .select {
+      padding: 1.1875rem 0.75rem 0.375rem;
+    }
+  }
+
+  & > .select:focus {
+    outline: none;
+  }
+  & > .select:focus:not(.select--inline) {
+    border: 1px solid rgba($primary1, 0.5);
+    box-shadow: 0 0 0 .25rem rgba($primary1,.25);
+  }
+  
+  & > .select--white:focus {
+    border: 1px solid rgba($white, 0.75);
+    box-shadow: 0 0 0 .25rem rgba($grey,.25);
+  }
+
+  & > .select:not(:focus,:disabled,.select--inline):hover {
+    border: 1px solid rgba($grey, 0.75);
+    box-shadow: 0 0 0 .25rem rgba($grey,.25);
+  }
+
+  & > .label {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    pointer-events: none;
+    transform-origin: 0 0;
+    padding: 0.75rem 0 0 0.75rem;
+    color: $grey;
+    transform: scale(.85) translateY(-.5rem) translateX(.15rem);
+    font-weight: 500;
+
+    @each $l, $c in $colors {
+      &.color-#{$l} {
+        color: $c;
+      }
+    }
+  }
+
+  & > .arrow {
+    color: $grey;
+    pointer-events: none;
+    display: block;
+    height: auto;
+  }
+
+  &:not(:has(> .select--inline)) > .arrow {
+    //width: 1rem;
+    width: 1.5rem;
+    position: absolute;
+    //right: 0.75rem;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    
+  }
+
+  &:has(> .select--inline) > .arrow {
+    width: 1em;
+    margin-left: -1.25em;
+  }
+
+  & > .select:not(:disabled):hover ~ .arrow {
+    color: $white;
+  }
+
+  & > .select:not(:disabled):focus ~ .arrow {
+    color: $primary1;
+  }
+  
+  & > .select--white:not(:disabled):focus ~ .arrow {
+    color: $white;
+  }
+
+  & > .select--sm ~ .arrow {
+    width: 1rem;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+  }
+
+  &--error {
+    & > .select {
+      border: 1px solid rgba($red, 0.75);
+      box-shadow: 0 0 0 .25rem rgba($red,.25);
+    }
+    & > .label {
+      color: $red;
+    }
+  }
+}

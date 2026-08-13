@@ -21,3 +21,10 @@ bumped (replace the tag to match the new version):
 ```bash
 git subtree pull --prefix=repos/effect https://github.com/Effect-TS/effect.git effect@<version> --squash
 ```
+
+## Pattern references (`agent-patterns/`)
+
+- `agent-patterns/effect-schema.md` — how to write Effect Schema code in
+  this repo: codec model, filter-vs-transform (the clamp trap), decode/encode
+  API choice, form integration, error message annotations, and a what-to-avoid
+  list. Read it before adding or changing any schema.

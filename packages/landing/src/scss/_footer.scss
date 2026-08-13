@@ -1,0 +1,73 @@
+.rujira {
+  &__footer {
+    padding: 3.375rem 0 2rem;
+    position: relative;
+
+    &-logo {
+      display: block;
+      width: auto;
+      height: 45px;
+      
+      @media screen and (min-width: $medium) {
+        height: 75px;
+      }
+    }
+
+    &-logo + div {
+      width: 100%;
+
+      & > div {
+        width: 100%;
+      }
+
+      @media screen and (min-width: 910px) {
+        width: auto;
+        
+      }
+      
+      @media screen and (min-width: $medium) {
+        & > div {
+          width: auto;
+        }
+      }
+    }
+
+    h4 {
+      font-size: 1.125rem;
+      line-height: 1.25rem;
+      color: $white;
+      margin-top: 2rem;
+
+      @media screen and (min-width: 910px) {
+        margin-top: 0;
+      }
+            
+      @media screen and (min-width: $medium) {
+        font-size: 1.25rem;
+        line-height: 1.5rem;
+      }
+    }
+
+    nav {
+      margin-top: 1.125rem;
+      display: flex;
+      flex-direction: column;
+
+      a {
+        font-size: 0.875rem;
+        color: $white;
+        text-decoration: none;
+        transition: color 0.2s, margin 0.2s;
+        margin: 0.625rem 0 0;
+
+        &:hover {
+          color: $pink;
+        }
+      }
+    }
+
+    p {
+      color: #8F85AB;
+    }
+  }
+}

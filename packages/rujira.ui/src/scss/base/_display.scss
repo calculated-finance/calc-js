@@ -1,0 +1,200 @@
+html {
+  box-sizing: border-box;
+  //scroll-behavior: smooth;
+  overscroll-behavior: none;
+}
+
+body {
+  height: 100%;
+  overflow: auto;
+  overscroll-behavior: none;
+}
+
+*,
+*:before,
+*:after {
+  box-sizing: border-box;
+}
+
+.relative {
+  position: relative;
+}
+
+.block {
+  display: block;
+}
+
+.inline-block {
+  display: inline-block;
+
+  &.va-b {
+    vertical-align: bottom;
+  }
+}
+
+.block-img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.overflow-x-auto {
+  overflow-x: auto;
+}
+
+.overflow-y-auto {
+  overflow-y: auto;
+}
+
+.overflow-hidden {
+  overflow: hidden;
+}
+
+.reset-overflow {
+  overflow: visible;
+}
+
+.pointer {
+  cursor: pointer;
+}
+
+.arrow {
+  cursor: default;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important; // Fix for https://github.com/twbs/bootstrap/issues/25686
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+.invisible {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+@each $s, $bp in $sizes {
+  @media only screen and (min-width: $bp) {
+    .visually-hidden-#{$s} {
+      position: absolute !important;
+      width: 1px !important;
+      height: 1px !important;
+      padding: 0 !important;
+      margin: -1px !important; // Fix for https://github.com/twbs/bootstrap/issues/25686
+      overflow: hidden !important;
+      clip: rect(0, 0, 0, 0) !important;
+      white-space: nowrap !important;
+      border: 0 !important;
+    }
+  }
+}
+
+@each $s, $bp in $sizes {
+  .show-#{$s} {
+    display: none;
+    @media only screen and (min-width: $bp) {
+      display: block;
+    }
+  }
+  .show-#{$s}-i {
+    display: none;
+    @media only screen and (min-width: $bp) {
+      display: inline;
+    }
+  }
+  .show-#{$s}-flex {
+    display: none;
+    @media only screen and (min-width: $bp) {
+      display: flex;
+    }
+  }
+  .show-#{$s}-iflex {
+    display: none;
+    @media only screen and (min-width: $bp) {
+      display: inline-flex;
+    }
+  }
+}
+
+.no-pointer-events {
+  pointer-events: none;
+}
+
+.no-select {
+  user-select: none;
+  cursor: default;
+}
+
+.clearfix {
+  &::after {
+    display: block;
+    clear: both;
+    content: "";
+  }
+}
+
+.transition {
+  transition: all 0.15s;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.common-scrollbars {
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: $black;
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: $grey;
+    border-radius: 4px;
+    border: 2px solid $black;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: $primary1;
+    border-width: 1px;
+  }
+
+  &::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+}
+
+.overflow-x {
+  overflow-y: hidden;
+  overflow-x: auto;
+}
+
+.overflow-y {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+.overflow {
+  overflow: auto;
+}
+
+.flex-overflow {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.glow-primary1 {
+  box-shadow:
+    0 0 0 3px rgba($primary1, 0.25),
+    0 0 0 1px rgba($primary1, 0.5);
+}

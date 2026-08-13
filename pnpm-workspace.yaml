@@ -1,0 +1,4 @@
+packages:
+  - 'packages/*'
+  - 'packages/vendor/cosmjs/packages/*'
+  - 'packages/vendor/cosmjs-types'

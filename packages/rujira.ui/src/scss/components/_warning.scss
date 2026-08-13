@@ -1,0 +1,135 @@
+.warning {
+  display: flex;
+  padding: 0.5rem;
+  border: 1px solid $grey;
+  color: $grey;
+  background-color: rgba($grey, 0.25);
+  font-size: 0.875rem;
+  line-height: 1.2em;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  word-break: break-word;
+  text-decoration: none;
+  gap: 0.5rem;
+
+  &--teal {
+    color: $teal;
+    border-color: $teal;
+    background-color: rgba($teal, 0.25);
+
+    img {
+      filter: brightness(0) saturate(100%) invert(87%) sepia(11%) saturate(1937%) hue-rotate(101deg) brightness(101%) contrast(97%);
+    }
+  }
+
+  &--orange {
+    color: $orange;
+    border-color: $orange;
+    background-color: rgba($orange, 0.25);
+
+    img {
+      filter: brightness(0) saturate(100%) invert(51%) sepia(31%) saturate(6409%) hue-rotate(11deg) brightness(106%) contrast(103%);
+    }
+  }
+
+  &--red {
+    color: $red;
+    border-color: $red;
+    background-color: rgba($red, 0.25);
+
+    img {
+      filter: brightness(0) saturate(100%) invert(35%) sepia(43%) saturate(2072%) hue-rotate(335deg) brightness(97%) contrast(95%);
+    }
+  }
+
+  &--primary5 {
+    color: $primary5;
+    border-color: $primary5;
+    background-color: rgba($primary5, 0.1);
+
+    img {
+      filter: brightness(0) saturate(100%) invert(94%) sepia(5%) saturate(400%) hue-rotate(218deg) brightness(101%) contrast(97%);
+    }
+  }
+
+  &__icon, &__close, svg:first-child:not(.loader__blob):not(.loader__spinner), img:first-child {
+    width: auto;
+    height: 1.25rem;
+    display: block;
+    flex-grow: 0;
+    margin-top: -0.1rem;
+
+    svg {
+      display: block;
+      width: auto;
+      height: 100%;
+    }
+  }
+  
+  &__icon, & > svg:first-child, & > img:first-child {
+    flex-shrink: 0;
+  }
+  
+  &__msg {
+    display: block;
+    flex: 1;
+    text-align: left;
+    text-decoration: none;
+  }
+
+  &--pre &__msg {
+    white-space: pre;
+  }
+
+  &__close {
+    color: inherit;
+    cursor: pointer;
+  }
+
+  &--sm {
+    font-size: 0.75rem;
+    padding: 0.375rem;
+    padding-right: 0.5rem;
+    border-radius: 0.375rem;
+
+    &__icon, &__close, svg:first-child, img:first-child {
+      height: 1rem;
+    }
+  }
+
+  &--xs {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.375rem;
+    border-radius: 0.375rem;
+
+    &__icon, &__close, svg:first-child, img:first-child {
+      height: 1rem;
+    }
+  }
+
+  &--borderless {
+    border: none;
+  }
+
+  button & {
+    cursor: pointer;
+    transition: all 0.15s;
+
+    &--teal:hover {
+      background-color: rgba($teal, 0.375);
+    }
+  
+    &--orange:hover {
+      background-color: rgba($orange, 0.375);
+    }
+    
+    &--red:hover {
+      background-color: rgba($red, 0.375);
+    }
+
+  }
+}
+
+a:has(.warning) {
+  text-decoration: none;
+}

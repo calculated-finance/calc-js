@@ -1,0 +1,15 @@
+@use "sass:math";
+
+.block {
+  display: block;
+}
+
+@for $i from 10 through 90 {
+  $sz: math.div($i, 16) * 1rem;
+  .i-fs-#{$i} {
+    font-size: $sz !important;
+  }
+  .i-lh-#{$i} {
+  line-height: $sz !important;
+  }
+}

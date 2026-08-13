@@ -1,0 +1,3 @@
+[submodule "packages/trading-view"]
+	path = packages/trading-view
+	url = git@github.com:tradingview/charting_library.git

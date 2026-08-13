@@ -1,0 +1,236 @@
+{
+  "rewrites": [
+    {
+      "source": "/:path*/wallet-core.wasm",
+      "destination": "/wallet-core.wasm"
+    },
+    {
+      "source": "/analytics",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/analytics"
+    },
+    {
+      "source": "/analytics/:path*",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/analytics/:path*"
+    },
+    {
+      "source": "/:locale/analytics",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/:locale/analytics"
+    },
+    {
+      "source": "/:locale/analytics/:path*",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/:locale/analytics/:path*"
+    },
+    {
+      "source": "/architecture",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/architecture"
+    },
+    {
+      "source": "/:locale/architecture",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/:locale/architecture"
+    },
+    {
+      "source": "/cypherpunk",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/cypherpunk"
+    },
+    {
+      "source": "/:locale/cypherpunk",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/:locale/cypherpunk"
+    },
+    {
+      "source": "/articles",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/articles"
+    },
+    {
+      "source": "/articles/:path*",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/articles/:path*"
+    },
+    {
+      "source": "/:locale/articles",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/:locale/articles"
+    },
+    {
+      "source": "/:locale/articles/:path*",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/:locale/articles/:path*"
+    },
+    {
+      "source": "/how-to-deposit",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/how-to-deposit"
+    },
+    {
+      "source": "/:locale/how-to-deposit",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/:locale/how-to-deposit"
+    },
+    {
+      "source": "/discover-rujira",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/discover-rujira"
+    },
+    {
+      "source": "/:locale/discover-rujira",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/:locale/discover-rujira"
+    },
+    {
+      "source": "/ecosystem",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/ecosystem"
+    },
+    {
+      "source": "/ecosystem/:path*",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/ecosystem/:path*"
+    },
+    {
+      "source": "/:locale/ecosystem",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/:locale/ecosystem"
+    },
+    {
+      "source": "/:locale/ecosystem/:path*",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/:locale/ecosystem/:path*"
+    },
+    {
+      "source": "/enshrined-oracles",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/enshrined-oracles"
+    },
+    {
+      "source": "/:locale/enshrined-oracles",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/:locale/enshrined-oracles"
+    },
+    {
+      "source": "/faq",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/faq"
+    },
+    {
+      "source": "/faq/:path*",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/faq/:path*"
+    },
+    {
+      "source": "/:locale/faq",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/:locale/faq"
+    },
+    {
+      "source": "/:locale/faq/:path*",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/:locale/faq/:path*"
+    },
+    {
+      "source": "/get-started",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/get-started"
+    },
+    {
+      "source": "/get-started/:path*",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/get-started/:path*"
+    },
+    {
+      "source": "/:locale/get-started",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/:locale/get-started"
+    },
+    {
+      "source": "/:locale/get-started/:path*",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/:locale/get-started/:path*"
+    },
+    {
+      "source": "/omnichain",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/omnichain"
+    },
+    {
+      "source": "/:locale/omnichain",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/:locale/omnichain"
+    },
+    {
+      "source": "/roadmap",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/roadmap"
+    },
+    {
+      "source": "/:locale/roadmap",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/:locale/roadmap"
+    },
+    {
+      "source": "/ruji-token",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/ruji-token"
+    },
+    {
+      "source": "/:locale/ruji-token",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/:locale/ruji-token"
+    },
+    {
+      "source": "/secured-assets",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/secured-assets"
+    },
+    {
+      "source": "/:locale/secured-assets",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/:locale/secured-assets"
+    },
+    {
+      "source": "/security",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/security"
+    },
+    {
+      "source": "/:locale/security",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/:locale/security"
+    },
+    {
+      "source": "/support",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/support"
+    },
+    {
+      "source": "/:locale/support",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/:locale/support"
+    },
+    {
+      "source": "/sitemap.xml",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/sitemap.xml"
+    },
+    {
+      "source": "/sitemap-marketing.xml",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/sitemap-marketing.xml"
+    },
+    {
+      "source": "/robots.txt",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/robots.txt"
+    },
+    {
+      "source": "/site.webmanifest",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/site.webmanifest"
+    },
+    {
+      "source": "/favicon.ico",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/favicon.ico"
+    },
+    {
+      "source": "/favicon.svg",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/favicon.svg"
+    },
+    {
+      "source": "/favicon.png",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/favicon.png"
+    },
+    {
+      "source": "/favicon-96x96.png",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/favicon-96x96.png"
+    },
+    {
+      "source": "/apple-touch-icon.png",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/apple-touch-icon.png"
+    },
+    {
+      "source": "/icons/:path*",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/icons/:path*"
+    },
+    {
+      "source": "/logo/:path*",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/logo/:path*"
+    },
+    {
+      "source": "/og/:path*",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/og/:path*"
+    },
+    {
+      "source": "/yandex_c14ceb01bc1bef58.html",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/yandex_c14ceb01bc1bef58.html"
+    },
+    {
+      "source": "/_next/:path*",
+      "destination": "https://rujira-ui-static-git-main-rujira.vercel.app/_next/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

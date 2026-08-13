@@ -1,0 +1,6 @@
+.algorithmic-leaderboard {
+  // Fits the longest realistic ticker pair (e.g. USDC/AVAX.USDC).
+  &__pair-col {
+    min-width: 17ch;
+  }
+}

@@ -1,0 +1,15 @@
+node_modules
+packages/*/dist/**
+lib
+**/public/charting-library/**
+.env.sentry-build-plugin
+**/.DS_Store
+**/bundle.html
+**/.env
+
+.claude/settings.local.json
+
+docs/static-snapshots/
+!docs/static-snapshots/.keep
+
+.idea/

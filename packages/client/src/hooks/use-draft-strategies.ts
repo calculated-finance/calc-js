@@ -97,13 +97,6 @@ export const useStrategyDraftsStore = create<StrategyStore>()(
   ),
 );
 
-export const selectStrategiesByStatus =
-  (status: "draft" | "active" | "paused" | "archived") => (chainId: ChainId, state: StrategyStore) =>
-    Object.values(state.strategies[chainId] ?? {}).reduce<Record<string, Strategy>>(
-      (acc, strategy) => (strategy.status === status ? { ...acc, [strategy.label]: strategy } : acc),
-      {},
-    );
-
 export const useDraftStrategies = (chainId: ChainId | undefined) => {
   const { strategies, fetch, add, update, deleteStrategy } = useStrategyDraftsStore();
 

@@ -82,7 +82,7 @@ import {
 export const Asset = Schema.Struct({
   displayName: Schema.NonEmptyTrimmedString,
   denom: Schema.NonEmptyTrimmedString,
-  significantFigures: Schema.Positive.pipe(Schema.clamp(6, 18)),
+  significantFigures: Schema.Positive.pipe(Schema.between(6, 18)),
   color: Schema.NonEmptyTrimmedString,
 });
 

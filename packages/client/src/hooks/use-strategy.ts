@@ -1,16 +1,7 @@
+import "@template/domain/bigint-json";
 import type { StrategyHandle } from "@template/domain/calc";
 import { useChainStrategy } from "./use-chain-strategy";
 import { useDraftStrategies } from "./use-draft-strategies";
-
-declare global {
-  interface BigInt {
-    toJSON(): string;
-  }
-}
-
-BigInt.prototype.toJSON = function () {
-  return this.toString();
-};
 
 export const useStrategy = (handle: StrategyHandle | undefined) => {
   const { strategies } = useDraftStrategies(handle?.chainId);

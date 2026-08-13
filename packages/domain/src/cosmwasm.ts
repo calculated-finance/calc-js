@@ -16,7 +16,7 @@ export const Uint128 = Schema.BigInt.pipe(
   )
 );
 
-export const Uint64 = Schema.String;
+export const Uint64 = Schema.String.pipe(Schema.pattern(/^\d+$/));
 
 export type Uint64 = typeof Uint64.Type;
 

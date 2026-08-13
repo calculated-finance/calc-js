@@ -5,7 +5,6 @@ import { useWallets } from "../../hooks/use-wallets";
 const WALLET_ICONS: Partial<Record<WalletType, string>> = {
   Keplr: "images/keplr.png",
   MetaMask: "images/metamask.svg",
-  "Rabby Wallet": "images/rabby.svg",
 };
 
 function ConnectWallet({ wallet, connect }: { wallet: Wallet; connect: () => void }) {

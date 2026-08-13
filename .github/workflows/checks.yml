@@ -1,0 +1,78 @@
+name: Checks
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  checks:
+    name: Typecheck, lint, test, build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck domain
+        run: pnpm --filter @template/domain check
+
+      - name: Typecheck worker
+        run: pnpm --filter @template/worker check
+
+      - name: Typecheck client
+        run: pnpm --filter client check
+
+      - name: Lint client
+        run: pnpm --filter client lint
+
+      - name: Test domain
+        run: pnpm --filter @template/domain exec vitest run
+
+      - name: Test client
+        run: pnpm --filter client test
+
+      - name: Build client
+        run: pnpm --filter client exec vite build
+
+  smoke:
+    name: Browser smoke
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browser
+        run: pnpm --filter client exec playwright install --with-deps chromium
+
+      - name: Build client
+        run: pnpm --filter client exec vite build
+
+      - name: Smoke test
+        run: pnpm --filter client smoke

@@ -16,10 +16,7 @@ import { makeRotatingClient } from "@template/domain/cosmwasm";
 import { Config, Duration, Effect, Schedule } from "effect";
 import { FoundTx } from "../../types.js";
 import { flattenAttributes } from "../../util.js";
-
-(BigInt.prototype as any).toJSON = function () {
-  return this.toString();
-};
+import "@template/domain/bigint-json";
 
 const sqs = new SQSClient({});
 const dynamodb = DynamoDBDocumentClient.from(new DynamoDBClient({}));

@@ -16,10 +16,7 @@ import type {
   SchedulerQueryMsg,
 } from "@template/domain/types";
 import { Config, DateTime, Effect, Schedule, Schema, Stream } from "effect";
-
-(BigInt.prototype as any).toJSON = function () {
-  return this.toString();
-};
+import "@template/domain/bigint-json";
 
 export class SQSSendMessageError extends Schema.TaggedError<SQSSendMessageError>()(
   "SQSSendMessageError",

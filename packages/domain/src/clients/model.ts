@@ -47,7 +47,7 @@ export const Connection = Schema.Union(
 
 export type Connection = Schema.Schema.Type<typeof Connection>;
 
-export const WalletType = Schema.Literal("MetaMask", "Keplr", "Rabby Wallet");
+export const WalletType = Schema.Literal("MetaMask", "Keplr");
 
 export type WalletType = Schema.Schema.Type<typeof WalletType>;
 

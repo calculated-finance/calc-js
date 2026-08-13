@@ -91,7 +91,7 @@ export function StrategyNode({ data: { strategy, update } }: CustomNodeData<Stra
         {!!balances && (
           <div className="flex flex-col gap-2">
             <code className="text-sm text-zinc-400">balances</code>
-            {balances.length > 1 ? (
+            {balances.length > 0 ? (
               <code className="flex flex-wrap gap-2 text-lg">
                 <Code>
                   {balances.map((b) => `${formatNumber(b.amount)} ${b.displayName.toUpperCase()}`).join(" | ")}

@@ -1,33 +1,35 @@
 import { useQuery } from "@tanstack/react-query";
-import { Amount } from "@template/domain/assets";
-import { CalcService, Strategy } from "@template/domain/calc";
-import { Effect, Schema } from "effect";
-import { useRuntime } from "./use-runtime";
+import { Strategy } from "@template/domain/calc";
+import { RujiraIndexer } from "@template/domain/indexer";
+import { Effect } from "effect";
+import { useIndexerRuntime } from "./use-runtime";
 
+/**
+ * Strategy balances from the Rujira indexer — one GraphQL lookup instead of
+ * a per-strategy contract RPC round trip.
+ */
 export const useStrategyBalances = (strategy: Strategy | undefined) => {
+  const runtime = useIndexerRuntime();
 
-    const runtime = useRuntime();
+  return useQuery({
+    queryKey: ["strategyBalances", strategy?.address],
+    enabled: !!strategy?.address,
+    refetchInterval: false,
+    retry: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    refetchOnMount: false,
+    queryFn: ({ signal }) =>
+      runtime.runPromise(
+        Effect.gen(function* () {
+          if (!strategy?.address) {
+            throw new Error("Cannot fetch strategy balances without a strategy address");
+          }
 
-    return useQuery({
-        queryKey: ["strategyBalances", strategy?.address],
-        enabled: !!strategy?.address,
-        refetchInterval: false,
-        retry: false,
-        refetchOnWindowFocus: false,
-        refetchOnReconnect: false,
-        refetchOnMount: false,
-        queryFn: ({ signal }) =>
-            runtime.runPromise(
-                Effect.gen(function* () {
-                    if (!strategy?.address) {
-                        throw new Error("Cannot fetch strategy balances without a strategy address");
-                    }
-            
-                    const CALC = yield* CalcService;
-
-                    return yield* CALC.queryStrategy(strategy.chainId, strategy.address, { balances: [] }, Schema.Array(Amount));
-                }),
-                { signal },
-            ),
-    });
-}
+          const indexer = yield* RujiraIndexer;
+          return yield* indexer.strategyBalances(strategy.address);
+        }),
+        { signal },
+      ),
+  });
+};

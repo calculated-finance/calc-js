@@ -1,5 +1,6 @@
 import { Socket } from "@effect/platform"
-import { Effect, Option, PubSub, Ref, Schedule, Schema, Stream } from "effect"
+import { Context, Effect, Either, Option, PubSub, Ref, Schedule, Schema, Stream } from "effect"
+import { Amount } from "./assets.js"
 import { FinPair } from "./rujira.js"
 
 /**
@@ -11,6 +12,17 @@ import { FinPair } from "./rujira.js"
 
 export const RUJIRA_API_URL = "https://api.rujira.network/api/graphql"
 export const RUJIRA_SOCKET_URL = "wss://api.rujira.network/socket/websocket?vsn=2.0.0"
+
+/**
+ * Endpoint overrides for consumers that cannot reach the indexer directly —
+ * the browser client goes through a same-origin proxy because the indexer's
+ * CORS whitelist doesn't include our origins. Server-side consumers use the
+ * defaults above.
+ */
+export class RujiraIndexerEndpoints extends Context.Tag("RujiraIndexerEndpoints")<
+    RujiraIndexerEndpoints,
+    { readonly apiUrl: string; readonly socketUrl: string }
+>() {}
 
 const CONTROL_TOPIC = "__absinthe__:control"
 const JOIN_REF = "1"
@@ -96,12 +108,43 @@ const FIN_PAIRS_QUERY = `{
   }
 }`
 
+/**
+ * The Relay global id for a CALC strategy: base64("CalcOrder:<address>").
+ * Exported for tests.
+ */
+export const calcOrderNodeId = (address: string): string => btoa(`CalcOrder:${address}`)
+
+const CalcOrderBalancesResult = Schema.Struct({
+    node: Schema.NullOr(Schema.Struct({
+        balances: Schema.optionalWith(
+            Schema.Array(Schema.Struct({
+                amount: Schema.NonEmptyTrimmedString,
+                asset: IndexerAsset
+            })),
+            { default: () => [], nullable: true }
+        )
+    }))
+})
+
+const CALC_ORDER_BALANCES_QUERY = `query ($id: ID) {
+  node(id: $id) {
+    ... on CalcOrder {
+      balances { amount asset { variants { native { denom } } } }
+    }
+  }
+}`
+
 export class RujiraIndexer extends Effect.Service<RujiraIndexer>()("RujiraIndexer", {
     scoped: Effect.gen(function*() {
+        const endpoints = Option.getOrElse(
+            yield* Effect.serviceOption(RujiraIndexerEndpoints),
+            () => ({ apiUrl: RUJIRA_API_URL, socketUrl: RUJIRA_SOCKET_URL })
+        )
+
         const frames = yield* PubSub.unbounded<PhoenixFrame>()
         const refCounter = yield* Ref.make(1)
 
-        const socket = yield* Socket.makeWebSocket(RUJIRA_SOCKET_URL)
+        const socket = yield* Socket.makeWebSocket(endpoints.socketUrl)
         const write = yield* socket.writer
 
         // Incoming frame pump. Lives for the service scope; on socket failure
@@ -197,7 +240,7 @@ export class RujiraIndexer extends Effect.Service<RujiraIndexer>()("RujiraIndexe
             Effect.gen(function*() {
                 const response = yield* Effect.tryPromise({
                     try: async () => {
-                        const res = await fetch(RUJIRA_API_URL, {
+                        const res = await fetch(endpoints.apiUrl, {
                             method: "POST",
                             headers: { "Content-Type": "application/json" },
                             body: JSON.stringify({ query: document, variables: variables ?? {} })
@@ -233,6 +276,24 @@ export class RujiraIndexer extends Effect.Service<RujiraIndexer>()("RujiraIndexe
                     })
                 )
             ),
+
+            /**
+             * A strategy contract's balances, served from the indexer instead
+             * of a per-strategy RPC round trip. Entries with denoms we have no
+             * asset metadata for are dropped rather than failing the batch —
+             * balances are display-only.
+             */
+            strategyBalances: (address: string) =>
+                query(CalcOrderBalancesResult, CALC_ORDER_BALANCES_QUERY, { id: calcOrderNodeId(address) }).pipe(
+                    Effect.map(({ node }) =>
+                        (node?.balances ?? []).flatMap((balance) => {
+                            const denom = balance.asset.variants.native?.denom
+                            if (!denom) return []
+                            const decoded = Schema.decodeUnknownEither(Amount)({ amount: balance.amount, denom })
+                            return Either.isRight(decoded) ? [decoded.right] : []
+                        })
+                    )
+                ),
 
             /**
              * Fires whenever the indexer observes a CALC order create/update

@@ -1,7 +1,7 @@
 import { Socket } from "@effect/platform";
 import { CalcService } from "@template/domain/calc";
 import { WalletService } from "@template/domain/clients";
-import { RujiraIndexer } from "@template/domain/indexer";
+import { RujiraIndexer, RujiraIndexerEndpoints } from "@template/domain/indexer";
 import { Effect, Layer, ManagedRuntime } from "effect";
 import React, { createContext } from "react";
 
@@ -17,6 +17,17 @@ export interface AppRuntimes {
 const memoMap = Effect.runSync(Layer.makeMemoMap);
 
 /**
+ * The indexer's CORS whitelist doesn't include our origins, so the browser
+ * reaches it through the dev/preview server's same-origin /rujira proxy
+ * (see vite.config.ts). Whatever serves the built client must provide the
+ * same route.
+ */
+const indexerEndpoints = Layer.succeed(RujiraIndexerEndpoints, {
+  apiUrl: "/rujira/api/graphql",
+  socketUrl: `${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}/rujira/socket/websocket?vsn=2.0.0`,
+});
+
+/**
  * App-lifetime runtimes, created once at module scope. Deliberately NOT tied
  * to component lifecycle: StrictMode's probe unmount would dispose a
  * component-owned runtime and the remount would then hang on the dead
@@ -28,7 +39,7 @@ const runtimes: AppRuntimes = {
   calc: ManagedRuntime.make(CalcService.Default, memoMap),
   wallet: ManagedRuntime.make(WalletService.Default, memoMap),
   indexer: ManagedRuntime.make(
-    RujiraIndexer.Default.pipe(Layer.provide(Socket.layerWebSocketConstructorGlobal)),
+    RujiraIndexer.Default.pipe(Layer.provide(Socket.layerWebSocketConstructorGlobal), Layer.provide(indexerEndpoints)),
     memoMap,
   ),
 };

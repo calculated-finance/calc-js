@@ -1,27 +1,21 @@
-import { Distribute, DistributeAction } from "@template/domain/calc";
+import { Distribution } from "@template/domain/calc";
 import "@xyflow/react/dist/style.css";
 import { useState } from "react";
 import { BaseNode } from "../../components/create/base-node";
 import { useAssets } from "../../hooks/use-assets";
 import { useEncodedSchemaForm } from "../../hooks/use-schema-form";
-import { type ActionNodeParams, type CustomNodeData } from "../../lib/layout/layout";
+import { type CustomNodeData, type DistributeNodeParams } from "../../lib/layout/layout";
 import { Input } from "../ui/input";
 import { Code } from "./code";
 import { JsonEditor } from "./json-editor";
 
 export function DistributeNode({
-  data: {
-    action: { id, distribute },
-    update,
-    remove,
-  },
-}: CustomNodeData<ActionNodeParams<DistributeAction>>) {
+  data: { id, distribute, update, remove },
+}: CustomNodeData<DistributeNodeParams>) {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isEditingJson, setIsEditingJson] = useState(false);
 
-  const form = useEncodedSchemaForm(Distribute, distribute, (updated) => {
-    update({ id, distribute: updated });
-  });
+  const form = useEncodedSchemaForm(Distribution, distribute, update);
 
   const { assetsByDenom } = useAssets();
 
@@ -49,7 +43,7 @@ export function DistributeNode({
             {isEditingJson && (
               <JsonEditor
                 value={distribute}
-                schema={Distribute}
+                schema={Distribution}
                 onSave={() => {
                   setIsEditingJson(false);
                 }}

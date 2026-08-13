@@ -1,6 +1,10 @@
 import { SendMessageBatchCommand, SQSClient } from "@aws-sdk/client-sqs";
 import { CosmWasmClient } from "@cosmjs/cosmwasm";
-import type { Trigger } from "@template/domain/calc2";
+import type {
+  ConditionFilter,
+  SchedulerQueryMsg,
+  Trigger,
+} from "@template/domain/calc";
 import {
   CHAINS_BY_ID,
   RUJIRA,
@@ -11,10 +15,6 @@ import {
   makeRotatingClient,
   type RotatingClient,
 } from "@template/domain/cosmwasm";
-import type {
-  ConditionFilter,
-  SchedulerQueryMsg,
-} from "@template/domain/types";
 import { Config, DateTime, Effect, Schedule, Schema, Stream } from "effect";
 import "@template/domain/bigint-json";
 

@@ -1,0 +1,302 @@
+[
+  {
+    "id": 700,
+    "source": "rj",
+    "owner": "thor15pp6nufdvf3tckg6fgcy93pn9z00dmjqrxa7el",
+    "contract_address": "thor1dp5eys9fs6jswdaxzdhcswfswyhfqlaz2alw5rjf5zqc0gvhh69sukdxvd",
+    "created_at": 1783949268,
+    "updated_at": 1786601193,
+    "label": "DCA into TCY",
+    "status": "active"
+  },
+  {
+    "id": 713,
+    "source": "rj",
+    "owner": "thor1uu48rykx2dpatdhk335fc6ms7xyxmq7ph0hlgr",
+    "contract_address": "thor12sy0vuw2qavvgx0zh3vhnjacejfcq5s55fes3852yr9fq8snk74q0cjry0",
+    "created_at": 1784710812,
+    "updated_at": 1786601193,
+    "label": "DCA into BTC",
+    "status": "active"
+  },
+  {
+    "id": 338,
+    "source": "rj",
+    "owner": "thor19yvnqlc2emst2r2yjmnlk7a6t2ed7qz52z00ak",
+    "contract_address": "thor1v2zgdtyn7cuw38fg0n5pu4azg7nr9ltrn79h8l0j39lwzcpx8ftsulvw8e",
+    "created_at": 1763082550,
+    "updated_at": 1786601175,
+    "label": "DCA out of TCY",
+    "status": "active"
+  },
+  {
+    "id": 469,
+    "source": "rj",
+    "owner": "thor1zmu3z8z8kgatymlrnxdx2ed93hc3fem6yl99nf",
+    "contract_address": "thor1ya8sfq9jqzeg8mdfr6sx59u9lawrlh6maazntnzrm3cv6vuct49qnkamsu",
+    "created_at": 1769245876,
+    "updated_at": 1786601156,
+    "label": "DCA into TCY",
+    "status": "active"
+  },
+  {
+    "id": 524,
+    "source": "rj",
+    "owner": "thor1zmu3z8z8kgatymlrnxdx2ed93hc3fem6yl99nf",
+    "contract_address": "thor1q9y99tf72760w42d6vq7q6szu89zcqrtwr9jk9v7dhuwzm7j5cdscexkgw",
+    "created_at": 1771438049,
+    "updated_at": 1786601125,
+    "label": "DCA out of RUNE",
+    "status": "active"
+  },
+  {
+    "id": 597,
+    "source": "rj",
+    "owner": "thor1cvnd058r3zhpjka4qezjg0y62a4f9vp4n9gr8j",
+    "contract_address": "thor1q73a72y6fea42mx9pa5v5w0dejvxx6v4vwagqgjv3ex8cn0jskmqq50vgz",
+    "created_at": 1773925646,
+    "updated_at": 1786601106,
+    "label": "DCA out of TCY",
+    "status": "active"
+  },
+  {
+    "id": 728,
+    "source": "rj",
+    "owner": "thor179fr9y67m7k8wd9k50xslr8d40fuk6qwm9ple4",
+    "contract_address": "thor133cq3fauvg9dtd4k7xvt0n8m8k6w26g7qy60uj204cevjaduhgdq7ueml3",
+    "created_at": 1785863507,
+    "updated_at": 1786601093,
+    "label": "DCA out of AUTO",
+    "status": "active"
+  },
+  {
+    "id": 730,
+    "source": "rj",
+    "owner": "thor15pp6nufdvf3tckg6fgcy93pn9z00dmjqrxa7el",
+    "contract_address": "thor1xgcgj90hxe9fq4yqdtxcmumk02ga6v2zvyaphv992rq2dvvcdtpsznwmsm",
+    "created_at": 1786023247,
+    "updated_at": 1786601086,
+    "label": "DCA out of TCY",
+    "status": "active"
+  },
+  {
+    "id": 337,
+    "source": "rj",
+    "owner": "thor19yvnqlc2emst2r2yjmnlk7a6t2ed7qz52z00ak",
+    "contract_address": "thor1l7c0akwyxjdyz9cypg2yqhchkl20saypc5xag7gcmmxepacrrhdsuefl9k",
+    "created_at": 1763082531,
+    "updated_at": 1786601086,
+    "label": "DCA into TCY",
+    "status": "active"
+  },
+  {
+    "id": 663,
+    "source": "rj",
+    "owner": "thor1cyglcvuqt5nzvlst6ehhgquhz0c7nzcsy00ms6",
+    "contract_address": "thor1jsmwt7x4jkk7j920efcf7e0sxf5vuxreu7ptraphh6phcsl2amnskkvyg4",
+    "created_at": 1779287602,
+    "updated_at": 1786601020,
+    "label": "DCA into BTC",
+    "status": "active"
+  },
+  {
+    "id": 522,
+    "source": "rj",
+    "owner": "thor1zmu3z8z8kgatymlrnxdx2ed93hc3fem6yl99nf",
+    "contract_address": "thor1jjg0a7ypkey0vz4p3cckqn0lagmdkxf4tp0sw96qnzt9p9j33yxsp553g7",
+    "created_at": 1771437660,
+    "updated_at": 1786600868,
+    "label": "DCA out of ETH",
+    "status": "active"
+  },
+  {
+    "id": 658,
+    "source": "rj",
+    "owner": "thor1mw7ppekhcp2nzuteums7d8v4nnq34hy0dpudzcrzzrsw2q2dmaqswtc7f0",
+    "contract_address": "thor1w06g0eu6kjefgf97uc6hhz39dh6gjzle223zdmufz04c242dcyks7qqulk",
+    "created_at": 1778676605,
+    "updated_at": 1786600831,
+    "label": "DCA into ETH",
+    "status": "active"
+  },
+  {
+    "id": 657,
+    "source": "rj",
+    "owner": "thor1mw7ppekhcp2nzuteums7d8v4nnq34hy0dpudzcrzzrsw2q2dmaqswtc7f0",
+    "contract_address": "thor1q2zxf2ln3u68sus6dt6jfexe2v4jxptfq0upk5k8pywdqc9dkl6qwpxa3n",
+    "created_at": 1778676605,
+    "updated_at": 1786600831,
+    "label": "DCA into BTC",
+    "status": "active"
+  },
+  {
+    "id": 631,
+    "source": "rj",
+    "owner": "thor1lhufh0mwasa0lk9udppdegmvnkgqt08f0m9p5g",
+    "contract_address": "thor1cahx7awdncyg4cyt3p7uvqmpqp9dnsrnr033w0jshw29qnmjshhq5xh7uy",
+    "created_at": 1777479696,
+    "updated_at": 1786600831,
+    "label": "DCA into TCY",
+    "status": "active"
+  },
+  {
+    "id": 688,
+    "source": "rj",
+    "owner": "thor1ghcl097590jzlgtyxmrmr9xujk3eku9ajfq6n5",
+    "contract_address": "thor1ke3y6xxz5ydfsu5f8zn6e3tzz7970822flt4xfmgzulzzydrml3saj3fm0",
+    "created_at": 1783440487,
+    "updated_at": 1786600825,
+    "label": "DCA into RUJI",
+    "status": "active"
+  },
+  {
+    "id": 714,
+    "source": "rj",
+    "owner": "thor1zmu3z8z8kgatymlrnxdx2ed93hc3fem6yl99nf",
+    "contract_address": "thor1t2gvmay6wtg4xv66n6pp5sawtrq3ane0ncwte6jlfz5xclj63etqylwfam",
+    "created_at": 1784742881,
+    "updated_at": 1786600747,
+    "label": "DCA out of DOGE",
+    "status": "active"
+  },
+  {
+    "id": 237,
+    "source": "rj",
+    "owner": "thor1zmu3z8z8kgatymlrnxdx2ed93hc3fem6yl99nf",
+    "contract_address": "thor1dk2v4s79vdr67kuesxv9f6l4gurycnsqudgptu8ydk4t4f93j26qn7k4ga",
+    "created_at": 1760513164,
+    "updated_at": 1786600747,
+    "label": "DCA out of RUNE",
+    "status": "active"
+  },
+  {
+    "id": 426,
+    "source": "rj",
+    "owner": "thor1zmu3z8z8kgatymlrnxdx2ed93hc3fem6yl99nf",
+    "contract_address": "thor1tmuxjrv6wawzqqyul5897yhxdzelv4wq5dhturvu8asa00vac90q052zly",
+    "created_at": 1767174841,
+    "updated_at": 1786600712,
+    "label": "DCA out of BTC",
+    "status": "active"
+  },
+  {
+    "id": 632,
+    "source": "rj",
+    "owner": "thor1zmu3z8z8kgatymlrnxdx2ed93hc3fem6yl99nf",
+    "contract_address": "thor1kzlmujt7svyvr5g5w5kddvxp2jrgjkrkfc0k4smyk7xnadksu53sdgjuqh",
+    "created_at": 1777497884,
+    "updated_at": 1786600712,
+    "label": "DCA out of DOGE",
+    "status": "active"
+  },
+  {
+    "id": 707,
+    "source": "rj",
+    "owner": "thor1cu0265zkletzk0l28qdn06p7q0znvn690wq3su",
+    "contract_address": "thor1l48hrcuel05z306ts49pjszskxr497l9wcen5e07jgta7zpdq0hscdgep2",
+    "created_at": 1784160924,
+    "updated_at": 1786600699,
+    "label": "DCA out of TCY",
+    "status": "active"
+  },
+  {
+    "id": 652,
+    "source": "rj",
+    "owner": "thor1zmu3z8z8kgatymlrnxdx2ed93hc3fem6yl99nf",
+    "contract_address": "thor1mvg30jlakxavfqdmd7twd26mn7utpc95el9q7z2y3jmkv9c0m8aqdgatk3",
+    "created_at": 1778536307,
+    "updated_at": 1786600686,
+    "label": "DCA out of ATOM",
+    "status": "active"
+  },
+  {
+    "id": 651,
+    "source": "rj",
+    "owner": "thor1zmu3z8z8kgatymlrnxdx2ed93hc3fem6yl99nf",
+    "contract_address": "thor10fp9erel7qxm4uyyvs8jel8hx9fxffq8d6dtn72yzfrsansenlpq8ft8e4",
+    "created_at": 1778536233,
+    "updated_at": 1786600686,
+    "label": "DCA out of ATOM",
+    "status": "active"
+  },
+  {
+    "id": 448,
+    "source": "rj",
+    "owner": "thor1zmu3z8z8kgatymlrnxdx2ed93hc3fem6yl99nf",
+    "contract_address": "thor1tef3hjdv7tfu47ytu9zh82f7zx9fsrrstuhklkspk2a43hpm66ps8wq8sm",
+    "created_at": 1768672144,
+    "updated_at": 1786600316,
+    "label": "DCA out of ETH",
+    "status": "active"
+  },
+  {
+    "id": 634,
+    "source": "rj",
+    "owner": "thor1zmu3z8z8kgatymlrnxdx2ed93hc3fem6yl99nf",
+    "contract_address": "thor1fu66ql0uelghn5hv6h6ew3jg9n3csk9zkdkyqf869swtc23fhwdsuc0wlm",
+    "created_at": 1777628276,
+    "updated_at": 1786600316,
+    "label": "DCA out of BTC",
+    "status": "active"
+  },
+  {
+    "id": 617,
+    "source": "rj",
+    "owner": "thor1zmu3z8z8kgatymlrnxdx2ed93hc3fem6yl99nf",
+    "contract_address": "thor1ysuraz3ssg8x9ke3vk9zlgjv03zvpmf4req8yqtykn3ltvsgzafsm3yfyj",
+    "created_at": 1775838644,
+    "updated_at": 1786599878,
+    "label": "DCA into ETH",
+    "status": "active"
+  },
+  {
+    "id": 433,
+    "source": "rj",
+    "owner": "thor1zmu3z8z8kgatymlrnxdx2ed93hc3fem6yl99nf",
+    "contract_address": "thor17wfz0lgye6juc5j5pngzjv3fmz8l6vd29qsxqzh6d6gcrl7ncyzsd7krqh",
+    "created_at": 1767530889,
+    "updated_at": 1786599878,
+    "label": "DCA out of RUJI",
+    "status": "active"
+  },
+  {
+    "id": 724,
+    "source": "rj",
+    "owner": "thor1jtj4z5unrrfvqecafvnrekm7vufmhqwt6mma45e63tyy60g7xtjqxg2rvd",
+    "contract_address": "thor1vv4csm9nrp3h4r5du69ffef6r59mvks2yyg2c3t93eqejx597y4q56kyjx",
+    "created_at": 1785754040,
+    "updated_at": 1786599853,
+    "label": "DCA into XUSK",
+    "status": "active"
+  },
+  {
+    "id": 269,
+    "source": "rj",
+    "owner": "thor1zmu3z8z8kgatymlrnxdx2ed93hc3fem6yl99nf",
+    "contract_address": "thor1lka3gtn4w5tz0nr4v4xtq0s832a20xsa0px93xy5flcud77m62usf6z520",
+    "created_at": 1761151782,
+    "updated_at": 1786599853,
+    "label": "DCA out of RUJI",
+    "status": "active"
+  },
+  {
+    "id": 393,
+    "source": "rj",
+    "owner": "thor1zmu3z8z8kgatymlrnxdx2ed93hc3fem6yl99nf",
+    "contract_address": "thor1sg08qg74fx2eg82malk7rrvfcxlg4xmfa5ctdh760xgvsmmn7nxss8uymh",
+    "created_at": 1765615502,
+    "updated_at": 1786599813,
+    "label": "DCA out of RUNE",
+    "status": "active"
+  },
+  {
+    "id": 653,
+    "source": "rj",
+    "owner": "thor1zmu3z8z8kgatymlrnxdx2ed93hc3fem6yl99nf",
+    "contract_address": "thor1h9e33vx36p4c73kmzz0fs73q8nqpd5la6t4ggp0f279ly6366ttsp984yf",
+    "created_at": 1778611454,
+    "updated_at": 1786599813,
+    "label": "DCA out of ATOM",
+    "status": "active"
+  }
+]

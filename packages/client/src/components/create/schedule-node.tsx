@@ -1,22 +1,18 @@
-import { Schedule, ScheduleAction } from "@template/domain/calc";
+import { ScheduleCondition } from "@template/domain/calc";
 import "@xyflow/react/dist/style.css";
 import cronstrue from "cronstrue";
 import duration from "humanize-duration";
 import { useState } from "react";
 import { BaseNode } from "../../components/create/base-node";
-import { type ActionNodeParams, type CustomNodeData } from "../../lib/layout/layout";
+import { useEncodedSchemaForm } from "../../hooks/use-schema-form";
+import { type CustomNodeData, type ScheduleNodeParams } from "../../lib/layout/layout";
 import { Input } from "../ui/input";
 import { AddAction } from "./add-action";
 import { JsonEditor } from "./json-editor";
-import { useEncodedSchemaForm } from "../../hooks/use-schema-form";
 
 export function ScheduleNode({
-  data: {
-    action: { id, schedule },
-    update,
-    remove,
-  },
-}: CustomNodeData<ActionNodeParams<ScheduleAction>>) {
+  data: { id, schedule, update, remove, addNext },
+}: CustomNodeData<ScheduleNodeParams>) {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isEditingJson, setIsEditingJson] = useState(false);
 
@@ -29,9 +25,7 @@ export function ScheduleNode({
           ? cronstrue.toString(schedule.cadence.cron.expr, { throwExceptionOnParseError: false })
           : "";
 
-  const form = useEncodedSchemaForm(Schedule, schedule, (updated) => {
-    update({ id, schedule: updated });
-  });
+  const form = useEncodedSchemaForm(ScheduleCondition, schedule, update);
 
   const [timeUnit, setTimeUnit] = useState<"seconds" | "minutes" | "hours" | "days">("seconds");
 
@@ -39,7 +33,7 @@ export function ScheduleNode({
     <BaseNode
       id={id}
       handleLeft
-      handleRight={!!schedule.action}
+      handleRight={!addNext}
       isHelping={isHelpOpen}
       setHelp={() => { setIsHelpOpen(!isHelpOpen); }}
       isEditingJson={isEditingJson}
@@ -59,11 +53,8 @@ export function ScheduleNode({
                 <code
                   onClick={() => {
                     update({
-                      id,
-                      schedule: {
-                        ...schedule,
-                        cadence: { time: { duration: { secs: 30, nanos: 0 } } },
-                      },
+                      ...schedule,
+                      cadence: { time: { duration: { secs: 30, nanos: 0 } } },
                     });
                   }}
                   className={`cursor-pointer text-sm hover:underline ${"time" in schedule.cadence ? "text-yellow-300" : "text-zinc-400"}`}
@@ -74,11 +65,8 @@ export function ScheduleNode({
                 <code
                   onClick={() => {
                     update({
-                      id,
-                      schedule: {
-                        ...schedule,
-                        cadence: { blocks: { interval: 100 } },
-                      },
+                      ...schedule,
+                      cadence: { blocks: { interval: 100 } },
                     });
                   }}
                   className={`cursor-pointer text-sm hover:underline ${"blocks" in schedule.cadence ? "text-yellow-300" : "text-zinc-400"}`}
@@ -89,23 +77,13 @@ export function ScheduleNode({
                 <code
                   onClick={() => {
                     update({
-                      id,
-                      schedule: {
-                        ...schedule,
-                        cadence: { cron: { expr: "* * * * * *" } },
-                      },
+                      ...schedule,
+                      cadence: { cron: { expr: "* * * * * *" } },
                     });
                   }}
                   className={`cursor-pointer text-sm hover:underline ${"cron" in schedule.cadence ? "text-yellow-300" : "text-zinc-400"}`}
                 >
                   CRON
-                </code>
-                <code>|</code>
-                <code
-                  onClick={() => {}}
-                  className={`cursor-pointer text-sm hover:underline ${"price" in schedule.cadence ? "text-yellow-300" : "text-zinc-400"}`}
-                >
-                  PRICE
                 </code>
               </div>
               <div className="flex flex-col pt-4">
@@ -222,29 +200,17 @@ export function ScheduleNode({
             </div>
           )}
           <div className={isHelpOpen ? "pt-6" : ""}>
-            {!isEditingJson && (
+            {!isEditingJson && addNext && (
               <AddAction
-                onAdd={(action) => {
-                  if ("schedule" in action) {
-                    throw new Error("Invalid action type for schedule node");
-                  }
-                  update({
-                    id,
-                    schedule: {
-                      ...schedule,
-                      action: action as Schedule["action"],
-                    },
-                  });
-                }}
-                disabledActions={["schedule"]}
+                onAdd={addNext}
                 isHelpOpen={isHelpOpen}
-                helpMessage="Select an action to execute when the schedule is triggered. The action will never execute before the schedule is due."
+                helpMessage="Select the next step to execute when the schedule is due."
               />
             )}
             {isEditingJson && (
               <JsonEditor
                 value={schedule}
-                schema={Schedule}
+                schema={ScheduleCondition}
                 onSave={() => {
                   setIsEditingJson(false);
                 }}

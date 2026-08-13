@@ -1,4 +1,4 @@
-import { Swap, SwapAction } from "@template/domain/calc";
+import { Swap } from "@template/domain/calc";
 import { formatNumber } from "@template/domain/numbers";
 import "@xyflow/react/dist/style.css";
 import { useEffect, useRef, useState } from "react";
@@ -6,17 +6,18 @@ import { Input } from "../../components/ui/input";
 import { useAssets } from "../../hooks/use-assets";
 import { useAvailableRoutes } from "../../hooks/use-available-routes";
 import { useDecodedSchemaForm } from "../../hooks/use-schema-form";
-import { type ActionNodeParams, type CustomNodeData } from "../../lib/layout/layout";
+import { type CustomNodeData, type SwapNodeParams } from "../../lib/layout/layout";
+import { AddAction } from "./add-action";
 import { BaseNode } from "./base-node";
 import { Code } from "./code";
 import { JsonEditor } from "./json-editor";
 
-export function SwapNode({ data: { action, update, remove } }: CustomNodeData<ActionNodeParams<SwapAction>>) {
-  const form = useDecodedSchemaForm(SwapAction, action, update);
+export function SwapNode({ data: { id, swap, update, remove, addNext } }: CustomNodeData<SwapNodeParams>) {
+  const form = useDecodedSchemaForm(Swap, swap, update);
 
   useEffect(() => {
     form.reset();
-  }, [action, form]);
+  }, [swap, form]);
 
   const [isSelectingSwapDenom, setIsSelectingSwapDenom] = useState(false);
   const [isSelectingReceiveDenom, setIsSelectingReceiveDenom] = useState(false);
@@ -33,33 +34,27 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
           className="cursor-pointer rounded bg-zinc-900 px-2 py-[1px] font-mono text-xl hover:underline"
           style={{ color: asset.color }}
           onClick={() => {
-            const updatedAction = isSelectingSwapDenom
+            const updatedSwap = isSelectingSwapDenom
               ? {
-                  id: form.state.values.id,
-                  swap: {
-                    ...form.state.values.swap,
-                    swap_amount: {
-                      ...asset,
-                      amount: form.state.values.swap.swap_amount.amount,
-                    },
-                    routes: [],
+                  ...form.state.values,
+                  swap_amount: {
+                    ...asset,
+                    amount: form.state.values.swap_amount.amount,
                   },
+                  routes: [],
                 }
               : {
-                  id: form.state.values.id,
-                  swap: {
-                    ...form.state.values.swap,
-                    minimum_receive_amount: {
-                      ...asset,
-                      amount: form.state.values.swap.minimum_receive_amount.amount,
-                    },
-                    routes: [],
+                  ...form.state.values,
+                  minimum_receive_amount: {
+                    ...asset,
+                    amount: form.state.values.minimum_receive_amount.amount,
                   },
+                  routes: [],
                 };
 
             setIsSelectingReceiveDenom(false);
             setIsSelectingSwapDenom(false);
-            update(updatedAction);
+            update(updatedSwap);
           }}
         >
           {asset.displayName}
@@ -72,7 +67,7 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
   const [isBuying, setIsBuying] = useState(true);
   const [isHelpOpen, setIsHelpOpen] = useState(false);
 
-  const routes = useAvailableRoutes([action.swap.swap_amount.denom, action.swap.minimum_receive_amount.denom]);
+  const routes = useAvailableRoutes([swap.swap_amount.denom, swap.minimum_receive_amount.denom]);
 
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -84,24 +79,25 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
 
   return (
     <BaseNode
-      id={action.id}
+      id={id}
       onDelete={remove}
       handleLeft
+      handleRight={!addNext}
       isHelping={isHelpOpen}
       setHelp={() => { setIsHelpOpen(!isHelpOpen); }}
       isEditingJson={isEditingJson}
       setIsEditingJson={() => { setIsEditingJson(!isEditingJson); }}
-      isValid={form.state.isValid && form.state.values.swap.routes.length > 0}
+      isValid={form.state.isValid && form.state.values.routes.length > 0}
       title={<code className="rounded bg-zinc-900 px-1 py-[1px] font-mono text-4xl text-zinc-100">SWAP</code>}
       summary={
         <div className="flex flex-col gap-1.5 text-xl text-zinc-300">
           <code>SWAP</code>
-          <Code className="rounded px-1 font-mono">{`${action.swap.swap_amount.displayName} -> ${action.swap.minimum_receive_amount.displayName}`}</Code>
+          <Code className="rounded px-1 font-mono">{`${swap.swap_amount.displayName} -> ${swap.minimum_receive_amount.displayName}`}</Code>
         </div>
       }
       details={
-        <Code className="text-sm">{`Swap ${formatNumber(action.swap.swap_amount.amount || 0)} ${action.swap.swap_amount.displayName} into at least ${formatNumber(action.swap.minimum_receive_amount.amount || 0)} ${action.swap.minimum_receive_amount.displayName}  with
-          a maximum slippage of ${action.swap.maximum_slippage_bps / 100}%`}</Code>
+        <Code className="text-sm">{`Swap ${formatNumber(swap.swap_amount.amount || 0)} ${swap.swap_amount.displayName} into at least ${formatNumber(swap.minimum_receive_amount.amount || 0)} ${swap.minimum_receive_amount.displayName}  with
+          a maximum slippage of ${swap.maximum_slippage_bps / 100}%`}</Code>
       }
       modal={
         <div
@@ -123,7 +119,7 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
               <form>
                 <div className="flex flex-col gap-4 text-xl">
                   <form.Field
-                    name="swap.swap_amount.amount"
+                    name="swap_amount.amount"
                     children={(field) => (
                       <div className="flex flex-col gap-0">
                         <div
@@ -164,9 +160,9 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
                             >
                               <code
                                 className="rounded px-1 py-[1px] font-mono hover:underline"
-                                style={{ color: action.swap.swap_amount.color }}
+                                style={{ color: swap.swap_amount.color }}
                               >
-                                {form.getFieldValue("swap.swap_amount").displayName}
+                                {form.getFieldValue("swap_amount").displayName}
                               </code>
                             </div>
                           </div>
@@ -178,7 +174,7 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
                     )}
                   />
                   <form.Field
-                    name="swap.minimum_receive_amount.amount"
+                    name="minimum_receive_amount.amount"
                     children={(field) => (
                       <div className="flex flex-col gap-0">
                         <div
@@ -222,10 +218,10 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
                               <code
                                 className="rounded px-1 py-[1px] font-mono hover:underline"
                                 style={{
-                                  color: action.swap.minimum_receive_amount.color,
+                                  color: swap.minimum_receive_amount.color,
                                 }}
                               >
-                                {form.getFieldValue("swap.minimum_receive_amount").displayName}
+                                {form.getFieldValue("minimum_receive_amount").displayName}
                               </code>
                             </div>
                           </div>
@@ -237,24 +233,24 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
                             <Code className="text-sm text-zinc-200">
                               {`${isBuying ? "buy " : "sell "} ${
                                 isBuying
-                                  ? form.state.values.swap.minimum_receive_amount.displayName
-                                  : form.state.values.swap.swap_amount.displayName
+                                  ? form.state.values.minimum_receive_amount.displayName
+                                  : form.state.values.swap_amount.displayName
                               } at ${isBuying ? "<" : ">"} $${
                                 isBuying
                                   ? formatNumber(
                                       field.state.value === 0
                                         ? 0
-                                        : form.state.values.swap.swap_amount.amount / field.state.value,
+                                        : form.state.values.swap_amount.amount / field.state.value,
                                     )
                                   : formatNumber(
                                       field.state.value === 0
                                         ? Number.NEGATIVE_INFINITY
-                                        : field.state.value / form.state.values.swap.swap_amount.amount,
+                                        : field.state.value / form.state.values.swap_amount.amount,
                                     )
                               } ${
                                 isBuying
-                                  ? form.state.values.swap.swap_amount.displayName
-                                  : form.state.values.swap.minimum_receive_amount.displayName
+                                  ? form.state.values.swap_amount.displayName
+                                  : form.state.values.minimum_receive_amount.displayName
                               }`}
                             </Code>
                             <code
@@ -269,7 +265,7 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
                     )}
                   />
                   <form.Field
-                    name="swap.routes"
+                    name="routes"
                     children={(field) => {
                       const hasFinRoute = field.state.value.some((r) => "fin" in r);
                       const canRouteOnFin = routes.some((r) => "fin" in r);
@@ -338,7 +334,7 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
                                 THORCHAIN
                               </code>
                             </div>
-                            {form.state.values.swap.routes.length == 0 && (
+                            {form.state.values.routes.length == 0 && (
                               <p className="font-mono text-sm text-red-500/60">Must select at least 1 route</p>
                             )}
                           </div>
@@ -347,13 +343,13 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
                     }}
                   />
                   <form.Field
-                    name="swap.adjustment"
+                    name="adjustment"
                     children={(field) => (
                       <div className="flex flex-col">
                         <div className="flex flex-col gap-2">
                           <div className="flex gap-8">
                             <form.Field
-                              name="swap.maximum_slippage_bps"
+                              name="maximum_slippage_bps"
                               children={(field) => (
                                 <div className="flex flex-1 flex-col gap-0">
                                   <div
@@ -435,7 +431,7 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
                                     onClick={() => {
                                       field.handleChange({
                                         linear_scalar: {
-                                          base_receive_amount: action.swap.minimum_receive_amount,
+                                          base_receive_amount: swap.minimum_receive_amount,
                                           minimum_swap_amount: null,
                                           scalar: 3,
                                         },
@@ -452,11 +448,11 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
                             </div>
                           </div>
                           <form.Field
-                            name="swap.maximum_slippage_bps"
+                            name="maximum_slippage_bps"
                             children={() =>
-                              !form.state.fieldMeta["swap.maximum_slippage_bps"]?.isValid && (
+                              !form.state.fieldMeta.maximum_slippage_bps?.isValid && (
                                 <p className="font-mono text-sm text-red-500/60">
-                                  {form.state.fieldMeta["swap.maximum_slippage_bps"]?.errors.join(", ")}
+                                  {form.state.fieldMeta.maximum_slippage_bps?.errors.join(", ")}
                                 </p>
                               )
                             }
@@ -471,7 +467,7 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
                         >
                           <div className="flex gap-8 pt-4">
                             <form.Field
-                              name="swap.adjustment.linear_scalar.scalar"
+                              name="adjustment.linear_scalar.scalar"
                               children={(field) => (
                                 <div className="flex flex-col gap-0">
                                   <div
@@ -529,8 +525,8 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
                                           <Code className="text-xs text-zinc-400">
                                             {`price (${
                                               isBuying
-                                                ? form.state.values.swap.swap_amount.displayName
-                                                : form.state.values.swap.minimum_receive_amount.displayName
+                                                ? form.state.values.swap_amount.displayName
+                                                : form.state.values.minimum_receive_amount.displayName
                                             })`}
                                           </Code>
                                           <code className="text-xs text-zinc-400">swap_amount</code>
@@ -539,39 +535,39 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
                                           <code className="text-xs text-zinc-200">
                                             {formatNumber(
                                               (isBuying
-                                                ? form.state.values.swap.swap_amount.amount /
-                                                  form.state.values.swap.minimum_receive_amount.amount
-                                                : form.state.values.swap.minimum_receive_amount.amount /
-                                                  form.state.values.swap.swap_amount.amount) *
+                                                ? form.state.values.swap_amount.amount /
+                                                  form.state.values.minimum_receive_amount.amount
+                                                : form.state.values.minimum_receive_amount.amount /
+                                                  form.state.values.swap_amount.amount) *
                                                 (1 - Math.min(1, 1 / field.state.value)),
                                             )}
                                           </code>
                                           <code className="text-xs text-zinc-200">
-                                            {formatNumber(form.state.values.swap.swap_amount.amount * 2)}
+                                            {formatNumber(form.state.values.swap_amount.amount * 2)}
                                           </code>
                                         </div>
                                         <div className="flex flex-col items-center gap-2.5">
                                           <code className="text-xs text-zinc-200">
                                             {formatNumber(
                                               isBuying
-                                                ? form.state.values.swap.swap_amount.amount /
-                                                    form.state.values.swap.minimum_receive_amount.amount
-                                                : form.state.values.swap.minimum_receive_amount.amount /
-                                                    form.state.values.swap.swap_amount.amount,
+                                                ? form.state.values.swap_amount.amount /
+                                                    form.state.values.minimum_receive_amount.amount
+                                                : form.state.values.minimum_receive_amount.amount /
+                                                    form.state.values.swap_amount.amount,
                                             )}
                                           </code>
                                           <code className="text-xs text-zinc-200">
-                                            {formatNumber(form.state.values.swap.swap_amount.amount)}
+                                            {formatNumber(form.state.values.swap_amount.amount)}
                                           </code>
                                         </div>
                                         <div className="flex flex-col items-end gap-2.5">
                                           <code className="text-xs text-zinc-200">
                                             {formatNumber(
                                               (isBuying
-                                                ? form.state.values.swap.swap_amount.amount /
-                                                  form.state.values.swap.minimum_receive_amount.amount
-                                                : form.state.values.swap.minimum_receive_amount.amount /
-                                                  form.state.values.swap.swap_amount.amount) *
+                                                ? form.state.values.swap_amount.amount /
+                                                  form.state.values.minimum_receive_amount.amount
+                                                : form.state.values.minimum_receive_amount.amount /
+                                                  form.state.values.swap_amount.amount) *
                                                 (1 + 1 / field.state.value || 1),
                                             )}
                                           </code>
@@ -585,7 +581,7 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
                             />
                           </div>
                           <form.Field
-                            name="swap.adjustment.linear_scalar.scalar"
+                            name="adjustment.linear_scalar.scalar"
                             children={(field) => (
                               <>
                                 {field.state.meta.isValid ? null : (
@@ -600,6 +596,15 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
                       </div>
                     )}
                   />
+                  {addNext && (
+                    <div className="pt-4">
+                      <AddAction
+                        onAdd={addNext}
+                        isHelpOpen={isHelpOpen}
+                        helpMessage="Add the next step to run after this swap completes."
+                      />
+                    </div>
+                  )}
                 </div>
               </form>
             )}
@@ -612,7 +617,7 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
             {isSelectingAnyAsset && assetSelector}
             {isEditingJson && (
               <JsonEditor
-                value={form.state.values.swap}
+                value={swap}
                 schema={Swap}
                 onSave={() => {
                   setIsEditingJson(false);

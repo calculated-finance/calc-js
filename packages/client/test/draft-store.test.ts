@@ -9,16 +9,39 @@ const encodedStrategy: typeof Strategy.Encoded = {
   label: "Round Trip",
   owner: "thor1owner",
   status: "draft",
-  action: {
-    id: "action-1",
-    swap: {
-      adjustment: "fixed",
-      maximum_slippage_bps: 300,
-      routes: [{ thorchain: {} }],
-      minimum_receive_amount: { amount: "10000000000", denom: "rune" },
-      swap_amount: { amount: "100000", denom: "btc-btc" },
+  nodes: [
+    {
+      condition: {
+        condition: {
+          schedule: {
+            cadence: { cron: { expr: "0 0 * * * *" } },
+            execution_rebate: [],
+            executors: [],
+            manager_address: "thor1manager",
+            scheduler_address: "thor1scheduler",
+          },
+        },
+        index: 0,
+        on_success: 1,
+        on_failure: null,
+      },
     },
-  },
+    {
+      action: {
+        action: {
+          swap: {
+            adjustment: "fixed",
+            maximum_slippage_bps: 300,
+            routes: [{ thorchain: {} }],
+            minimum_receive_amount: { amount: "10000000000", denom: "rune" },
+            swap_amount: { amount: "100000", denom: "btc-btc" },
+          },
+        },
+        index: 1,
+        next: null,
+      },
+    },
+  ],
 };
 
 describe("draft strategy store persistence", () => {
@@ -37,8 +60,8 @@ describe("draft strategy store persistence", () => {
     ).state.strategies.thorchain["draft-1"];
 
     // encoded on disk: raw integer amounts, not display units
-    expect(stored.action).toMatchObject({
-      swap: { swap_amount: { amount: "100000", denom: "btc-btc" } },
+    expect(stored.nodes[1]).toMatchObject({
+      action: { action: { swap: { swap_amount: { amount: "100000", denom: "btc-btc" } } } },
     });
 
     // and decoding what was stored returns the original strategy
@@ -53,6 +76,7 @@ describe("draft strategy store persistence", () => {
 
   it("drops corrupt persisted drafts on rehydration and keeps valid ones", async () => {
     const valid = { ...encodedStrategy, id: "survivor" };
+    // A draft persisted under the pre-v2 schema: nested action tree, no nodes.
     const corrupt = {
       id: "stale",
       chainId: "thorchain",
@@ -61,11 +85,11 @@ describe("draft strategy store persistence", () => {
       action: {
         id: "action-x",
         swap: {
-          adjustment: { linear_scalar: { base_receive_amount: { amount: "1", denom: "rune" }, minimum_swap_amount: null, scalar: 99 } },
+          adjustment: "fixed",
           maximum_slippage_bps: 300,
           routes: [{ thorchain: {} }],
           minimum_receive_amount: { amount: "1", denom: "rune" },
-          swap_amount: { amount: "1", denom: "unknown-denom-gone" },
+          swap_amount: { amount: "1", denom: "rune" },
         },
       },
     };

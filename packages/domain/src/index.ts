@@ -1,7 +1,6 @@
 // Namespace exports (existing)
 export * as assets from "./assets.js"
 export * as calc from "./calc.js"
-export * as calc2 from "./calc2.js"
 export * as chains from "./chains.js"
 export * as clients from "./clients.js"
 export * as keplr from "./clients/keplr.js"
@@ -12,5 +11,3 @@ export * as evm from "./evm.js"
 export * as numbers from "./numbers.js"
 export * as rujira from "./rujira.js"
 export * as storage from "./storage.js"
-export * as strategies from "./strategies.js"
-export * as types from "./types.js"

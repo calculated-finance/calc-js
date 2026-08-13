@@ -1,14 +1,9 @@
 import type { Asset } from "@template/domain/assets";
-import type { DistributeAction, ManyAction, ScheduleAction, SwapAction } from "@template/domain/calc";
 import { RUJIRA } from "@template/domain/chains";
-import type { ActionKey } from "../../lib/layout/layout";
+import type { NodeBody } from "../../lib/graph";
 
-/** An action variant without its builder-assigned node id. */
-export type ActionBody =
-  | Omit<SwapAction, "id">
-  | Omit<ManyAction, "id">
-  | Omit<ScheduleAction, "id">
-  | Omit<DistributeAction, "id">;
+/** The step variants the picker can insert into the strategy graph. */
+export type ActionKey = "swap" | "distribute" | "schedule";
 
 export interface MakeDefaultContext {
   assets: Asset[];
@@ -21,18 +16,18 @@ export interface ActionDefinition {
   label: string;
   /** Button colour in the action picker. */
   colorClassName: string;
-  /** React Flow node type string; must match the layout function's output. */
+  /** React Flow node type string; must match graphNodeType's output. */
   nodeType: string;
-  /** The action inserted when the user picks this type. */
-  makeDefault: (context: MakeDefaultContext) => ActionBody;
+  /** The node payload inserted when the user picks this type. */
+  makeDefault: (context: MakeDefaultContext) => NodeBody;
 }
 
 /**
- * Everything the builder knows about each action type except its node
+ * Everything the builder knows about each insertable step except its node
  * component (kept apart in actions.tsx to avoid an import cycle with the node
- * components, which render the picker). Adding a variant to ActionKey forces
- * an entry here, in actions.tsx, and in lib/layout's layoutFunctions — the
- * compiler walks you through the rest.
+ * components, which render the picker). In the v2 contract model swap and
+ * distribute are action nodes while schedule is a condition node gating
+ * whatever follows it.
  */
 export const ACTION_DEFINITIONS: Record<ActionKey, ActionDefinition> = {
   swap: {
@@ -41,21 +36,23 @@ export const ACTION_DEFINITIONS: Record<ActionKey, ActionDefinition> = {
     colorClassName: "text-purple-300",
     nodeType: "swapNode",
     makeDefault: ({ assets }) => ({
-      swap: {
-        adjustment: "fixed",
-        maximum_slippage_bps: 300,
-        routes: [
-          {
-            thorchain: {},
+      action: {
+        swap: {
+          adjustment: "fixed",
+          maximum_slippage_bps: 300,
+          routes: [
+            {
+              thorchain: {},
+            },
+          ],
+          minimum_receive_amount: {
+            amount: 100,
+            ...assets[0],
           },
-        ],
-        minimum_receive_amount: {
-          amount: 100,
-          ...assets[0],
-        },
-        swap_amount: {
-          amount: 0.001,
-          ...assets[1],
+          swap_amount: {
+            amount: 0.001,
+            ...assets[1],
+          },
         },
       },
     }),
@@ -66,9 +63,11 @@ export const ACTION_DEFINITIONS: Record<ActionKey, ActionDefinition> = {
     colorClassName: "text-blue-300",
     nodeType: "distributeNode",
     makeDefault: ({ denoms }) => ({
-      distribute: {
-        denoms: denoms ?? [],
-        destinations: [],
+      action: {
+        distribute: {
+          denoms: denoms ?? [],
+          destinations: [],
+        },
       },
     }),
   },
@@ -78,20 +77,15 @@ export const ACTION_DEFINITIONS: Record<ActionKey, ActionDefinition> = {
     colorClassName: "text-yellow-300",
     nodeType: "scheduleNode",
     makeDefault: () => ({
-      schedule: {
-        cadence: { cron: { expr: "0 23 12 * * SUN#2" } },
-        execution_rebate: [],
-        scheduler: RUJIRA.schedulerContract,
-        contract_address: RUJIRA.managerContract,
-        executors: [],
+      condition: {
+        schedule: {
+          cadence: { cron: { expr: "0 23 12 * * SUN#2" } },
+          execution_rebate: [],
+          executors: [],
+          manager_address: RUJIRA.managerContract,
+          scheduler_address: RUJIRA.schedulerContract,
+        },
       },
     }),
-  },
-  many: {
-    key: "many",
-    label: "Group",
-    colorClassName: "text-red-300",
-    nodeType: "manyNode",
-    makeDefault: () => ({ many: [] }),
   },
 };

@@ -1,46 +1,27 @@
 import type { Amount } from "@template/domain/assets";
-import type { Action } from "@template/domain/calc";
+import type { Node } from "@template/domain/calc";
+import { isActionNode } from "./graph";
 
-export const getDefaultDeposits = (action: Action): Record<string, Amount> => {
-  if ("many" in action) {
-    return action.many.reduce<Record<string, Amount>>(
-      (acc, action) =>
-        Object.values(getDefaultDeposits(action)).reduce((acc, deposit) => {
-          const existing = acc[deposit.denom] as Amount | undefined;
-          return {
-            ...acc,
-            [deposit.denom]: existing ? { ...deposit, amount: existing.amount + deposit.amount } : deposit,
-          };
-        }, acc),
-      {},
-    );
-  }
+/**
+ * Suggested deposits for a strategy: the sum of every swap action's
+ * swap_amount per denom. Limit orders bid in base units the form never
+ * edits, so they are left for the user to top up manually.
+ */
+export const getDefaultDeposits = (nodes: readonly Node[]): Record<string, Amount> =>
+  nodes.reduce<Record<string, Amount>>((acc, node) => {
+    if (!isActionNode(node) || !("swap" in node.action.action)) return acc;
 
-  if ("schedule" in action && action.schedule.action) {
-    return getDefaultDeposits(action.schedule.action);
-  }
-
-  if ("swap" in action) {
+    const deposit = node.action.action.swap.swap_amount;
+    const existing = acc[deposit.denom] as Amount | undefined;
     return {
-      [action.swap.swap_amount.denom]: action.swap.swap_amount,
+      ...acc,
+      [deposit.denom]: existing ? { ...deposit, amount: existing.amount + deposit.amount } : deposit,
     };
-  }
+  }, {});
 
-  return {};
-};
-
-export const getDefaultWithdrawalDenoms = (action: Action, escrowed: string[]): string[] => {
-  if ("many" in action) {
-    return action.many.flatMap((action) => getDefaultWithdrawalDenoms(action, escrowed));
-  }
-
-  if ("schedule" in action && action.schedule.action) {
-    return getDefaultWithdrawalDenoms(action.schedule.action, escrowed);
-  }
-
-  if ("swap" in action) {
-    return escrowed.includes(action.swap.swap_amount.denom) ? [] : [action.swap.swap_amount.denom];
-  }
-
-  return [];
-};
+export const getDefaultWithdrawalDenoms = (nodes: readonly Node[], escrowed: string[]): string[] =>
+  nodes.flatMap((node) => {
+    if (!isActionNode(node) || !("swap" in node.action.action)) return [];
+    const denom = node.action.action.swap.swap_amount.denom;
+    return escrowed.includes(denom) ? [] : [denom];
+  });

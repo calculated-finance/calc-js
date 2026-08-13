@@ -7,7 +7,7 @@ const decodeAdjustment = Schema.decodeUnknownEither(LinearScalarSwapAdjustment)
 const encodeAdjustment = Schema.encodeUnknownEither(LinearScalarSwapAdjustment)
 const decodeBps = Schema.decodeUnknownEither(BasisPoints)
 
-const adjustmentWithScalar = (scalar: number) => ({
+const adjustmentWithScalar = (scalar: number | string) => ({
     linear_scalar: {
         base_receive_amount: { amount: "10000000000", denom: "rune" },
         minimum_swap_amount: null,
@@ -19,6 +19,26 @@ describe("LinearScalarSwapAdjustment.scalar", () => {
     it("accepts a scalar within (0, 10]", () => {
         const result = decodeAdjustment(adjustmentWithScalar(10))
         expect(Either.isRight(result)).toBe(true)
+    })
+
+    it("accepts the contract's Decimal string form", () => {
+        const result = decodeAdjustment(adjustmentWithScalar("3.5"))
+        expect(Either.isRight(result)).toBe(true)
+        if (Either.isRight(result)) {
+            expect(result.right.linear_scalar.scalar).toBe(3.5)
+        }
+    })
+
+    it("always encodes the scalar as the wire string", () => {
+        const decoded = decodeAdjustment(adjustmentWithScalar(3))
+        expect(Either.isRight(decoded)).toBe(true)
+        if (Either.isRight(decoded)) {
+            const encoded = encodeAdjustment(decoded.right)
+            expect(Either.isRight(encoded)).toBe(true)
+            if (Either.isRight(encoded)) {
+                expect(encoded.right.linear_scalar.scalar).toBe("3")
+            }
+        }
     })
 
     it("rejects a scalar above 10 on decode instead of clamping", () => {
@@ -39,15 +59,6 @@ describe("LinearScalarSwapAdjustment.scalar", () => {
                 linear_scalar: { ...decoded.right.linear_scalar, scalar: 11 }
             }
             expect(Either.isLeft(encodeAdjustment(tampered))).toBe(true)
-        }
-    })
-
-    it("round-trips a valid adjustment", () => {
-        const decoded = decodeAdjustment(adjustmentWithScalar(3))
-        expect(Either.isRight(decoded)).toBe(true)
-        if (Either.isRight(decoded)) {
-            const encoded = encodeAdjustment(decoded.right)
-            expect(Either.isRight(encoded)).toBe(true)
         }
     })
 })

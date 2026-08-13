@@ -1,20 +1,18 @@
-import type { Action } from "@template/domain/calc";
 import { Fragment } from "react";
-import { v4 } from "uuid";
 import { useAssets } from "../../hooks/use-assets";
 import { useNodeModalStore } from "../../hooks/use-node-modal-store";
-import type { ActionKey } from "../../lib/layout/layout";
-import { ACTION_DEFINITIONS, type ActionDefinition } from "./action-definitions";
+import type { NodeBody } from "../../lib/graph";
+import { ACTION_DEFINITIONS, type ActionDefinition, type ActionKey } from "./action-definitions";
 
 interface ComingSoon {
   label: string;
   colorClassName: string;
 }
 
-/** Picker rows: implemented action types mixed with not-yet-wired stubs. */
+/** Picker rows: implemented step types mixed with not-yet-wired stubs. */
 const PICKER_ROWS: (ActionDefinition | ComingSoon)[][] = [
   [ACTION_DEFINITIONS.swap, { label: "Limit Order", colorClassName: "text-green-300" }, ACTION_DEFINITIONS.distribute],
-  [ACTION_DEFINITIONS.schedule, ACTION_DEFINITIONS.many, { label: "Conditional", colorClassName: "text-orange-300" }],
+  [ACTION_DEFINITIONS.schedule, { label: "Conditional", colorClassName: "text-orange-300" }],
 ];
 
 const isImplemented = (entry: ActionDefinition | ComingSoon): entry is ActionDefinition => "key" in entry;
@@ -26,7 +24,8 @@ export function AddAction({
   isHelpOpen,
   helpMessage,
 }: {
-  onAdd: (action: Action) => void;
+  /** Inserts the node; returns the new node's React Flow id to open its modal. */
+  onAdd: (body: NodeBody) => string | undefined;
   disabledActions?: ActionKey[];
   denoms?: string[];
   isHelpOpen?: boolean;
@@ -36,13 +35,8 @@ export function AddAction({
   const { assets } = useAssets();
 
   const addAction = (definition: ActionDefinition) => {
-    const actionId = v4();
-    const newAction = {
-      id: actionId,
-      ...definition.makeDefault({ assets, denoms }),
-    } as Action;
-    onAdd(newAction);
-    setOpenId(actionId);
+    const newId = onAdd(definition.makeDefault({ assets, denoms }));
+    if (newId) setOpenId(newId);
   };
 
   return (

@@ -145,7 +145,7 @@ export default function CreateStrategy() {
       label: "New Strategy",
       status: "draft" as const,
     };
-    add(handle);
+    add({ ...handle, nodes: [] });
     setStrategyFilter("draft");
     setStrategyHandle(handle);
     setOpenId(handle.id);

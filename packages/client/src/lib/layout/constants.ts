@@ -13,11 +13,19 @@ export const CHILD_OFFSET_X = 300;
 /** Wider offset used when a parent fans out to multiple children. */
 export const MULTI_CHILD_OFFSET_X = 400;
 
-export const makeEdge = (source: string, target: string): BuiltInEdge => ({
+export type EdgeKind = "next" | "success" | "failure";
+
+const EDGE_COLORS: Record<EdgeKind, string> = {
+  next: "#9CCCF0",
+  success: "#6EE7A0",
+  failure: "#F87171",
+};
+
+export const makeEdge = (source: string, target: string, kind: EdgeKind = "next"): BuiltInEdge => ({
   id: `${source}-to-${target}`,
   source,
   target,
-  style: { stroke: "#9CCCF0", strokeWidth: 2 },
+  style: { stroke: EDGE_COLORS[kind], strokeWidth: 2 },
   type: "smoothstep",
   pathOptions: {
     borderRadius: 16,

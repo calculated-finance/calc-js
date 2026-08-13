@@ -5,6 +5,7 @@ import { useState } from "react";
 import { BaseNode } from "../../components/create/base-node";
 import { useStrategyBalances } from "../../hooks/use-strategy-balances";
 import { useEncodedSchemaForm } from "../../hooks/use-schema-form";
+import { appendNode } from "../../lib/graph";
 import { type CustomNodeData, type StrategyNodeParams } from "../../lib/layout/layout";
 import { Input } from "../ui/input";
 import { AddAction } from "./add-action";
@@ -101,16 +102,17 @@ export function StrategyNode({ data: { strategy, update } }: CustomNodeData<Stra
             )}
           </div>
         )}
-        {!strategy.action && (
+        {strategy.nodes.length === 0 && (
           <AddAction
-            onAdd={(action) =>
-              { update({
+            onAdd={(body) => {
+              update({
                 ...strategy,
-                action,
-              }); }
-            }
+                nodes: appendNode(strategy.nodes, body),
+              });
+              return `${strategy.id}:0`;
+            }}
             isHelpOpen={isHelpOpen}
-            helpMessage="Select the root action for this strategy. You can choose a simple action like a execute a swap or set a limit order, however it's often more useful to start with a schedule or a group action."
+            helpMessage="Select the first step for this strategy. It's often most useful to start with a schedule, which gates everything after it."
           />
         )}
       </form>
@@ -120,7 +122,7 @@ export function StrategyNode({ data: { strategy, update } }: CustomNodeData<Stra
   return (
     <BaseNode
       id={strategy.id}
-      handleRight={!!strategy.action}
+      handleRight={strategy.nodes.length > 0}
       title={<code className="rounded bg-zinc-900 px-1 py-[1px] font-mono text-4xl text-zinc-100">START</code>}
       summary={<code className="flex flex-col gap-1.5 text-xl text-zinc-300">START</code>}
       details={<Code className="text-md text-zinc-300">{strategy.label}</Code>}

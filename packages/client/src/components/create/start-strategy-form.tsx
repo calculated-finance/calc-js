@@ -21,7 +21,7 @@ export function StartStrategyForm({
 }) {
   const form = useDecodedSchemaForm(Strategy, strategy, update);
 
-  const defaultDeposit = useMemo(() => (strategy.action ? getDefaultDeposits(strategy.action) : {}), [strategy.action]);
+  const defaultDeposit = useMemo(() => getDefaultDeposits(strategy.nodes), [strategy.nodes]);
 
   const [deposit, setDeposit] = useState<Record<string, Amount>>(defaultDeposit);
 
@@ -131,50 +131,33 @@ export function StartStrategyForm({
         {isSigning && encodedStrategy && (
           <SignTransactionForm
             chain={RUJIRA}
-            getDataWithSender={(sender) => {
-              function removeIds(obj: unknown): unknown {
-                if (Array.isArray(obj)) {
-                  return obj.map(removeIds);
-                }
-                if (obj && typeof obj === "object") {
-                  return Object.fromEntries(
-                    Object.entries(obj)
-                      .filter(([k]) => k !== "id")
-                      .map(([k, v]) => [k, removeIds(v)]),
-                  );
-                }
-                return obj;
-              }
-
-              const strategyWithoutIds = removeIds(encodedStrategy) as Record<string, unknown>; // TODO: Manage this with schema transformations
-
-              return {
-                type: "cosmos",
-                msgs: [
-                  {
-                    typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
-                    value: {
-                      sender,
-                      // TODO: use config to get the contract address
-                      contract: RUJIRA.managerContract,
-                      msg: toUtf8(
-                        JSON.stringify({
-                          instantiate_strategy: {
-                            strategy: { ...strategyWithoutIds, owner: sender, state: null },
-                            label: form.state.values.label,
-                            affiliates: [],
-                          },
-                        }),
-                      ),
-                      funds: Object.values(deposit)
-                        .filter((d) => d.amount > 0)
-                        .map((d) => Schema.encodeSync(Amount)(d))
-                        .sort((a, b) => a.denom.localeCompare(b.denom)),
-                    },
+            getDataWithSender={(sender) => ({
+              type: "cosmos",
+              msgs: [
+                {
+                  typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
+                  value: {
+                    sender,
+                    // TODO: use config to get the contract address
+                    contract: RUJIRA.managerContract,
+                    msg: toUtf8(
+                      JSON.stringify({
+                        instantiate: {
+                          affiliates: [],
+                          label: form.state.values.label,
+                          nodes: encodedStrategy.nodes,
+                          owner: sender,
+                        },
+                      }),
+                    ),
+                    funds: Object.values(deposit)
+                      .filter((d) => d.amount > 0)
+                      .map((d) => Schema.encodeSync(Amount)(d))
+                      .sort((a, b) => a.denom.localeCompare(b.denom)),
                   },
-                ],
-              };
-            }}
+                },
+              ],
+            })}
             callToAction="Start Strategy"
             onBack={() => { setIsSigning(false); }}
             onSuccess={() => {

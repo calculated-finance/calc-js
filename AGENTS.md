@@ -27,11 +27,13 @@ generated guesses or web search.
     (`raw/` holds per-message schemas: `execute.json`, `query.json`,
     `response_to_*.json`)
   - Compiled wasm + checksums: `repos/calc-rs/artifacts/`
-  - NOTE: v2 models a strategy as a flat node graph (`nodes: Node[]`, each
-    with `index` plus `next` or `on_success`/`on_failure`), not a nested
-    action tree. Parts of `packages/domain/src/calc.ts` still model the
-    pre-v2 shape (e.g. `StrategyConfig` expecting `{ strategy: { action } }`);
-    check `calc.d.ts` before trusting the domain schemas for wire formats.
+  - v2 models a strategy as a flat node graph (`nodes: Node[]`, each with
+    `index` plus `next` or `on_success`/`on_failure`), not a nested action
+    tree. `packages/domain/src/calc.ts` mirrors these shapes and is verified
+    against live mainnet responses in
+    `packages/domain/test/calc-wire.test.ts` (fixtures under
+    `packages/domain/test/fixtures/`). When the deployed contracts move,
+    refresh the fixtures and re-vendor at the new tag.
 - Never import from `repos/**` in application code; dependencies come from
   npm via pnpm. The vendored tree exists purely for reading.
 

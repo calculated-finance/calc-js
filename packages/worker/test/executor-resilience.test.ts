@@ -3,6 +3,7 @@ import {
   AllRpcEndpointsFailedError,
   calculateAttemptTimeoutMs,
   classifyRpcFailure,
+  deduplicateTriggerIds,
   executeWithRpcFailover,
   ExecutionBudgetExhaustedError,
   RpcAttemptTimeoutError,
@@ -38,6 +39,27 @@ describe("RpcCircuitBreaker", () => {
     expect(breaker.getState("rpc-1")).toBeUndefined();
   });
 
+  it("opens an endpoint immediately after an execute timeout", () => {
+    const breaker = new RpcCircuitBreaker({
+      cooldownMs: 500,
+      failureThreshold: 2,
+      now: () => 1_000,
+    });
+
+    expect(
+      breaker.recordFailure("rpc-1", { openImmediately: true })
+    ).toEqual({
+      consecutiveFailures: 1,
+      opened: true,
+      openUntilMs: 1_500,
+    });
+    expect(breaker.select(endpoints, 0)).toEqual({
+      endpoints: endpoints.slice(1),
+      forcedProbe: false,
+      skippedRpcUrls: ["rpc-1"],
+    });
+  });
+
   it("probes only the endpoint whose cooldown expires first when all are open", () => {
     let now = 1_000;
     const breaker = new RpcCircuitBreaker({
@@ -67,9 +89,9 @@ describe("executeWithRpcFailover", () => {
       failureThreshold: 2,
     }),
     endpoints,
-    getRemainingTimeInMillis: () => 30_000,
-    headroomMs: 2_000,
-    maxAttemptMs: 25_000,
+    getRemainingTimeInMillis: () => 60_000,
+    headroomMs: 5_000,
+    maxAttemptMs: 50_000,
     minAttemptMs: 3_000,
     startIndex: 0,
   });
@@ -107,9 +129,10 @@ describe("executeWithRpcFailover", () => {
   });
 
   it("does not try another endpoint after an ambiguous client-side timeout", async () => {
+    const testOptions = options();
     const execute = vi.fn(() => new Promise<string>(() => {}));
     const promise = executeWithRpcFailover({
-      ...options(),
+      ...testOptions,
       execute,
       maxAttemptMs: 1,
       minAttemptMs: 1,
@@ -117,6 +140,13 @@ describe("executeWithRpcFailover", () => {
 
     await expect(promise).rejects.toBeInstanceOf(RpcAttemptTimeoutError);
     expect(execute).toHaveBeenCalledTimes(1);
+    expect(testOptions.circuitBreaker.getState("rpc-1")).toMatchObject({
+      consecutiveFailures: 1,
+      openUntilMs: expect.any(Number),
+    });
+    expect(
+      testOptions.circuitBreaker.select(endpoints, 0).skippedRpcUrls
+    ).toEqual(["rpc-1"]);
   });
 
   it("stops before starting an attempt without enough Lambda budget", async () => {
@@ -147,12 +177,20 @@ describe("attempt budgeting and classification", () => {
   it("keeps Lambda headroom and caps a single attempt", () => {
     expect(
       calculateAttemptTimeoutMs({
-        headroomMs: 2_000,
-        maxAttemptMs: 25_000,
+        headroomMs: 5_000,
+        maxAttemptMs: 50_000,
         minAttemptMs: 3_000,
-        remainingTimeMs: 30_000,
+        remainingTimeMs: 60_000,
       })
-    ).toBe(25_000);
+    ).toBe(50_000);
+  });
+
+  it("deduplicates trigger IDs while preserving their order", () => {
+    expect(deduplicateTriggerIds(["a", "b", "a", "c", "b"])).toEqual([
+      "a",
+      "b",
+      "c",
+    ]);
   });
 
   it("treats an RPC-reported halt as endpoint failure telemetry, not global state", () => {

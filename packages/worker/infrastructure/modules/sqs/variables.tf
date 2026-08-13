@@ -18,7 +18,7 @@ variable "alarm_actions" {
 variable "oldest_message_age_alarm_seconds" {
   description = "Oldest trigger-message age that raises an alarm"
   type        = number
-  default     = 300
+  default     = 600
 }
 
 variable "visible_messages_alarm_threshold" {

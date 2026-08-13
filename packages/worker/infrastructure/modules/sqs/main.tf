@@ -18,9 +18,9 @@ resource "aws_sqs_queue" "triggers" {
   content_based_deduplication = true
   deduplication_scope         = "queue"
   # AWS recommends at least six times the Lambda timeout. The executors have
-  # a 30-second timeout, so 180 seconds prevents immediate redelivery while a
+  # a 60-second timeout, so 360 seconds prevents immediate redelivery while a
   # failed invocation is still unwinding or Lambda is backing off.
-  visibility_timeout_seconds = 180
+  visibility_timeout_seconds = 360
 
   # Keep triggers through an upstream chain or RPC outage instead of expiring
   # them after five minutes. The scheduler contract re-checks each trigger and

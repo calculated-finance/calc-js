@@ -70,7 +70,7 @@ resource "aws_lambda_function" "executor" {
   handler                        = "app.handler"
   filename                       = data.archive_file.executor_zip.output_path
   source_code_hash               = filebase64sha256(data.archive_file.executor_zip.output_path)
-  timeout                        = 30
+  timeout                        = 60
   memory_size                    = 512
   reserved_concurrent_executions = 1
 
@@ -114,7 +114,7 @@ resource "aws_cloudwatch_metric_alarm" "executor_near_timeout" {
   count = length(var.signer_secret_arns)
 
   alarm_name          = "${aws_lambda_function.executor[count.index].function_name}-near-timeout"
-  alarm_description   = "Executor Lambda duration approached its 30-second hard timeout"
+  alarm_description   = "Executor Lambda duration approached its 60-second hard timeout"
   comparison_operator = "GreaterThanOrEqualToThreshold"
   evaluation_periods  = 1
   datapoints_to_alarm = 1
@@ -122,7 +122,7 @@ resource "aws_cloudwatch_metric_alarm" "executor_near_timeout" {
   namespace           = "AWS/Lambda"
   period              = 300
   statistic           = "Maximum"
-  threshold           = 28000
+  threshold           = 55000
   treat_missing_data  = "notBreaching"
   alarm_actions       = var.alarm_actions
 

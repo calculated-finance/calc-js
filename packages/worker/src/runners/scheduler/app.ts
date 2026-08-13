@@ -139,7 +139,7 @@ const scheduler = Effect.gen(function* () {
             Entries: triggers.map((trigger) => ({
               Id: trigger.id,
               MessageBody: trigger.id,
-              MessageGroupId: "all",
+              MessageGroupId: trigger.id,
               MessageDeduplicationId: trigger.id,
             })),
           })

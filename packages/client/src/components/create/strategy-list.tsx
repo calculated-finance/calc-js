@@ -54,70 +54,70 @@ function DraftStrategyHandle({
 
   return (
     <>
-      <code key={handle.id} className={`flex gap-2 text-lg text-zinc-200 ${!isSelected ? "opacity-35" : ""}`}>
-        {isSelected ? "* " : ""}
-        {(!isSelected || !isDeleting) && (
+      <code
+        key={handle.id}
+        className={`group flex gap-2 text-lg text-zinc-200 ${!isSelected ? "opacity-35 hover:opacity-100" : ""}`}
+      >
+        {!isDeleting && (
           <Code
             onClick={() => {
               setIsDeleting(false);
               onSelect();
             }}
-            className={isSelected ? "" : "ml-[18.5px] cursor-pointer hover:underline"}
+            className={isSelected ? "" : "cursor-pointer hover:underline"}
           >
-            {`${handle.label}${isSelected ? " |" : ""}`}
+            {handle.label}
           </Code>
         )}
-        {isSelected && (
-          <>
-            {!isDeleting && (
-              <>
-                {" "}
-                <code
-                  onClick={() => {
-                    setIsStarting(true);
-                  }}
-                  className="cursor-pointer text-green-300 hover:underline"
-                >
-                  Start
-                </code>
-                {" 🚀"}
-                <code> | </code>
-                <code
-                  onClick={() => {
-                    setIsDeleting(true);
-                  }}
-                  className="cursor-pointer text-red-300 hover:underline"
-                >
-                  Delete
-                </code>
-                {" 🗑️"}
-              </>
-            )}
-            {isDeleting && (
-              <div className="flex items-center gap-2">
-                <code>Are you sure?</code>{" "}
-                <code
-                  className="cursor-pointer text-red-300 hover:underline"
-                  onClick={() => {
-                    deleteStrategy(handle.id);
-                    setOpenId(null);
-                    setIsDeleting(false);
-                  }}
-                >
-                  Yes
-                </code>
-                <code>/</code>
-                <code
-                  className="cursor-pointer pl-[2px] text-green-300 hover:underline"
-                  onClick={() => {
-                    setIsDeleting(false);
-                  }}
-                >
-                  No
-                </code>
-              </div>
-            )}
-          </>
+        {!isDeleting && (
+          <span className="hidden items-baseline gap-2 group-hover:flex">
+            <code>|</code>
+            <code
+              onClick={() => {
+                onSelect();
+                setIsStarting(true);
+              }}
+              className="cursor-pointer text-green-300 hover:underline"
+            >
+              Start
+            </code>
+            {" 🚀"}
+            <code> | </code>
+            <code
+              onClick={() => {
+                onSelect();
+                setIsDeleting(true);
+              }}
+              className="cursor-pointer text-red-300 hover:underline"
+            >
+              Delete
+            </code>
+            {" 🗑️"}
+          </span>
+        )}
+        {isDeleting && (
+          <div className="flex items-center gap-2">
+            <code>Are you sure?</code>{" "}
+            <code
+              className="cursor-pointer text-red-300 hover:underline"
+              onClick={() => {
+                deleteStrategy(handle.id);
+                setOpenId(null);
+                setIsDeleting(false);
+              }}
+            >
+              Yes
+            </code>
+            <code>/</code>
+            <code
+              className="cursor-pointer pl-[2px] text-green-300 hover:underline"
+              onClick={() => {
+                setIsDeleting(false);
+              }}
+            >
+              No
+            </code>
+          </div>
         )}
       </code>
       <Modal
@@ -197,9 +197,11 @@ function ActiveStrategyHandle({
 
   return (
     <>
-      <code key={handle.id} className={`flex gap-2 text-lg text-zinc-200 ${!isSelected ? "opacity-35" : ""}`}>
-        {isSelected ? "* " : ""}
-        <Code onClick={onSelect} className={isSelected ? "" : "ml-[18.5px] cursor-pointer hover:underline"}>
+      <code
+        key={handle.id}
+        className={`group flex gap-2 text-lg text-zinc-200 ${!isSelected ? "opacity-35 hover:opacity-100" : ""}`}
+      >
+        <Code onClick={onSelect} className={isSelected ? "" : "cursor-pointer hover:underline"}>
           {handle.label}
         </Code>
         {!!balances?.length && (
@@ -208,11 +210,11 @@ function ActiveStrategyHandle({
             <BalancesSummary balances={balances} />
           </>
         )}
-        {isSelected && (
-          <>
-            <code>|</code>
+        <span className="hidden items-baseline gap-2 group-hover:flex">
+          <code>|</code>
             <code
               onClick={() => {
+                onSelect();
                 openTransaction(
                   (sender) => ({
                     type: "cosmos",
@@ -239,6 +241,7 @@ function ActiveStrategyHandle({
             <code> | </code>
             <code
               onClick={() => {
+                onSelect();
                 openTransaction(statusUpdateData(handle, "paused"), "Pause Strategy");
               }}
               className="cursor-pointer text-blue-300 hover:underline"
@@ -249,6 +252,7 @@ function ActiveStrategyHandle({
             <code> | </code>
             <code
               onClick={() => {
+                onSelect();
                 openTransaction(statusUpdateData(handle, "archived"), "Archive Strategy");
               }}
               className="cursor-pointer text-red-300 hover:underline"
@@ -259,6 +263,7 @@ function ActiveStrategyHandle({
             <code> | </code>
             <code
               onClick={() => {
+                onSelect();
                 void navigator.clipboard.writeText(handle.contract_address);
               }}
               className="cursor-pointer text-zinc-300 hover:underline"
@@ -266,8 +271,7 @@ function ActiveStrategyHandle({
               Copy
             </code>
             {" 📋"}
-          </>
-        )}
+          </span>
       </code>
       <Modal
         open={!!executableTransactionData}
@@ -295,8 +299,8 @@ function ActiveStrategyHandle({
 type SortKey = "recent" | "valuable";
 
 const SORT_LABELS: Record<SortKey, string> = {
-  recent: "Most recent",
-  valuable: "Most valuable",
+  recent: "most_recent",
+  valuable: "most_valuable",
 };
 
 export function StrategyList({
@@ -323,21 +327,23 @@ export function StrategyList({
     .sort((a, b) => (sortBy === "valuable" ? valueOf(b) - valueOf(a) : createdAt(b) - createdAt(a)));
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-4.5">
       {filter !== "draft" && (
         <div className="flex gap-4 pl-[10px]">
-          {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => (
-            <code
-              key={key}
-              onClick={() => {
-                setSortBy(key);
-              }}
-              className={`cursor-pointer text-sm hover:underline ${
-                sortBy === key ? "text-zinc-200 underline" : "text-zinc-600"
-              }`}
-            >
-              {SORT_LABELS[key]}
-            </code>
+          {(Object.keys(SORT_LABELS) as SortKey[]).map((key, index) => (
+            <Fragment key={key}>
+              {index > 0 && <code className="text-sm text-zinc-600">|</code>}
+              <code
+                onClick={() => {
+                  setSortBy(key);
+                }}
+                className={`cursor-pointer text-sm hover:underline ${
+                  sortBy === key ? "text-zinc-200" : "text-zinc-600"
+                }`}
+              >
+                {SORT_LABELS[key]}
+              </code>
+            </Fragment>
           ))}
         </div>
       )}

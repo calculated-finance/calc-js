@@ -15,9 +15,15 @@ import { ChainStrategyHandle, Node, StrategyConfig } from "../src/calc.js"
 const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), "fixtures")
 
 const handles = JSON.parse(readFileSync(join(fixturesDir, "manager-strategies.json"), "utf8")) as Array<unknown>
-const configs = JSON.parse(
-    readFileSync(join(fixturesDir, "strategy-configs.json"), "utf8")
-) as Record<string, unknown>
+const configs = {
+    ...JSON.parse(readFileSync(join(fixturesDir, "strategy-configs.json"), "utf8")) as Record<string, unknown>,
+    // Mid-execution config with a populated latest_swap whose
+    // streaming_swap_blocks is 0 (a non-streaming swap) — regression for the
+    // Positive filter that rejected it.
+    "thor1exulhuwd3yrdym4vk6qhlsngj2rtt2wyqsk95cj0zhs8cct2sg4ss5nf85": JSON.parse(
+        readFileSync(join(fixturesDir, "strategy-config-streaming.json"), "utf8")
+    ) as unknown
+}
 
 const decodeHandle = Schema.decodeUnknownEither(ChainStrategyHandle)
 const decodeConfig = Schema.decodeUnknownEither(StrategyConfig)

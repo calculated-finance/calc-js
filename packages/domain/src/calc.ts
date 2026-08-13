@@ -69,11 +69,13 @@ export const FinRoute = Schema.Struct({
     fin: Schema.Struct({ pair_address: Schema.NonEmptyTrimmedString })
 })
 
+// Both block fields are legitimately 0 on the wire (a non-streaming swap
+// reports streaming_swap_blocks: 0), so no Positive filters here.
 export const StreamingSwap = Schema.Struct({
     expected_receive_amount: Amount,
     memo: Schema.NonEmptyTrimmedString,
-    starting_block: Schema.Positive,
-    streaming_swap_blocks: Schema.Positive,
+    starting_block: Schema.NonNegative,
+    streaming_swap_blocks: Schema.NonNegative,
     swap_amount: Amount
 })
 

@@ -74,6 +74,9 @@ const nodeTypes = {
   loadingStrategy: ({ data: { label } }: { data: { label: string } }) => (
     <code className="text-lg text-zinc-500">Fetching {label || "strategy"}...</code>
   ),
+  strategyError: ({ data: { label } }: { data: { label: string } }) => (
+    <code className="max-w-150 text-lg text-red-400/80">Failed to load {label || "strategy"} — see console</code>
+  ),
 };
 
 export default function CreateStrategy() {
@@ -160,7 +163,7 @@ export default function CreateStrategy() {
   }, [strategyHandle, chain.id, sharedStrategyAddress, sharedChainId, navigate]);
 
   const { add, update } = useDraftStrategies(chain.id);
-  const { data: strategy, isPending: isPendingStrategy } = useStrategy(strategyHandle);
+  const { data: strategy, isPending: isPendingStrategy, error: strategyError } = useStrategy(strategyHandle);
 
   const { fitView } = useReactFlow();
 
@@ -190,6 +193,15 @@ export default function CreateStrategy() {
       return;
     }
 
+    // A failed fetch/decode must say so on the canvas; a silent blank reads
+    // as "no strategy selected".
+    if (strategyError && strategyHandle) {
+      console.error("Failed to load strategy", strategyHandle, strategyError);
+      setNodes([{ id: "error", type: "strategyError", data: { label: strategyHandle.label }, position: { x: 0, y: 0 } }]);
+      setEdges([]);
+      return;
+    }
+
     if (!strategy) {
       setNodes([]);
       setEdges([]);
@@ -210,7 +222,7 @@ export default function CreateStrategy() {
     setNodes(layout.nodes as unknown as Node[]);
     setEdges(layout.edges);
     void fitView(FIT_VIEW_OPTIONS);
-  }, [strategyFilter, isPendingStrategy, isLoadingStrategies, strategy, strategyHandle, update, fitView, setNodes, setEdges]);
+  }, [strategyFilter, isPendingStrategy, isLoadingStrategies, strategy, strategyError, strategyHandle, update, fitView, setNodes, setEdges]);
 
   useEffect(() => {
     layoutNodes();

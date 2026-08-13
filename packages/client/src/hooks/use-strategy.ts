@@ -13,8 +13,8 @@ export const useStrategy = (handle: StrategyHandle | undefined) => {
   // (pre-edit) strategy would be returned until an unrelated refetch.
   if (handle?.status === "draft") {
     const draft = strategies[handle.id];
-    return { data: draft, isPending: !draft };
+    return { data: draft, isPending: !draft, error: null };
   }
 
-  return { data: chainQuery.data, isPending: chainQuery.isPending };
+  return { data: chainQuery.data, isPending: chainQuery.isPending, error: chainQuery.error };
 };

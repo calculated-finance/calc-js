@@ -4,7 +4,7 @@ import { v4 } from "uuid";
 import { useAssets } from "../../hooks/use-assets";
 import { useNodeModalStore } from "../../hooks/use-node-modal-store";
 import type { ActionKey } from "../../lib/layout/layout";
-import { ACTION_TYPES, type ActionTypeDefinition } from "./actions";
+import { ACTION_DEFINITIONS, type ActionDefinition } from "./action-definitions";
 
 interface ComingSoon {
   label: string;
@@ -12,12 +12,12 @@ interface ComingSoon {
 }
 
 /** Picker rows: implemented action types mixed with not-yet-wired stubs. */
-const PICKER_ROWS: (ActionTypeDefinition | ComingSoon)[][] = [
-  [ACTION_TYPES.swap, { label: "Limit Order", colorClassName: "text-green-300" }, ACTION_TYPES.distribute],
-  [ACTION_TYPES.schedule, ACTION_TYPES.many, { label: "Conditional", colorClassName: "text-orange-300" }],
+const PICKER_ROWS: (ActionDefinition | ComingSoon)[][] = [
+  [ACTION_DEFINITIONS.swap, { label: "Limit Order", colorClassName: "text-green-300" }, ACTION_DEFINITIONS.distribute],
+  [ACTION_DEFINITIONS.schedule, ACTION_DEFINITIONS.many, { label: "Conditional", colorClassName: "text-orange-300" }],
 ];
 
-const isImplemented = (entry: ActionTypeDefinition | ComingSoon): entry is ActionTypeDefinition => "key" in entry;
+const isImplemented = (entry: ActionDefinition | ComingSoon): entry is ActionDefinition => "key" in entry;
 
 export function AddAction({
   onAdd,
@@ -35,7 +35,7 @@ export function AddAction({
   const { setOpenId } = useNodeModalStore();
   const { assets } = useAssets();
 
-  const addAction = (definition: ActionTypeDefinition) => {
+  const addAction = (definition: ActionDefinition) => {
     const actionId = v4();
     const newAction = {
       id: actionId,

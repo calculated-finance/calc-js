@@ -14,23 +14,6 @@ export const BasisPoints = Schema.NonNegativeInt.pipe(
     })
 )
 
-export const PercentageFromBasisPoints = Schema.transform(
-    BasisPoints,
-    Schema.NonNegativeInt.pipe(
-        Schema.clamp(0, 100)
-    ),
-    {
-        strict: true,
-        decode: (value) => Math.round(value / 10_000),
-        encode: (value) => Math.round(value * 10_000)
-    }
-).pipe(Schema.annotations({
-    message: () => ({
-        message: "Please provide a % value",
-        override: true
-    })
-}))
-
 export const formatNumber = (value: number, options?: Intl.NumberFormatOptions) =>
     (new Intl.NumberFormat("en-US", {
         maximumFractionDigits: value > 1000

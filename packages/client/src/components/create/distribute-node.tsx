@@ -1,6 +1,5 @@
 import { Distribute, DistributeAction } from "@template/domain/calc";
 import "@xyflow/react/dist/style.css";
-import { Effect, Schema } from "effect";
 import { useState } from "react";
 import { BaseNode } from "../../components/create/base-node";
 import { useAssets } from "../../hooks/use-assets";
@@ -49,7 +48,7 @@ export function DistributeNode({
           <div>
             {isEditingJson && (
               <JsonEditor
-                data={Effect.runSync(Schema.encode(Distribute)(distribute))}
+                value={distribute}
                 schema={Distribute}
                 onSave={() => {
                   setIsEditingJson(false);

@@ -5,7 +5,7 @@ import { ThemeProvider } from './components/providers/theme-provider.tsx'
 import './index.css'
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { MemoMapProvider } from './components/providers/memo-map-provider.tsx'
+import { RuntimeProvider } from './components/providers/runtime-provider.tsx'
 import { WalletProvider } from './components/providers/wallet-provider.tsx'
 import { routeTree } from './routeTree.gen.ts'
 
@@ -25,13 +25,13 @@ if (!rootElement) throw new Error('Root element #root not found')
 createRoot(rootElement).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-    <MemoMapProvider>
+    <RuntimeProvider>
       <ThemeProvider defaultTheme="dark">
         <WalletProvider>
           <RouterProvider router={router} />
         </WalletProvider>
       </ThemeProvider>
-    </MemoMapProvider>
+    </RuntimeProvider>
     </QueryClientProvider>
   </StrictMode>
 )

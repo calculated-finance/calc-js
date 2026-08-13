@@ -1,7 +1,6 @@
 import { Schedule, ScheduleAction } from "@template/domain/calc";
 import "@xyflow/react/dist/style.css";
 import cronstrue from "cronstrue";
-import { Effect, Schema } from "effect";
 import duration from "humanize-duration";
 import { useState } from "react";
 import { BaseNode } from "../../components/create/base-node";
@@ -244,7 +243,7 @@ export function ScheduleNode({
             )}
             {isEditingJson && (
               <JsonEditor
-                data={Effect.runSync(Schema.encode(Schedule)(schedule))}
+                value={schedule}
                 schema={Schedule}
                 onSave={() => {
                   setIsEditingJson(false);

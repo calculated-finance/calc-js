@@ -1,13 +1,11 @@
 import { useQuery } from "@tanstack/react-query";
 import { CalcService, Strategy, type StrategyHandle } from "@template/domain/calc";
-import { Effect, ManagedRuntime, Schema } from "effect";
-import { useMemo } from "react";
+import { Effect, Schema } from "effect";
 import { v4 } from "uuid";
-import { useMemoMap } from "./use-memo-map";
+import { useRuntime } from "./use-runtime";
 
 export const useChainStrategy = (handle: StrategyHandle | undefined) => {
-  const { memoMap } = useMemoMap();
-  const runtime = useMemo(() => ManagedRuntime.make(CalcService.Default, memoMap), [memoMap]);
+    const runtime = useRuntime();
 
   return useQuery({
     queryKey: ["strategy", handle?.chainId, handle?.id, handle?.status],

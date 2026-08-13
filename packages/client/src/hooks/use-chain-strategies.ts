@@ -1,17 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import { CalcService, StrategyHandle, StrategyId } from "@template/domain/calc";
 import { ChainId } from "@template/domain/chains";
-import { Effect, ManagedRuntime } from "effect";
-import { useMemo } from "react";
+import { Effect } from "effect";
 import { useAddressBook } from "./use-address-book";
-import { useMemoMap } from "./use-memo-map";
+import { useRuntime } from "./use-runtime";
 
 export const useChainStrategies = (chainId: ChainId, status: "draft" | "active" | "paused" | "archived") => {
   const { addressBook } = useAddressBook();
   const addresses = Object.values(addressBook[chainId] ?? {});
 
-  const { memoMap } = useMemoMap();
-  const runtime = useMemo(() => ManagedRuntime.make(CalcService.Default, memoMap), [memoMap]);
+    const runtime = useRuntime();
 
   return useQuery({
     queryKey: ["strategies", chainId, status, addresses.map((a) => a.address)],

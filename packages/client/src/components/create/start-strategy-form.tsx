@@ -3,7 +3,7 @@ import { Amount } from "@template/domain/assets";
 import { Strategy, StrategyId } from "@template/domain/calc";
 import { RUJIRA } from "@template/domain/chains";
 import "@xyflow/react/dist/style.css";
-import { Effect, Schema } from "effect";
+import { Either, Schema } from "effect";
 import { useMemo, useState } from "react";
 import { getDefaultDeposits } from "../../lib/strategy";
 import { Input } from "../ui/input";
@@ -26,6 +26,8 @@ export function StartStrategyForm({
   const [deposit, setDeposit] = useState<Record<string, Amount>>(defaultDeposit);
 
   const [isSigning, setIsSigning] = useState(false);
+  const [encodedStrategy, setEncodedStrategy] = useState<typeof Strategy.Encoded>();
+  const [startError, setStartError] = useState<string>();
 
   return (
     <div className="w-100">
@@ -98,9 +100,21 @@ export function StartStrategyForm({
                 </div>
               ))}
             </div>
-            <div className="flex w-full justify-end gap-4">
+            <div className="flex w-full flex-col items-end gap-2">
+              {startError && <code className="text-sm text-red-400/80">{startError}</code>}
               <code
-                onClick={() => { setIsSigning(true); }}
+                onClick={() => {
+                  // Encode up front so a mid-edit invalid state surfaces as a
+                  // message instead of a render-path throw at signing time.
+                  const encoded = Schema.encodeUnknownEither(Strategy)(form.state.values);
+                  if (Either.isLeft(encoded)) {
+                    setStartError("Fix the highlighted fields before starting the strategy.");
+                    return;
+                  }
+                  setStartError(undefined);
+                  setEncodedStrategy(encoded.right);
+                  setIsSigning(true);
+                }}
                 className="w-fit cursor-pointer pr-1 text-end text-lg text-green-300 hover:underline"
               >
                 Start Strategy
@@ -114,7 +128,7 @@ export function StartStrategyForm({
           isSigning ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
         }`}
       >
-        {isSigning && (
+        {isSigning && encodedStrategy && (
           <SignTransactionForm
             chain={RUJIRA}
             getDataWithSender={(sender) => {
@@ -132,7 +146,6 @@ export function StartStrategyForm({
                 return obj;
               }
 
-              const encodedStrategy = Effect.runSync(Schema.encode(Strategy)(form.state.values));
               const strategyWithoutIds = removeIds(encodedStrategy) as Record<string, unknown>; // TODO: Manage this with schema transformations
 
               return {
@@ -155,7 +168,7 @@ export function StartStrategyForm({
                       ),
                       funds: Object.values(deposit)
                         .filter((d) => d.amount > 0)
-                        .map((d) => Effect.runSync(Schema.encode(Amount)(d)))
+                        .map((d) => Schema.encodeSync(Amount)(d))
                         .sort((a, b) => a.denom.localeCompare(b.denom)),
                     },
                   },

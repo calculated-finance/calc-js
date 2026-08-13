@@ -1,20 +1,37 @@
 import "@xyflow/react/dist/style.css";
+import { Either, Schema } from "effect";
 import "prism-themes/themes/prism-duotone-sea.css";
 import Prism from "prismjs";
 import "prismjs/components/prism-json";
 import { useState } from "react";
 import Editor from "react-simple-code-editor";
 
-export function JsonEditor<T>({
-  data,
+export function JsonEditor<A, I>({
+  value,
+  schema,
   onExit,
 }: {
-  data: T;
-  schema: unknown;
-  onSave: (data: T) => void;
+  value: A;
+  schema: Schema.Schema<A, I>;
+  onSave: (value: A) => void;
   onExit?: () => void;
 }) {
-  const [localCode] = useState<string>(JSON.stringify(data, null, 4));
+  // Encoding live values can fail mid-edit; never let that throw in render.
+  const encoded = Schema.encodeUnknownEither(schema)(value);
+  const [localCode] = useState<string>(() =>
+    Either.isRight(encoded) ? JSON.stringify(encoded.right, null, 4) : "",
+  );
+
+  if (Either.isLeft(encoded)) {
+    return (
+      <div className="mt-4 flex flex-col gap-2">
+        <code className="text-sm text-red-400/80">Fix the validation errors to view this node as JSON.</code>
+        <code className="cursor-pointer text-sm text-zinc-500 underline" onClick={onExit}>
+          exit
+        </code>
+      </div>
+    );
+  }
 
   return (
     <div className="mt-4 max-h-150 w-300 overflow-auto" style={{ scrollbarWidth: "none" }}>

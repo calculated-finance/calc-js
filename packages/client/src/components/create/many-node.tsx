@@ -1,6 +1,5 @@
 import { Action, ActionsExcludingMany, Many, ManyAction } from "@template/domain/calc";
 import "@xyflow/react/dist/style.css";
-import { Effect, Schema } from "effect";
 import { useState } from "react";
 import { BaseNode } from "../../components/create/base-node";
 import { type ActionNodeParams, type CustomNodeData } from "../../lib/layout/layout";
@@ -59,7 +58,7 @@ export function ManyNode({
           )}
           {isEditingJson && (
             <JsonEditor
-              data={Effect.runSync(Schema.encode(Many)(many))}
+              value={many}
               schema={Many}
               onSave={() => {
                 setIsEditingJson(false);

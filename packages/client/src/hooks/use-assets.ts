@@ -1,8 +1,9 @@
 import { Asset, assetList } from "@template/domain/assets"
 import { Effect } from "effect"
 
+const assets = Effect.runSync(assetList)
+
 export const useAssets = () => {
-    const assets = Effect.runSync(assetList)
     
     return {
         assets, 

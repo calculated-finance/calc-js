@@ -1,8 +1,8 @@
 import type { Chain, ChainId } from "@template/domain/chains";
 import { TransactionData, Wallet, WalletService } from "@template/domain/clients";
-import { Effect, ManagedRuntime, Stream } from "effect";
+import { Effect, Fiber, Stream } from "effect";
 import React, { useEffect } from "react";
-import { useMemoMap } from "../../hooks/use-memo-map";
+import { useRuntime } from "../../hooks/use-runtime";
 
 interface WalletProviderProps {
   children: React.ReactNode;
@@ -40,37 +40,35 @@ export const WalletProviderContext = React.createContext<WalletProviderState>(in
 
 export const WalletProvider = ({ children }: WalletProviderProps) => {
   const [state, setState] = React.useState<WalletProviderState>(initialState);
-  const { memoMap } = useMemoMap();
+  const runtime = useRuntime();
 
   useEffect(() => {
-    ManagedRuntime.make(WalletService.Default, memoMap).runFork(
+    const fiber = runtime.runFork(
       Effect.gen(function* () {
         const walletService = yield* WalletService;
 
-        const walletsFiber = yield* Effect.fork(
-          Stream.runForEach(walletService.wallets, (wallets) =>
-            Effect.sync(() => {
-              setState(() => ({
-                wallets,
-                connect: (wallet: Wallet) => Effect.runPromise(walletService.connect(wallet)),
-                switchChain: (wallet: Wallet, chainId: ChainId) =>
-                  Effect.runPromise(walletService.switchChain(wallet, chainId)),
-                disconnect: (wallet: Wallet) => Effect.runPromise(walletService.disconnect(wallet)),
-                simulateTransaction: (wallet: Wallet, chain: Chain, data: TransactionData) =>
-                  Effect.runPromise(walletService.simulateTransaction(wallet, chain, data).pipe(Effect.scoped)),
-                signTransaction: (wallet: Wallet, chain: Chain, data: TransactionData) =>
-                  Effect.runPromise(walletService.signTransaction(wallet, chain, data).pipe(Effect.scoped)),
-              }));
-            }),
-          ),
+        yield* Stream.runForEach(walletService.wallets, (wallets) =>
+          Effect.sync(() => {
+            setState(() => ({
+              wallets,
+              connect: (wallet: Wallet) => Effect.runPromise(walletService.connect(wallet)),
+              switchChain: (wallet: Wallet, chainId: ChainId) =>
+                Effect.runPromise(walletService.switchChain(wallet, chainId)),
+              disconnect: (wallet: Wallet) => Effect.runPromise(walletService.disconnect(wallet)),
+              simulateTransaction: (wallet: Wallet, chain: Chain, data: TransactionData) =>
+                Effect.runPromise(walletService.simulateTransaction(wallet, chain, data).pipe(Effect.scoped)),
+              signTransaction: (wallet: Wallet, chain: Chain, data: TransactionData) =>
+                Effect.runPromise(walletService.signTransaction(wallet, chain, data).pipe(Effect.scoped)),
+            }));
+          }),
         );
-
-        yield* Effect.all([walletsFiber], {
-          concurrency: "unbounded",
-        });
       }),
     );
-  }, [memoMap]);
+
+    return () => {
+      void Effect.runFork(Fiber.interrupt(fiber));
+    };
+  }, [runtime]);
 
   return <WalletProviderContext.Provider value={state}>{children}</WalletProviderContext.Provider>;
 };

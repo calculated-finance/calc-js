@@ -1,7 +1,6 @@
 import { Swap, SwapAction } from "@template/domain/calc";
 import { formatNumber } from "@template/domain/numbers";
 import "@xyflow/react/dist/style.css";
-import { Effect, Schema } from "effect";
 import { useEffect, useRef, useState } from "react";
 import { Input } from "../../components/ui/input";
 import { useAssets } from "../../hooks/use-assets";
@@ -613,7 +612,7 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
             {isSelectingAnyAsset && assetSelector}
             {isEditingJson && (
               <JsonEditor
-                data={Effect.runSync(Schema.encode(Swap)(form.state.values.swap))}
+                value={form.state.values.swap}
                 schema={Swap}
                 onSave={() => {
                   setIsEditingJson(false);

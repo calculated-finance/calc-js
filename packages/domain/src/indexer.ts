@@ -121,10 +121,26 @@ const IndexerBalance = Schema.Struct({
     asset: IndexerAsset
 })
 
+/**
+ * A config node from the balances query. Condition nodes (and action
+ * variants the schema doesn't type yet) come back as empty objects, so
+ * every field tolerates absence.
+ */
+const CalcOrderConfigNode = Schema.Struct({
+    action: Schema.optional(Schema.Struct({
+        swapAmount: Schema.optional(Schema.Struct({ asset: IndexerAsset })),
+        minimumReceiveAmount: Schema.optional(Schema.Struct({ asset: IndexerAsset })),
+        denoms: Schema.optional(Schema.Array(Schema.NonEmptyTrimmedString))
+    }))
+})
+
 const CalcOrdersBalancesResult = Schema.Struct({
     nodes: Schema.Array(Schema.NullOr(Schema.Struct({
         address: Schema.optional(Schema.NonEmptyTrimmedString),
-        balances: Schema.optionalWith(Schema.Array(IndexerBalance), { default: () => [], nullable: true })
+        balances: Schema.optionalWith(Schema.Array(IndexerBalance), { default: () => [], nullable: true }),
+        config: Schema.optional(Schema.NullOr(Schema.Struct({
+            nodes: Schema.optionalWith(Schema.Array(CalcOrderConfigNode), { default: () => [], nullable: true })
+        })))
     })))
 })
 
@@ -133,6 +149,21 @@ export const CALC_ORDERS_BALANCES_QUERY = `query ($ids: [ID!]!) {
     ... on CalcOrder {
       address
       balances { amount valueUsd asset { variants { native { denom } } } }
+      config {
+        nodes {
+          ... on CalcAction {
+            action {
+              ... on CalcActionSwap {
+                swapAmount { asset { variants { native { denom } } } }
+                minimumReceiveAmount { asset { variants { native { denom } } } }
+              }
+              ... on CalcActionDistribute {
+                denoms
+              }
+            }
+          }
+        }
+      }
     }
   }
 }`
@@ -317,12 +348,31 @@ export class RujiraIndexer extends Effect.Service<RujiraIndexer>()("RujiraIndexe
                     Effect.map(({ nodes }) =>
                         nodes.reduce<Record<string, { balances: Array<Amount>; valueUsd: number }>>((acc, node) => {
                             if (!node?.address) return acc
+
+                            const held = node.balances.flatMap((balance) =>
+                                toAmount(balance.amount, balance.asset.variants.native?.denom)
+                            )
+
+                            // Denoms the strategy's actions touch but the
+                            // contract holds none of render as explicit zeros.
+                            const involved = (node.config?.nodes ?? []).flatMap((configNode) => {
+                                const action = configNode.action
+                                if (!action) return []
+                                return [
+                                    action.swapAmount?.asset.variants.native?.denom,
+                                    action.minimumReceiveAmount?.asset.variants.native?.denom,
+                                    ...(action.denoms ?? [])
+                                ].flatMap((denom) => (denom ? [denom] : []))
+                            })
+                            const heldDenoms = new Set(held.map((amount) => amount.denom))
+                            const zeros = [...new Set(involved)]
+                                .filter((denom) => !heldDenoms.has(denom))
+                                .flatMap((denom) => toAmount("0", denom))
+
                             return {
                                 ...acc,
                                 [node.address]: {
-                                    balances: node.balances.flatMap((balance) =>
-                                        toAmount(balance.amount, balance.asset.variants.native?.denom)
-                                    ),
+                                    balances: [...held, ...zeros],
                                     valueUsd: node.balances.reduce(
                                         (total, balance) => total + Number(balance.valueUsd) / 1e8,
                                         0

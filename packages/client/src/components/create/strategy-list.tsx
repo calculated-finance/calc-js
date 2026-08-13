@@ -299,8 +299,16 @@ function ActiveStrategyHandle({
 type SortKey = "recent" | "valuable";
 
 const SORT_LABELS: Record<SortKey, string> = {
-  recent: "most_recent",
-  valuable: "most_valuable",
+  recent: "RECENT",
+  valuable: "VALUE",
+};
+
+type StatusKey = "active" | "completed" | "paused";
+
+const STATUS_LABELS: Record<StatusKey, string> = {
+  active: "ACTIVE",
+  completed: "COMPLETED",
+  paused: "PAUSED",
 };
 
 export function StrategyList({
@@ -310,26 +318,58 @@ export function StrategyList({
   onSelect,
 }: {
   handles: Record<string | number, StrategyHandle>;
-  filter: "draft" | "active" | "paused" | "archived";
+  filter: "draft" | "strategies" | "archived";
   selectedId: string | number | undefined;
   onSelect: (handle: StrategyHandle) => void;
 }) {
   const { ref, onScroll, maskImage } = useScrollFade();
   const { data: balancesByAddress } = useStrategiesBalances(Object.values(handles));
   const [sortBy, setSortBy] = useState<SortKey>("recent");
+  const [statuses, setStatuses] = useState<Set<StatusKey>>(new Set(["active", "completed", "paused"]));
 
   const valueOf = (handle: StrategyHandle) =>
     handle.status !== "draft" ? (balancesByAddress?.[handle.contract_address]?.valueUsd ?? 0) : 0;
   const createdAt = (handle: StrategyHandle) => (handle.status !== "draft" ? (handle.created_at ?? 0) : 0);
 
+  // COMPLETED = still active on-chain but holding nothing (fully executed
+  // and swept). Unknown while balances load, so default to ACTIVE then.
+  const statusOf = (handle: StrategyHandle): StatusKey | undefined => {
+    if (handle.status === "paused") return "paused";
+    if (handle.status !== "active") return undefined;
+    const entry = balancesByAddress?.[handle.contract_address];
+    return entry?.valueUsd === 0 ? "completed" : "active";
+  };
+
+  const matchesFilter = (handle: StrategyHandle) => {
+    if (filter === "draft") return handle.status === "draft";
+    if (filter === "archived") return handle.status === "archived";
+    const status = statusOf(handle);
+    return status !== undefined && statuses.has(status);
+  };
+
   const rows = Object.values(handles)
-    .filter((handle) => handle.status === filter)
+    .filter(matchesFilter)
     .sort((a, b) => (sortBy === "valuable" ? valueOf(b) - valueOf(a) : createdAt(b) - createdAt(a)));
 
+  const toggleStatus = (key: StatusKey) => {
+    setStatuses((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) {
+        next.delete(key);
+      } else {
+        next.add(key);
+      }
+      return next;
+    });
+  };
+
   return (
-    <div className="flex flex-col gap-4.5">
+    // Controls sit BELOW the list: the panel is bottom-anchored, so the list
+    // grows upward and the controls keep a fixed position while toggling.
+    <div className="flex flex-col-reverse gap-4.5">
       {filter !== "draft" && (
         <div className="flex gap-4 pl-[10px]">
+          <code className="text-sm text-zinc-500">sort_by:</code>
           {(Object.keys(SORT_LABELS) as SortKey[]).map((key, index) => (
             <Fragment key={key}>
               {index > 0 && <code className="text-sm text-zinc-600">|</code>}
@@ -342,6 +382,26 @@ export function StrategyList({
                 }`}
               >
                 {SORT_LABELS[key]}
+              </code>
+            </Fragment>
+          ))}
+        </div>
+      )}
+      {filter === "strategies" && (
+        <div className="flex gap-4 pl-[10px]">
+          <code className="text-sm text-zinc-500">filter:</code>
+          {(Object.keys(STATUS_LABELS) as StatusKey[]).map((key, index) => (
+            <Fragment key={key}>
+              {index > 0 && <code className="text-sm text-zinc-600">|</code>}
+              <code
+                onClick={() => {
+                  toggleStatus(key);
+                }}
+                className={`cursor-pointer text-sm hover:underline ${
+                  statuses.has(key) ? "text-zinc-200" : "text-zinc-600"
+                }`}
+              >
+                {STATUS_LABELS[key]}
               </code>
             </Fragment>
           ))}

@@ -28,7 +28,7 @@ import { useNodeModalStore } from "../../hooks/use-node-modal-store";
 import { useNodeVisibilityStore } from "../../hooks/use-node-visibility";
 import { useOrderUpdates } from "../../hooks/use-order-updates";
 import { useRuntime } from "../../hooks/use-runtime";
-import { useStrategies } from "../../hooks/use-strategies";
+import { type StrategyFilter, useStrategies } from "../../hooks/use-strategies";
 import { useStrategy } from "../../hooks/use-strategy";
 import { useStrategyChain } from "../../hooks/use-strategy-chain";
 import { useWallets } from "../../hooks/use-wallets";
@@ -49,14 +49,11 @@ export const Route = createFileRoute("/create/")({
   ),
 });
 
-type StrategyFilter = "draft" | "active" | "paused" | "archived";
-
-const FILTERS: StrategyFilter[] = ["draft", "active", "paused", "archived"];
+const FILTERS: StrategyFilter[] = ["draft", "strategies", "archived"];
 
 const FILTER_LABELS: Record<StrategyFilter, string> = {
   draft: "Drafts",
-  active: "Active",
-  paused: "Paused",
+  strategies: "Strategies",
   archived: "Archived",
 };
 
@@ -70,7 +67,7 @@ const FIT_VIEW_OPTIONS = { padding: 1 / 6, maxZoom: 2, minZoom: 0.2 };
 const nodeTypes = {
   ...actionNodeTypes,
   loadingStrategies: ({ data: { status } }: { data: { status: StrategyFilter } }) => (
-    <code className="text-lg text-zinc-500">Fetching {status} strategies...</code>
+    <code className="text-lg text-zinc-500">Fetching {FILTER_LABELS[status].toLowerCase()}...</code>
   ),
   loadingStrategy: ({ data: { label } }: { data: { label: string } }) => (
     <code className="text-lg text-zinc-500">Fetching {label || "strategy"}...</code>
@@ -86,7 +83,7 @@ export default function CreateStrategy() {
   const { chain, setChain: setStrategyChain } = useStrategyChain();
   const [isSwitchingStrategyChain, setIsSwitchingStrategyChain] = useState(false);
 
-  const [strategyFilter, setStrategyFilter] = useState<StrategyFilter>("active");
+  const [strategyFilter, setStrategyFilter] = useState<StrategyFilter>("strategies");
   const { data: strategyHandles, isLoading: isLoadingStrategies } = useStrategies(chain.id, strategyFilter);
   const [selectedHandle, setStrategyHandle] = useState<StrategyHandle>();
 
@@ -142,7 +139,7 @@ export default function CreateStrategy() {
         if (cancelled) return;
         consumedSharedStrategy.current = true;
         addEntry({ chainId, address: handle.owner, label: "shared" });
-        setStrategyFilter(handle.status);
+        setStrategyFilter(handle.status === "archived" ? "archived" : "strategies");
         setStrategyHandle({ ...handle, chainId });
       })
       .catch(() => {

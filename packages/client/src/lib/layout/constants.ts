@@ -1,4 +1,4 @@
-import type { BuiltInEdge } from "@xyflow/react";
+import { type BuiltInEdge, MarkerType } from "@xyflow/react";
 
 /** Node box dimensions assumed by every layout function and by BaseNode. */
 export const NODE_WIDTH = 200;
@@ -18,7 +18,7 @@ const EDGE_COLORS: Record<EdgeKind, string> = {
   failure: "#F87171",
 };
 
-export const makeEdge = (source: string, target: string, kind: EdgeKind = "next"): BuiltInEdge => ({
+export const makeEdge = (source: string, target: string, kind: EdgeKind = "next", label?: string): BuiltInEdge => ({
   id: `${source}-to-${target}`,
   source,
   target,
@@ -26,6 +26,16 @@ export const makeEdge = (source: string, target: string, kind: EdgeKind = "next"
   // the failure lane immediately instead of overlaying the success edges.
   ...(kind === "failure" ? { sourceHandle: "failure" } : {}),
   style: { stroke: EDGE_COLORS[kind], strokeWidth: 2 },
+  markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16, color: EDGE_COLORS[kind] },
+  ...(label
+    ? {
+        label,
+        labelStyle: { fill: "#a1a1aa", fontFamily: "monospace", fontSize: 12 },
+        labelBgStyle: { fill: "#0b0b0d" },
+        labelBgPadding: [4, 2] as [number, number],
+        labelBgBorderRadius: 4,
+      }
+    : {}),
   type: "smoothstep",
   pathOptions: {
     borderRadius: 16,

@@ -54,13 +54,12 @@ try {
   await page.waitForTimeout(1_500);
 
   // Shell renders
-  await page.getByText("Drafts", { exact: true }).waitFor({ timeout: 10_000 });
+  await page.getByText("Create draft").waitFor({ timeout: 10_000 });
 
   // Wallet stream delivers (Connect appears once wallets emit)
   await page.getByText("Connect", { exact: true }).waitFor({ timeout: 10_000 });
 
-  // Core builder flow
-  await page.getByText("Drafts", { exact: true }).click();
+  // Core builder flow (Create draft is always visible now)
   await page.getByText("Create draft").click();
   await page.getByText("Schedule", { exact: true }).last().click();
   await page.waitForTimeout(1_000);

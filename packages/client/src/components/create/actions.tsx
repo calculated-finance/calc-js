@@ -1,7 +1,9 @@
 import type { NodeTypes } from "@xyflow/react";
+import { BalanceNode } from "./balance-node";
 import { ConditionNode } from "./condition-node";
 import { DistributeNode } from "./distribute-node";
 import { LimitOrderNode } from "./limit-order-node";
+import { LiquidityNode } from "./liquidity-node";
 import { ScheduleNode } from "./schedule-node";
 import { StrategyNode } from "./strategy-node";
 import { SwapNode } from "./swap-node";
@@ -18,5 +20,7 @@ export const actionNodeTypes: NodeTypes = {
   limitOrderNode: LimitOrderNode as NodeTypes[string],
   distributeNode: DistributeNode as NodeTypes[string],
   scheduleNode: ScheduleNode as NodeTypes[string],
+  balanceNode: BalanceNode as NodeTypes[string],
+  liquidityNode: LiquidityNode as NodeTypes[string],
   conditionNode: ConditionNode as NodeTypes[string],
 };

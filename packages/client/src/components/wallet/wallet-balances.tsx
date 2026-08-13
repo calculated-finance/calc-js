@@ -1,4 +1,5 @@
-import { formatNumber } from "@template/domain/numbers";
+import NumberFlow from "@number-flow/react";
+import { numberFormatOptions } from "@template/domain/numbers";
 import { useConnectedWallet } from "../../hooks/use-connection";
 import { useScrollFade } from "../../hooks/use-scroll-fade";
 import { useWalletBalances } from "../../hooks/use-wallet-balances";
@@ -25,7 +26,9 @@ export function WalletBalances() {
     >
       {balances.map((balance) => (
         <code key={balance.denom} className="flex items-baseline gap-2 text-lg">
-          <span className="text-zinc-200">{formatNumber(balance.amount)}</span>
+          <span className="text-zinc-200">
+            <NumberFlow value={balance.amount} format={numberFormatOptions(balance.amount)} />
+          </span>
           <span style={{ color: balance.color }}>{balance.displayName.toUpperCase()}</span>
         </code>
       ))}

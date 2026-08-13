@@ -22,6 +22,16 @@ import type { LayoutContext, LayoutResult, NodeParams, StrategyNodeParams } from
 import { graphNodeType } from "./layout";
 
 /**
+ * The reading label for an edge: failures read "else", anything leading
+ * into a condition reads "if", and the ordinary path reads "then".
+ */
+const edgeLabel = (kind: "next" | "success" | "failure", target: CalcNode | undefined): string => {
+  if (kind === "failure") return "ELSE";
+  if (target && !isActionNode(target)) return "IF";
+  return "THEN";
+};
+
+/**
  * Lays out the strategy's node graph left to right from the entry node
  * (index 0). Conditions stack their success branch above their failure
  * branch in the next column; links to already-placed nodes (loops) become
@@ -128,7 +138,7 @@ export const layoutStrategy = (
     let successAnchor: number | undefined;
 
     for (const link of links) {
-      edges.push(makeEdge(rfId(index), rfId(link.target), link.kind));
+      edges.push(makeEdge(rfId(index), rfId(link.target), link.kind, edgeLabel(link.kind, byIndex.get(link.target))));
       if (placed.has(link.target) || !byIndex.has(link.target)) continue;
       // Failure branches always drop a lane, even as an only child, so the
       // main success/next row stays visually distinct from failure handling.
@@ -171,7 +181,7 @@ export const layoutStrategy = (
   });
 
   if (graph.length > 0) {
-    edges.push(makeEdge(`${strategy.id}`, rfId(nodeIndex(graph[0])), "next"));
+    edges.push(makeEdge(`${strategy.id}`, rfId(nodeIndex(graph[0])), "next", edgeLabel("next", graph[0])));
   }
 
   const minX = Math.min(...nodes.map((node) => node.position.x));

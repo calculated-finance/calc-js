@@ -36,7 +36,13 @@ describe("graphNodeType", () => {
   it("maps each node kind to its component type", () => {
     expect(graphNodeType(swapNode(0))).toBe("swapNode");
     expect(graphNodeType(scheduleNode(0))).toBe("scheduleNode");
-    expect(graphNodeType(balanceNode(0))).toBe("conditionNode");
+    expect(graphNodeType(balanceNode(0))).toBe("balanceNode");
+    expect(
+      graphNodeType({ condition: { condition: { can_swap: {} } as unknown as Condition, index: 0 } }),
+    ).toBe("liquidityNode");
+    expect(
+      graphNodeType({ condition: { condition: { oracle_price: {} } as unknown as Condition, index: 0 } }),
+    ).toBe("conditionNode");
     expect(graphNodeType({ action: { action: { distribute: {} } as unknown as Action, index: 0 } })).toBe(
       "distributeNode",
     );

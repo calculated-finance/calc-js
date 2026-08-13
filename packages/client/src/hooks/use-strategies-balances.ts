@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { StrategyHandle } from "@template/domain/calc";
 import { RujiraIndexer } from "@template/domain/indexer";
 import { Effect } from "effect";
@@ -19,9 +19,17 @@ export const useStrategiesBalances = (handles: StrategyHandle[]) => {
     queryKey: ["strategiesBalances", addresses],
     enabled: addresses.length > 0,
     staleTime: 30 * 1000,
+    retry: 2,
+    // The list's addresses change as handles load in; keep showing the last
+    // balances rather than blanking every chip while the new batch fetches.
+    placeholderData: keepPreviousData,
     queryFn: () =>
-      runtime.runPromise(
-        Effect.flatMap(RujiraIndexer, (indexer) => indexer.strategiesBalances(addresses)),
-      ),
+      runtime
+        .runPromise(Effect.flatMap(RujiraIndexer, (indexer) => indexer.strategiesBalances(addresses)))
+        .catch((error: unknown) => {
+          // A failed batch means no chips anywhere — never fail silently.
+          console.error("strategiesBalances failed", error);
+          throw error;
+        }),
   });
 };

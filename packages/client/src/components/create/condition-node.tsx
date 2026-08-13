@@ -5,46 +5,57 @@ import { useState } from "react";
 import { BaseNode } from "../../components/create/base-node";
 import { type ConditionNodeParams, type CustomNodeData } from "../../lib/layout/layout";
 import { AddAction } from "./add-action";
+import { Code } from "./code";
 import { JsonEditor } from "./json-editor";
 
 /** Human-readable labels per condition variant. */
 const CONDITION_LABELS: Record<string, string> = {
-  timestamp_elapsed: "TIME PASSED",
-  blocks_completed: "BLOCKS PASSED",
-  can_swap: "CAN SWAP",
-  fin_limit_order_filled: "ORDER FILLED",
-  balance_available: "BALANCE",
-  strategy_status: "STRATEGY STATUS",
-  oracle_price: "ORACLE PRICE",
-  asset_value_ratio: "VALUE RATIO",
+  timestamp_elapsed: "time passed",
+  blocks_completed: "blocks passed",
+  fin_limit_order_filled: "order filled",
+  strategy_status: "strategy status",
+  oracle_price: "oracle price",
+  asset_value_ratio: "value ratio",
 };
 
 const conditionKey = (condition: Condition): string => Object.keys(condition)[0];
 
+const labelOf = (condition: Condition): string => {
+  if ("balance_available" in condition) {
+    return `check ${condition.balance_available.amount.displayName.toUpperCase()} balance`;
+  }
+  if ("can_swap" in condition) {
+    const swap = condition.can_swap;
+    // Non-breaking spaces keep the pair on one line when the label wraps.
+    return `check ${swap.swap_amount.displayName.toUpperCase()}\u00A0/\u00A0${swap.minimum_receive_amount.displayName.toUpperCase()} liquidity`;
+  }
+  return CONDITION_LABELS[conditionKey(condition)] ?? conditionKey(condition);
+};
+
 const describe = (condition: Condition): string => {
   if ("can_swap" in condition) {
     const swap = condition.can_swap;
-    return `Can swap ${swap.swap_amount.amount} ${swap.swap_amount.displayName} for at least ${swap.minimum_receive_amount.amount} ${swap.minimum_receive_amount.displayName}`;
+    return `can swap ${swap.swap_amount.amount} ${swap.swap_amount.displayName} for at least ${swap.minimum_receive_amount.amount} ${swap.minimum_receive_amount.displayName}`;
   }
   if ("balance_available" in condition) {
     const balance = condition.balance_available;
-    return `At least ${balance.amount.amount} ${balance.amount.displayName} available`;
+    return `at least ${balance.amount.amount} ${balance.amount.displayName} available`;
   }
   if ("timestamp_elapsed" in condition) {
-    return `After ${new Date(Number(condition.timestamp_elapsed) / 1_000_000).toISOString()}`;
+    return `after ${new Date(Number(condition.timestamp_elapsed) / 1_000_000).toISOString()}`;
   }
   if ("blocks_completed" in condition) {
-    return `After block ${condition.blocks_completed}`;
+    return `after block ${condition.blocks_completed}`;
   }
   if ("oracle_price" in condition) {
     const oracle = condition.oracle_price;
     return `${oracle.asset} price ${oracle.direction} ${BigDecimal.format(oracle.price)}`;
   }
   if ("strategy_status" in condition) {
-    return `Strategy is ${condition.strategy_status.status}`;
+    return `strategy is ${condition.strategy_status.status}`;
   }
   if ("fin_limit_order_filled" in condition) {
-    return `Limit order at ${BigDecimal.format(condition.fin_limit_order_filled.price)} filled`;
+    return `limit order at ${BigDecimal.format(condition.fin_limit_order_filled.price)} filled`;
   }
   return conditionKey(condition);
 };
@@ -59,7 +70,7 @@ export function ConditionNode({
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isEditingJson, setIsEditingJson] = useState(false);
 
-  const label = CONDITION_LABELS[conditionKey(condition)] ?? conditionKey(condition).toUpperCase();
+  const label = labelOf(condition);
 
   return (
     <BaseNode
@@ -72,15 +83,15 @@ export function ConditionNode({
       isEditingJson={isEditingJson}
       setIsEditingJson={() => { setIsEditingJson(!isEditingJson); }}
       onDelete={remove}
-      title={<code className="rounded bg-zinc-900 px-1 py-[1px] font-mono text-4xl text-zinc-100">IF</code>}
-      summary={<code className="flex flex-col gap-1.5 text-xl text-zinc-300">{label}</code>}
-      details={<code className="text-sm text-zinc-300">{describe(condition)}</code>}
+      title={<code className="rounded bg-zinc-900 px-1 py-[1px] font-mono text-4xl text-zinc-100">if</code>}
+      summary={<Code className="text-xl text-zinc-300">{label}</Code>}
+      details={<Code className="text-sm text-zinc-300">{describe(condition)}</Code>}
       modal={
         <div className="flex flex-col gap-8">
           {!isEditingJson && (
             <div className="flex flex-col gap-2">
               <code className="text-sm text-zinc-400">condition</code>
-              <code className="text-lg text-zinc-200">{describe(condition)}</code>
+              <Code className="text-lg text-zinc-200">{describe(condition)}</Code>
               <code className="text-sm text-zinc-500">Edit this condition via the JSON view.</code>
             </div>
           )}

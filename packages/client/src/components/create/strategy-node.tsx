@@ -123,8 +123,8 @@ export function StrategyNode({ data: { strategy, update } }: CustomNodeData<Stra
     <BaseNode
       id={strategy.id}
       handleRight={strategy.nodes.length > 0}
-      title={<code className="rounded bg-zinc-900 px-1 py-[1px] font-mono text-4xl text-zinc-100">START</code>}
-      summary={<code className="flex flex-col gap-1.5 text-xl text-zinc-300">START</code>}
+      title={<code className="rounded bg-zinc-900 px-1 py-[1px] font-mono text-4xl text-zinc-100">start</code>}
+      summary={<code className="flex flex-col gap-1.5 text-xl text-zinc-300">start</code>}
       details={<Code className="text-md text-zinc-300">{strategy.label}</Code>}
       modal={renderForm()}
       isHelping={isHelpOpen}

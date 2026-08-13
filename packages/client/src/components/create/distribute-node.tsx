@@ -29,14 +29,14 @@ export function DistributeNode({
       isEditingJson={isEditingJson}
       setIsEditingJson={() => { setIsEditingJson(!isEditingJson); }}
       onDelete={remove}
-      title={<code className="rounded bg-zinc-900 px-1 py-[1px] font-mono text-4xl text-zinc-100">SEND</code>}
+      title={<code className="rounded bg-zinc-900 px-1 py-[1px] font-mono text-4xl text-zinc-100">send</code>}
       summary={
         <code className="flex flex-col gap-1.5 text-xl text-zinc-300">
-          {distribute.destinations.length} DESTINATION{distribute.destinations.length !== 1 ? "S" : ""}
+          send to {distribute.destinations.length} destination{distribute.destinations.length !== 1 ? "s" : ""}
         </code>
       }
       details={
-        <code className="text-sm text-zinc-300">{`Distribute to ${distribute.destinations.length} destinations`}</code>
+        <code className="text-sm text-zinc-300">{`distribute to ${distribute.destinations.length} destinations`}</code>
       }
       modal={
         <form>

@@ -1,21 +1,19 @@
-import { StrategyStatus } from "@template/domain/calc";
 import { ChainId } from "@template/domain/chains";
 import { useChainStrategies } from "./use-chain-strategies";
 import { useDraftStrategies } from "./use-draft-strategies";
 
-export type StrategyFilter = "draft" | "strategies" | "archived";
-
-/** The chain statuses each top-level filter tab spans. */
-const FILTER_STATUSES: Record<StrategyFilter, StrategyStatus[]> = {
-  draft: [],
-  // Active and paused fetch together; the list's own filter splits them.
-  strategies: ["active", "paused"],
-  archived: ["archived"],
-};
-
-export const useStrategies = (chainId: ChainId, filter: StrategyFilter) => {
+/** Local drafts merged over every chain strategy; the list filters by status. */
+export const useStrategies = (chainId: ChainId) => {
   const { strategyHandles: draftStrategies } = useDraftStrategies(chainId);
-  const { data: liveStrategies, ...helpers } = useChainStrategies(chainId, FILTER_STATUSES[filter]);
+  // The deployed manager's strategies query only accepts active|paused as a
+  // status filter (archived is a strategy status but not a queryable one).
+  const { data: liveStrategies, isLoading, ...helpers } = useChainStrategies(chainId, ["active", "paused"]);
 
-  return { data: filter === "draft" ? draftStrategies : liveStrategies, ...helpers };
+  // The list stays empty until the chain set has loaded, so it doesn't
+  // flash a drafts-only view on page open.
+  return {
+    data: isLoading ? {} : { ...draftStrategies, ...liveStrategies },
+    isLoading,
+    ...helpers,
+  };
 };

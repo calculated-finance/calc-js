@@ -48,22 +48,22 @@ export function LimitOrderNode({
       isEditingJson={isEditingJson}
       setIsEditingJson={() => { setIsEditingJson(!isEditingJson); }}
       onDelete={remove}
-      title={<code className="rounded bg-zinc-900 px-1 py-[1px] font-mono text-4xl text-zinc-100">ORDER</code>}
+      title={<code className="rounded bg-zinc-900 px-1 py-[1px] font-mono text-4xl text-zinc-100">order</code>}
       summary={
         <div className="flex flex-col gap-1.5 text-xl text-zinc-300">
-          <code>LIMIT ORDER</code>
-          <Code className="rounded px-1 font-mono">{`${limitOrder.side.toUpperCase()} ${bidAsset}`}</Code>
+          <code>limit order</code>
+          <Code className="rounded px-1 font-mono">{`${limitOrder.side} ${bidAsset}`}</Code>
         </div>
       }
       details={
-        <Code className="text-sm">{`${limitOrder.side === "base" ? "Sell" : "Buy"} with ${bid} ${bidAsset} ${describePrice(limitOrder)}`}</Code>
+        <Code className="text-sm">{`${limitOrder.side === "base" ? "sell" : "buy"} with ${bid} ${bidAsset} ${describePrice(limitOrder)}`}</Code>
       }
       modal={
         <div className="flex flex-col gap-8">
           {!isEditingJson && (
             <div className="flex flex-col gap-2">
               <code className="text-sm text-zinc-400">limit_order</code>
-              <code className="text-lg text-zinc-200">{`${limitOrder.side} side, bid ${bid} ${bidAsset}, ${describePrice(limitOrder)}`}</code>
+              <Code className="text-lg text-zinc-200">{`${limitOrder.side} side, bid ${bid} ${bidAsset}, ${describePrice(limitOrder)}`}</Code>
               <code className="text-sm text-zinc-500">Edit this order via the JSON view.</code>
             </div>
           )}

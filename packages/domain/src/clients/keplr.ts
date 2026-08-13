@@ -216,10 +216,11 @@ const connectCosmos = (
     chain: CosmosChain
 ) =>
     Effect.gen(function*() {
+        const networkChainId = chain.networkChainId ?? chain.id
         const tryEnable = Effect.tryPromise({
             try: async () => {
-                await window.keplr?.enable(`${chain.id}`)
-                return window.keplr?.getKey(`${chain.id}`)
+                await window.keplr?.enable(networkChainId)
+                return window.keplr?.getKey(networkChainId)
             },
             catch: (cause) => new ClientNotAvailableError({ cause: `Keplr enable failed: ${String(cause)}` })
         })
@@ -291,8 +292,10 @@ const withKeplrSigningClient = <A, E>(
             return yield* Effect.fail(new ClientNotAvailableError({ cause: "Keplr wallet not installed" }))
         }
 
+        const chain = SUPPORTED_CHAINS_BY_ID[chainId]
+        const networkChainId = ("networkChainId" in chain ? chain.networkChainId : undefined) ?? `${chainId}`
         const signer = yield* Effect.tryPromise({
-            try: () => window.keplr!.getOfflineSignerAuto(`${chainId}`),
+            try: () => window.keplr!.getOfflineSignerAuto(networkChainId),
             catch: (cause) => new SignerNotAvailableError({ cause: `Keplr signer not available: ${String(cause)}` })
         })
 

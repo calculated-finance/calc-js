@@ -172,8 +172,17 @@ export const CALC_ORDERS_BALANCES_QUERY = `query ($ids: [ID!]!) {
 export const accountNodeId = (address: string): string => btoa(`Account:${address}`)
 
 export const CALC_ORDERS_UPDATED_SUBSCRIPTION = `subscription ($owner: Address!) {
-  calcOrdersUpdated(owner: $owner) { node { __typename } }
+  calcOrdersUpdated(owner: $owner) { node { ... on CalcOrder { address } } }
 }`
+
+const CalcOrderUpdatedEvent = Schema.Struct({
+    calcOrdersUpdated: Schema.NullOr(Schema.Struct({
+        node: Schema.optionalWith(
+            Schema.Struct({ address: Schema.optional(Schema.NonEmptyTrimmedString) }),
+            { nullable: true }
+        )
+    }))
+})
 
 const AccountBalancesResult = Schema.Struct({
     node: Schema.NullOr(Schema.Struct({
@@ -421,11 +430,13 @@ export class RujiraIndexer extends Effect.Service<RujiraIndexer>()("RujiraIndexe
 
             /**
              * Fires whenever the indexer observes a CALC order create/update
-             * for the owner. Payload is treated as an opaque tick; consumers
-             * refetch rather than patch.
+             * for the owner, carrying the strategy's contract address (when
+             * the indexer includes it). Consumers refetch rather than patch.
              */
             calcOrdersUpdated: (owner: string) =>
-                subscribe(Schema.Unknown, CALC_ORDERS_UPDATED_SUBSCRIPTION, { owner })
+                subscribe(CalcOrderUpdatedEvent, CALC_ORDERS_UPDATED_SUBSCRIPTION, { owner }).pipe(
+                    Stream.map((event) => ({ address: event.calcOrdersUpdated?.node?.address }))
+                )
         }
     })
 }) {}

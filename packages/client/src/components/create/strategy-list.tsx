@@ -3,8 +3,9 @@ import type { Amount } from "@template/domain/assets";
 import type { StrategyHandle } from "@template/domain/calc";
 import { type Chain, COSMOS_CHAINS_BY_ID } from "@template/domain/chains";
 import type { TransactionData } from "@template/domain/clients";
-import { formatNumber } from "@template/domain/numbers";
-import { Fragment, useState } from "react";
+import NumberFlow from "@number-flow/react";
+import { numberFormatOptions } from "@template/domain/numbers";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { useDraftStrategies } from "../../hooks/use-draft-strategies";
 import { useNodeModalStore } from "../../hooks/use-node-modal-store";
 import { useScrollFade } from "../../hooks/use-scroll-fade";
@@ -15,20 +16,101 @@ import { Code } from "./code";
 import { SignTransactionForm } from "./sign-transaction-form";
 import { StartStrategyForm } from "./start-strategy-form";
 
+/** The denoms whose amounts changed in the latest balances refetch, with direction. */
+export interface BalanceFlash {
+  changes: Record<string, "up" | "down">;
+  nonce: number;
+}
+
+/**
+ * The row-dimming treatment, applied per element rather than on the row so
+ * a flashing balance chip can reach full brightness inside a dim row.
+ */
+const DIM = "opacity-35 group-hover:opacity-100 transition-opacity duration-500";
+
+function BalanceChip({
+  balance,
+  dimmed,
+  direction,
+  flashNonce,
+}: {
+  balance: Amount;
+  dimmed: boolean;
+  direction?: "up" | "down";
+  flashNonce?: number;
+}) {
+  const [isColored, setIsColored] = useState(false);
+  const [isBright, setIsBright] = useState(false);
+
+  // Fade the changed amount to green (up) or red (down), 500ms each way.
+  // The colour leads the brightness flash by 100ms on the way in and
+  // follows it by 100ms on the way out. setState runs in timeouts so the
+  // fade-in transitions.
+  useEffect(() => {
+    if (!flashNonce) return;
+    const timers = [
+      setTimeout(() => {
+        setIsColored(true);
+      }, 0),
+      setTimeout(() => {
+        setIsBright(true);
+      }, 100),
+      setTimeout(() => {
+        setIsBright(false);
+      }, 600),
+      setTimeout(() => {
+        setIsColored(false);
+      }, 700),
+    ];
+    return () => {
+      timers.forEach(clearTimeout);
+    };
+  }, [flashNonce]);
+
+  // A single transition-all: stacking transition-colors with the DIM
+  // preset's transition-opacity would override transition-property and
+  // make the colour snap instead of fade.
+  const dimOpacity = dimmed && !isBright ? "opacity-35 group-hover:opacity-100" : "";
+  const amountColor = isColored ? (direction === "down" ? "text-red-400" : "text-green-400") : "text-zinc-200";
+
+  return (
+    <>
+      <span className={`transition-all duration-500 ${dimOpacity} ${amountColor}`}>
+        <NumberFlow value={balance.amount} format={numberFormatOptions(balance.amount)} />
+      </span>
+      <span className={dimmed ? DIM : ""} style={{ color: balance.color }}>
+        {balance.displayName.toUpperCase()}
+      </span>
+    </>
+  );
+}
+
 /**
  * A compact one-line balances summary, e.g. "32,207 RUNE | 12 TCY".
  * Inherits the row's font size; denoms take their asset colours, matching
- * the wallet balances panel.
+ * the wallet balances panel. Chips whose amounts just changed flash.
  */
-export function BalancesSummary({ balances }: { balances: Amount[] | undefined }) {
+export function BalancesSummary({
+  balances,
+  dimmed,
+  flash,
+}: {
+  balances: Amount[] | undefined;
+  dimmed: boolean;
+  flash?: BalanceFlash;
+}) {
   if (!balances?.length) return null;
   return (
     <code className="flex items-baseline gap-2">
       {balances.map((balance, index) => (
         <Fragment key={balance.denom}>
-          {index > 0 && <span>|</span>}
-          <span className="text-zinc-200">{formatNumber(balance.amount)}</span>
-          <span style={{ color: balance.color }}>{balance.displayName.toUpperCase()}</span>
+          {index > 0 && <span className={dimmed ? DIM : ""}>|</span>}
+          <BalanceChip
+            balance={balance}
+            dimmed={dimmed}
+            direction={flash?.changes[balance.denom]}
+            flashNonce={flash?.changes[balance.denom] ? flash.nonce : undefined}
+          />
         </Fragment>
       ))}
     </code>
@@ -165,11 +247,13 @@ const statusUpdateData =
 function ActiveStrategyHandle({
   handle,
   balances,
+  flash,
   isSelected,
   onSelect,
 }: {
   handle: StrategyHandle;
   balances?: Amount[];
+  flash?: BalanceFlash;
   isSelected: boolean;
   onSelect: () => void;
 }) {
@@ -197,17 +281,14 @@ function ActiveStrategyHandle({
 
   return (
     <>
-      <code
-        key={handle.id}
-        className={`group flex gap-2 text-lg text-zinc-200 ${!isSelected ? "opacity-35 hover:opacity-100" : ""}`}
-      >
-        <Code onClick={onSelect} className={isSelected ? "" : "cursor-pointer hover:underline"}>
+      <code key={handle.id} className="group flex gap-2 text-lg text-zinc-200">
+        <Code onClick={onSelect} className={isSelected ? "" : `cursor-pointer hover:underline ${DIM}`}>
           {handle.label}
         </Code>
         {!!balances?.length && (
           <>
-            <code>|</code>
-            <BalancesSummary balances={balances} />
+            <code className={isSelected ? "" : DIM}>|</code>
+            <BalancesSummary balances={balances} dimmed={!isSelected} flash={flash} />
           </>
         )}
         <span className="hidden items-baseline gap-2 group-hover:flex">
@@ -303,9 +384,12 @@ const SORT_LABELS: Record<SortKey, string> = {
   valuable: "VALUE",
 };
 
-type StatusKey = "active" | "completed" | "paused";
+export type StatusKey = "draft" | "active" | "completed" | "paused" | "archived";
 
-const STATUS_LABELS: Record<StatusKey, string> = {
+// ARCHIVED stays out of the picker: the deployed manager can't list
+// archived strategies (its query filter only accepts active|paused).
+const STATUS_LABELS: Partial<Record<StatusKey, string>> = {
+  draft: "DRAFT",
   active: "ACTIVE",
   completed: "COMPLETED",
   paused: "PAUSED",
@@ -313,19 +397,67 @@ const STATUS_LABELS: Record<StatusKey, string> = {
 
 export function StrategyList({
   handles,
-  filter,
+  status,
+  onStatusChange,
   selectedId,
   onSelect,
 }: {
   handles: Record<string | number, StrategyHandle>;
-  filter: "draft" | "strategies" | "archived";
+  status: StatusKey;
+  onStatusChange: (status: StatusKey) => void;
   selectedId: string | number | undefined;
   onSelect: (handle: StrategyHandle) => void;
 }) {
   const { ref, onScroll, maskImage } = useScrollFade();
   const { data: balancesByAddress } = useStrategiesBalances(Object.values(handles));
   const [sortBy, setSortBy] = useState<SortKey>("recent");
-  const [statuses, setStatuses] = useState<Set<StatusKey>>(new Set(["active"]));
+
+  // Diff each balances refetch against the previous one: strategies whose
+  // amounts moved get their row pulsed and the changed chips flashed. This
+  // keys off actual data, so it fires for real executions regardless of how
+  // the refetch was triggered.
+  const previousBalances = useRef<typeof balancesByAddress>(undefined);
+  const [balanceFlashes, setBalanceFlashes] = useState<Record<string, BalanceFlash>>({});
+
+  useEffect(() => {
+    const previous = previousBalances.current;
+    previousBalances.current = balancesByAddress;
+    if (!previous || !balancesByAddress) return;
+
+    const previousEntries = new Map(Object.entries(previous));
+    const changed: Record<string, Record<string, "up" | "down">> = {};
+    for (const [address, entry] of Object.entries(balancesByAddress)) {
+      const before = previousEntries.get(address);
+      if (!before) continue;
+      const beforeAmounts = new Map(before.balances.map((balance) => [balance.denom, balance.amount]));
+      const changes: Record<string, "up" | "down"> = {};
+      for (const balance of entry.balances) {
+        const previousAmount = beforeAmounts.get(balance.denom);
+        if (previousAmount === undefined || previousAmount === balance.amount) continue;
+        changes[balance.denom] = balance.amount > previousAmount ? "up" : "down";
+      }
+      if (Object.keys(changes).length > 0) changed[address] = changes;
+    }
+    if (Object.keys(changed).length === 0) return;
+
+    // Deferred so the chips' fade-in transitions run.
+    const timer = setTimeout(() => {
+      setBalanceFlashes((prev) => {
+        const prevEntries = new Map(Object.entries(prev));
+        return Object.entries(changed).reduce(
+          (acc, [address, changes]) => ({
+            ...acc,
+            [address]: { changes, nonce: (prevEntries.get(address)?.nonce ?? 0) + 1 },
+          }),
+          prev,
+        );
+      });
+    }, 0);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [balancesByAddress]);
+
 
   const valueOf = (handle: StrategyHandle) =>
     handle.status !== "draft" ? (balancesByAddress?.[handle.contract_address]?.valueUsd ?? 0) : 0;
@@ -333,41 +465,27 @@ export function StrategyList({
 
   // COMPLETED = still active on-chain but holding nothing (fully executed
   // and swept). Unknown while balances load, so default to ACTIVE then.
-  const statusOf = (handle: StrategyHandle): StatusKey | undefined => {
-    if (handle.status === "paused") return "paused";
-    if (handle.status !== "active") return undefined;
-    const entry = balancesByAddress?.[handle.contract_address];
-    return entry?.valueUsd === 0 ? "completed" : "active";
+  const statusOf = (handle: StrategyHandle): StatusKey => {
+    if (handle.status === "active") {
+      const entry = balancesByAddress?.[handle.contract_address];
+      return entry?.valueUsd === 0 ? "completed" : "active";
+    }
+    return handle.status;
   };
 
-  const matchesFilter = (handle: StrategyHandle) => {
-    if (filter === "draft") return handle.status === "draft";
-    if (filter === "archived") return handle.status === "archived";
-    const status = statusOf(handle);
-    return status !== undefined && statuses.has(status);
-  };
+  const matchesFilter = (handle: StrategyHandle) => statusOf(handle) === status;
 
   const rows = Object.values(handles)
     .filter(matchesFilter)
     .sort((a, b) => (sortBy === "valuable" ? valueOf(b) - valueOf(a) : createdAt(b) - createdAt(a)));
 
-  const toggleStatus = (key: StatusKey) => {
-    setStatuses((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) {
-        next.delete(key);
-      } else {
-        next.add(key);
-      }
-      return next;
-    });
-  };
+
 
   return (
     // Controls sit BELOW the list: the panel is bottom-anchored, so the list
     // grows upward and the controls keep a fixed position while toggling.
     <div className="flex flex-col-reverse gap-4.5 pb-4">
-      {filter !== "draft" && (
+      {
         <div className="flex gap-4 pl-[10px]">
           <code className="text-sm text-zinc-500">sort_by:</code>
           {(Object.keys(SORT_LABELS) as SortKey[]).map((key, index) => (
@@ -386,8 +504,8 @@ export function StrategyList({
             </Fragment>
           ))}
         </div>
-      )}
-      {filter === "strategies" && (
+      }
+      {(
         <div className="flex gap-4 pl-[10px]">
           <code className="text-sm text-zinc-500">filter:</code>
           {(Object.keys(STATUS_LABELS) as StatusKey[]).map((key, index) => (
@@ -395,10 +513,10 @@ export function StrategyList({
               {index > 0 && <code className="text-sm text-zinc-600">|</code>}
               <code
                 onClick={() => {
-                  toggleStatus(key);
+                  onStatusChange(key);
                 }}
                 className={`cursor-pointer text-sm hover:underline ${
-                  statuses.has(key) ? "text-zinc-200" : "text-zinc-600"
+                  status === key ? "text-zinc-200" : "text-zinc-600"
                 }`}
               >
                 {STATUS_LABELS[key]}
@@ -431,6 +549,7 @@ export function StrategyList({
               key={handle.id}
               handle={handle}
               balances={balancesByAddress?.[handle.contract_address]?.balances}
+              flash={balanceFlashes[handle.contract_address]}
               isSelected={isSelected}
               onSelect={() => {
                 onSelect(handle);

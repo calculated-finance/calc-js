@@ -1,9 +1,11 @@
 import type { Chain } from "@template/domain/chains";
 import { TransactionData, type Wallet } from "@template/domain/clients";
+import { formatNumber } from "@template/domain/numbers";
 import { useEffect, useMemo, useState } from "react";
+import { useAssets } from "../../hooks/use-assets";
+import { errorMessage, isUserRejection } from "../../lib/wallet-errors";
 import { useWallets } from "../../hooks/use-wallets";
-
-const errorMessage = (error: unknown) => (error instanceof Error ? error.message : String(error));
+import { Code } from "./code";
 
 export function SignTransactionForm({
   chain,
@@ -19,6 +21,7 @@ export function SignTransactionForm({
   onSuccess?: () => void;
 }) {
   const { wallets, connect, simulateTransaction, signTransaction } = useWallets();
+  const { assetsByDenom } = useAssets();
 
   const { viableConnections, viableConnectionsByWalletType } = useMemo(() => {
     const viableConnections = wallets.filter(
@@ -44,7 +47,7 @@ export function SignTransactionForm({
   const defaultSender = viableConnections[0] as Wallet | undefined;
   const effectiveSender = sender ?? defaultSender;
 
-  const [simulationResult, setSimulationResult] = useState<string>();
+  const [simulationResult, setSimulationResult] = useState<{ gas: number } | { failure: string }>();
 
   useEffect(() => {
     if (effectiveSender?.connection.status !== "connected") return;
@@ -52,12 +55,26 @@ export function SignTransactionForm({
 
     simulateTransaction(effectiveSender, chain, data)
       .then((result) => {
-        setSimulationResult(`Expected gas: ${result}`);
+        setSimulationResult({ gas: result });
       })
       .catch((error: unknown) => {
-        setSimulationResult(`Simulation failed: ${errorMessage(error)}`);
+        setSimulationResult({ failure: errorMessage(error) });
       });
   }, [effectiveSender, chain, getDataWithSender, simulateTransaction]);
+
+  // The simulated gas priced in the chain's gas asset, e.g. "0.02 RUNE".
+  const expectedFee = useMemo(() => {
+    if (!simulationResult || !("gas" in simulationResult)) return undefined;
+    if (!("defaultGasPrice" in chain)) return `${formatNumber(simulationResult.gas)} gas`;
+    const match = /^([\d.]+)(\D.*)$/.exec(chain.defaultGasPrice);
+    if (!match) return `${formatNumber(simulationResult.gas)} gas`;
+    const [, price, denom] = match;
+    const asset = assetsByDenom[denom];
+    const baseUnits = simulationResult.gas * Number(price);
+    return asset
+      ? `${formatNumber(baseUnits / 10 ** asset.significantFigures)} ${asset.displayName.toUpperCase()}`
+      : `${formatNumber(baseUnits)} ${denom}`;
+  }, [simulationResult, chain, assetsByDenom]);
 
   const viableWallets = useMemo(
     () =>
@@ -142,6 +159,10 @@ export function SignTransactionForm({
                     })
                     .catch((error: unknown) => {
                       setIsExecuting(false);
+                      // Always findable in the console, even for treated-as-decline cases.
+                      console.error("signTransaction failed", error);
+                      // Declining in the wallet is an expected outcome, not an error.
+                      if (isUserRejection(error)) return;
                       setError(`Transaction failed: ${errorMessage(error)}`);
                     });
                 }}
@@ -154,6 +175,14 @@ export function SignTransactionForm({
             <code className="text-lg text-zinc-500">Checking transaction...</code>
           )}
         </div>
+      )}
+      {expectedFee && (
+        <div className="flex w-full justify-end pt-1">
+          <Code className="text-sm text-zinc-500">{`expected_gas: ${expectedFee}`}</Code>
+        </div>
+      )}
+      {simulationResult && "failure" in simulationResult && (
+        <code className="text-sm text-red-500/80">Simulation failed: {simulationResult.failure}</code>
       )}
       {error && (
         <div className="flex flex-col gap-2">

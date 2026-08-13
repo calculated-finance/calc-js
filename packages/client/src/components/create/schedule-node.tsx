@@ -18,11 +18,11 @@ export function ScheduleNode({
 
   const summary =
     "time" in schedule.cadence
-      ? `Every ${duration(schedule.cadence.time.duration.secs * 1000 || 0, { largest: 2, round: true })}`
+      ? `every ${duration(schedule.cadence.time.duration.secs * 1000 || 0, { largest: 2, round: true })}`
       : "blocks" in schedule.cadence
-        ? `Every ${schedule.cadence.blocks.interval === 1 ? "" : schedule.cadence.blocks.interval} block${schedule.cadence.blocks.interval === 1 ? "" : "s"}`
+        ? `every ${schedule.cadence.blocks.interval === 1 ? "" : schedule.cadence.blocks.interval} block${schedule.cadence.blocks.interval === 1 ? "" : "s"}`
         : "cron" in schedule.cadence
-          ? cronstrue.toString(schedule.cadence.cron.expr, { throwExceptionOnParseError: false })
+          ? cronstrue.toString(schedule.cadence.cron.expr, { throwExceptionOnParseError: false }).replace(/^./, (c) => c.toLowerCase())
           : "";
 
   const form = useEncodedSchemaForm(ScheduleCondition, schedule, update);
@@ -40,10 +40,8 @@ export function ScheduleNode({
       isEditingJson={isEditingJson}
       setIsEditingJson={() => { setIsEditingJson(!isEditingJson); }}
       onDelete={remove}
-      title={<code className="rounded bg-zinc-900 px-1 py-[1px] font-mono text-4xl text-zinc-100">WHEN</code>}
-      summary={
-        <code className="flex flex-col gap-1.5 text-xl text-zinc-300">{`${"time" in schedule.cadence ? "TIME" : "blocks" in schedule.cadence ? "BLOCK" : "cron" in schedule.cadence ? "CRON" : ""} SCHEDULE`}</code>
-      }
+      title={<code className="rounded bg-zinc-900 px-1 py-[1px] font-mono text-4xl text-zinc-100">when</code>}
+      summary={<code className="flex flex-col gap-1.5 text-xl text-zinc-300">set next trigger</code>}
       details={<code className="text-sm text-zinc-300">{summary}</code>}
       modal={
         <div className="flex flex-col gap-8">

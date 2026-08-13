@@ -19,6 +19,11 @@ declare module '@tanstack/react-router' {
 
 const queryClient = new QueryClient();
 
+// Dev console access for poking caches (e.g. simulating balance changes).
+if (import.meta.env.DEV) {
+  (window as unknown as Record<string, unknown>).__queryClient = queryClient;
+}
+
 const rootElement = document.getElementById('root')
 if (!rootElement) throw new Error('Root element #root not found')
 

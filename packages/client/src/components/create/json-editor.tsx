@@ -4,7 +4,13 @@ import "prism-themes/themes/prism-duotone-sea.css";
 import Prism from "prismjs";
 import "prismjs/components/prism-json";
 import { useState } from "react";
-import Editor from "react-simple-code-editor";
+import ReactSimpleCodeEditor from "react-simple-code-editor";
+
+// react-simple-code-editor ships CJS with exports.default; depending on how
+// the dep optimizer interops it, the default import can arrive as the module
+// namespace object instead of the component. Unwrap defensively.
+const Editor =
+  (ReactSimpleCodeEditor as unknown as { default?: typeof ReactSimpleCodeEditor }).default ?? ReactSimpleCodeEditor;
 
 export function JsonEditor<A, I>({
   value,

@@ -34,6 +34,11 @@ export type CosmosChain = Schema.Schema.Type<typeof CosmosChain>;
 export const CosmosChain = Schema.Struct({
   type: Schema.Literal("cosmos"),
   id: CosmosChainId,
+  /**
+   * The network's actual chain-id when it differs from our internal id —
+   * what wallets sign against (e.g. thorchain-1). Defaults to `id`.
+   */
+  networkChainId: Schema.optional(Schema.NonEmptyTrimmedString),
   displayName: Schema.NonEmptyTrimmedString,
   color: Schema.NonEmptyTrimmedString,
   bech32AddressPrefix: Schema.NonEmptyTrimmedString,
@@ -91,6 +96,10 @@ export const COSMOS_HUB = {
 export const RUJIRA = {
   type: "cosmos" as const,
   id: "thorchain" as const,
+  // Keplr signers must be bound to the network's real chain-id: cosmjs
+  // stamps sign-docs with the id the RPC reports, and a signer bound to
+  // "thorchain" rejects them with Keplr's generic "An error has occurred".
+  networkChainId: "thorchain-1",
   displayName: "Rujira",
   color: "#ab3ddb",
   bech32AddressPrefix: "thor",

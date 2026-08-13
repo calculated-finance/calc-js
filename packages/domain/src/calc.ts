@@ -270,6 +270,14 @@ export const PriceSource = Schema.Union(
     Schema.Struct({ fin: Schema.Struct({ address: Schema.NonEmptyTrimmedString }) })
 )
 
+/** balance_available's payload; exported for the builder's form. */
+export const BalanceAvailable = Schema.Struct({
+    address: Schema.optional(Schema.NullOr(Schema.NonEmptyTrimmedString)),
+    amount: Amount
+})
+
+export type BalanceAvailable = Schema.Schema.Type<typeof BalanceAvailable>
+
 export const Condition = Schema.Union(
     Schema.Struct({ timestamp_elapsed: Timestamp }),
     Schema.Struct({ blocks_completed: Schema.NonNegative }),
@@ -283,12 +291,7 @@ export const Condition = Schema.Union(
             side: Side
         })
     }),
-    Schema.Struct({
-        balance_available: Schema.Struct({
-            address: Schema.optional(Schema.NullOr(Schema.NonEmptyTrimmedString)),
-            amount: Amount
-        })
-    }),
+    Schema.Struct({ balance_available: BalanceAvailable }),
     Schema.Struct({
         strategy_status: Schema.Struct({
             contract_address: Schema.NonEmptyTrimmedString,

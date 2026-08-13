@@ -102,5 +102,9 @@ export const graphNodeType = (node: CalcNode): string => {
     const action = node.action.action;
     return "swap" in action ? "swapNode" : "limit_order" in action ? "limitOrderNode" : "distributeNode";
   }
-  return "schedule" in node.condition.condition ? "scheduleNode" : "conditionNode";
+  const condition = node.condition.condition;
+  if ("schedule" in condition) return "scheduleNode";
+  if ("balance_available" in condition) return "balanceNode";
+  if ("can_swap" in condition) return "liquidityNode";
+  return "conditionNode";
 };

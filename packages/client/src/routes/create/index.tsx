@@ -50,6 +50,13 @@ const FILTER_LABELS: Record<StrategyFilter, string> = {
   archived: "Archived",
 };
 
+/**
+ * Fit the selected strategy into the middle two thirds of the viewport:
+ * one sixth of padding on every side. minZoom must stay below the canvas
+ * minimum so wide strategies can zoom out far enough to fit fully.
+ */
+const FIT_VIEW_OPTIONS = { padding: 1 / 6, maxZoom: 2, minZoom: 0.2 };
+
 const nodeTypes = {
   ...actionNodeTypes,
   loadingStrategies: ({ data: { status } }: { data: { status: StrategyFilter } }) => (
@@ -83,7 +90,7 @@ export default function CreateStrategy() {
   const { fitView } = useReactFlow();
 
   useEffect(() => {
-    void fitView();
+    void fitView(FIT_VIEW_OPTIONS);
   }, [strategyFilter, strategyHandle, fitView]);
 
   const { wallets } = useWallets();
@@ -127,7 +134,7 @@ export default function CreateStrategy() {
     // can't carry; the shapes are otherwise identical.
     setNodes(layout.nodes as unknown as Node[]);
     setEdges(layout.edges);
-    void fitView();
+    void fitView(FIT_VIEW_OPTIONS);
   }, [strategyFilter, isPendingStrategy, isLoadingStrategies, strategy, strategyHandle, update, fitView, setNodes, setEdges]);
 
   useEffect(() => {
@@ -171,11 +178,7 @@ export default function CreateStrategy() {
         nodeTypes={nodeTypes}
         preventScrolling={true}
         fitView
-        fitViewOptions={{
-          padding: 20,
-          maxZoom: 2,
-          minZoom: 0.9,
-        }}
+        fitViewOptions={FIT_VIEW_OPTIONS}
         maxZoom={2}
         minZoom={0.2}
         className="h-screen w-screen"

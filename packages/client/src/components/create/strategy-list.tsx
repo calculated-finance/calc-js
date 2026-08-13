@@ -2,7 +2,7 @@ import { toUtf8 } from "@cosmjs/encoding";
 import type { StrategyHandle } from "@template/domain/calc";
 import { type Chain, COSMOS_CHAINS_BY_ID } from "@template/domain/chains";
 import type { TransactionData } from "@template/domain/clients";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useDraftStrategies } from "../../hooks/use-draft-strategies";
 import { useNodeModalStore } from "../../hooks/use-node-modal-store";
 import { useStrategy } from "../../hooks/use-strategy";
@@ -259,6 +259,8 @@ function ActiveStrategyHandle({
   );
 }
 
+const FADE_HEIGHT = 32;
+
 export function StrategyList({
   handles,
   filter,
@@ -270,12 +272,42 @@ export function StrategyList({
   selectedId: string | number | undefined;
   onSelect: (handle: StrategyHandle) => void;
 }) {
+  const listRef = useRef<HTMLDivElement>(null);
+  const [fade, setFade] = useState({ top: false, bottom: false });
+
+  // Fade an edge only while more content continues past it, so the fades
+  // themselves signal "there's more to scroll".
+  const updateFade = useCallback(() => {
+    const el = listRef.current;
+    if (!el) return;
+    const top = el.scrollTop > 2;
+    const bottom = el.scrollTop + el.clientHeight < el.scrollHeight - 2;
+    setFade((prev) => (prev.top === top && prev.bottom === bottom ? prev : { top, bottom }));
+  }, []);
+
+  useEffect(() => {
+    updateFade();
+    const el = listRef.current;
+    if (!el) return;
+    const observer = new ResizeObserver(updateFade);
+    observer.observe(el);
+    return () => {
+      observer.disconnect();
+    };
+  }, [updateFade, handles, filter]);
+
+  const maskImage = `linear-gradient(to bottom, ${
+    fade.top ? `transparent, black ${FADE_HEIGHT}px` : "black"
+  }, ${fade.bottom ? `black calc(100% - ${FADE_HEIGHT}px), transparent` : "black"})`;
+
   return (
     // nowheel keeps wheel events scrolling this list instead of zooming the
     // React Flow canvas underneath.
     <div
+      ref={listRef}
+      onScroll={updateFade}
       className="nowheel flex max-h-[33vh] flex-col items-start gap-4 overflow-y-auto pr-4 pb-2 pl-[10px]"
-      style={{ scrollbarWidth: "thin" }}
+      style={{ scrollbarWidth: "thin", maskImage, WebkitMaskImage: maskImage }}
     >
       {Object.values(handles)
         .filter((handle) => handle.status === filter)

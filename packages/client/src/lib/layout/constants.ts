@@ -10,9 +10,6 @@ export const NODE_SPACING = 50;
 /** Horizontal offset from a parent node to its child column. */
 export const CHILD_OFFSET_X = 300;
 
-/** Wider offset used when a parent fans out to multiple children. */
-export const MULTI_CHILD_OFFSET_X = 400;
-
 export type EdgeKind = "next" | "success" | "failure";
 
 const EDGE_COLORS: Record<EdgeKind, string> = {

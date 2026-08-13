@@ -17,7 +17,7 @@ import {
   removeNode,
   replaceNodeBody,
 } from "../graph";
-import { CHILD_OFFSET_X, makeEdge, MULTI_CHILD_OFFSET_X, NODE_HEIGHT, NODE_WIDTH } from "./constants";
+import { CHILD_OFFSET_X, makeEdge, NODE_HEIGHT, NODE_WIDTH } from "./constants";
 import type { LayoutContext, LayoutResult, NodeParams, StrategyNodeParams } from "./layout";
 import { graphNodeType } from "./layout";
 
@@ -122,7 +122,7 @@ export const layoutStrategy = (
     placed.add(index);
 
     const links = outgoingEdges(node);
-    const childX = x + (links.length > 1 ? MULTI_CHILD_OFFSET_X : CHILD_OFFSET_X);
+    const childX = x + CHILD_OFFSET_X;
     let childY = y;
     let laidChildren = 0;
     let successAnchor: number | undefined;

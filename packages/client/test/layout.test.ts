@@ -1,6 +1,6 @@
 import type { Action, Condition, Node, Strategy } from "@template/domain/calc";
 import { describe, expect, it } from "vitest";
-import { CHILD_OFFSET_X, MULTI_CHILD_OFFSET_X, NODE_HEIGHT, NODE_SPACING, NODE_WIDTH } from "../src/lib/layout/constants";
+import { CHILD_OFFSET_X, NODE_HEIGHT, NODE_SPACING, NODE_WIDTH } from "../src/lib/layout/constants";
 import { graphNodeType } from "../src/lib/layout/layout";
 import { layoutStrategy } from "../src/lib/layout/layout-strategy";
 
@@ -75,14 +75,14 @@ describe("layoutStrategy", () => {
     );
   });
 
-  it("fans a condition's branches out to a wider column and stacks them", () => {
+  it("stacks a condition's branches in the same next column", () => {
     const strategy = strategyWith([balanceNode(0, 1, 2), swapNode(1), swapNode(2)]);
     const layout = layoutStrategy({ strategy, update: noop }, context);
 
     const byId = Object.fromEntries(layout.nodes.map((node) => [node.id, node]));
 
-    expect(byId["strategy-1:1"].position.x).toBe(CHILD_OFFSET_X + MULTI_CHILD_OFFSET_X);
-    expect(byId["strategy-1:2"].position.x).toBe(CHILD_OFFSET_X + MULTI_CHILD_OFFSET_X);
+    expect(byId["strategy-1:1"].position.x).toBe(CHILD_OFFSET_X * 2);
+    expect(byId["strategy-1:2"].position.x).toBe(CHILD_OFFSET_X * 2);
     expect(byId["strategy-1:2"].position.y - byId["strategy-1:1"].position.y).toBe(NODE_HEIGHT + NODE_SPACING);
 
     // the condition stays level with its success branch; failure hangs below

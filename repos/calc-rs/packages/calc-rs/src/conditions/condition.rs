@@ -1,0 +1,546 @@
+use std::vec;
+
+use cosmwasm_schema::cw_serde;
+use cosmwasm_std::{
+    Addr, Coin, Coins, CosmosMsg, Decimal, Deps, Env, StdError, StdResult, Timestamp,
+};
+use rujira_rs::{
+    fin::{ConfigResponse, OrderResponse, Price, QueryMsg, Side},
+    query::Pool,
+    Asset,
+};
+
+use crate::{
+    actions::{
+        limit_orders::fin_limit_order::{Direction, FinLimitOrder, PriceStrategy},
+        swaps::swap::Swap,
+    },
+    conditions::{asset_value_ratio::AssetValueRatio, schedule::Schedule},
+    core::Amount,
+    manager::{Affiliate, ManagerQueryMsg, Strategy, StrategyStatus},
+    operation::{Operation, StatefulOperation},
+};
+
+#[cw_serde]
+pub enum Condition {
+    TimestampElapsed(Timestamp),
+    BlocksCompleted(u64),
+    Schedule(Schedule),
+    CanSwap(Swap),
+    FinLimitOrderFilled {
+        owner: Option<Addr>,
+        pair_address: Addr,
+        side: Side,
+        price: Decimal,
+    },
+    BalanceAvailable {
+        address: Option<Addr>,
+        amount: Coin,
+    },
+    StrategyStatus {
+        manager_contract: Addr,
+        contract_address: Addr,
+        status: StrategyStatus,
+    },
+    OraclePrice {
+        asset: String,
+        direction: Direction,
+        price: Decimal,
+    },
+    AssetValueRatio(AssetValueRatio),
+}
+
+impl Condition {
+    pub fn size(&self) -> usize {
+        match self {
+            Condition::TimestampElapsed(_) => 1,
+            Condition::BlocksCompleted(_) => 1,
+            Condition::Schedule(_) => 2,
+            Condition::CanSwap { .. } => 2,
+            Condition::FinLimitOrderFilled { .. } => 2,
+            Condition::BalanceAvailable { .. } => 1,
+            Condition::StrategyStatus { .. } => 2,
+            Condition::OraclePrice { .. } => 2,
+            Condition::AssetValueRatio(_) => 2,
+        }
+    }
+
+    pub fn is_satisfied(&self, deps: Deps, env: &Env) -> StdResult<bool> {
+        Ok(match self {
+            Condition::TimestampElapsed(timestamp) => env.block.time >= *timestamp,
+            Condition::BlocksCompleted(height) => env.block.height >= *height,
+            Condition::Schedule(schedule) => schedule.can_execute(deps, env)?,
+            Condition::FinLimitOrderFilled {
+                owner,
+                pair_address,
+                side,
+                price,
+            } => {
+                let order = deps.querier.query_wasm_smart::<OrderResponse>(
+                    pair_address,
+                    &QueryMsg::Order((
+                        owner.as_ref().unwrap_or(&env.contract.address).to_string(),
+                        side.clone(),
+                        Price::Fixed(*price),
+                    )),
+                )?;
+
+                order.remaining.is_zero()
+            }
+            Condition::CanSwap(swap) => swap.best_quote(deps, env).is_ok(),
+            Condition::BalanceAvailable { address, amount } => {
+                let balance = deps.querier.query_balance(
+                    address.as_ref().unwrap_or(&env.contract.address),
+                    &amount.denom,
+                )?;
+                balance.amount >= amount.amount
+            }
+            Condition::StrategyStatus {
+                manager_contract,
+                contract_address,
+                status,
+            } => {
+                let strategy = deps.querier.query_wasm_smart::<Strategy>(
+                    manager_contract,
+                    &ManagerQueryMsg::Strategy {
+                        address: contract_address.clone(),
+                    },
+                )?;
+                strategy.status == *status
+            }
+            Condition::OraclePrice {
+                asset,
+                direction,
+                price,
+            } => {
+                let layer_1_asset = Asset::from_denom(&asset)
+                    .map_err(|e| {
+                        StdError::generic_err(format!(
+                            "Denom ({asset}) not a valid asset: {e}"
+                        ))
+                    })?
+                    .to_layer_1();
+
+                let oracle_price = Pool::load(deps.querier, &layer_1_asset)
+                    .map_err(|e| {
+                        StdError::generic_err(format!(
+                            "Failed to load oracle price for {asset}, error: {e}"
+                        ))
+                    })?
+                    .asset_tor_price;
+
+                match direction {
+                    Direction::Above => oracle_price > *price,
+                    Direction::Below => oracle_price < *price,
+                }
+            }
+            Condition::AssetValueRatio(asset_value_ratio) => {
+                asset_value_ratio.is_satisfied(deps, env)?
+            }
+        })
+    }
+}
+
+impl Operation<Condition> for Condition {
+    fn init(self, deps: Deps, env: &Env, affiliates: &[Affiliate]) -> StdResult<Condition> {
+        match self {
+            Condition::Schedule(schedule) => schedule.init(deps, env, affiliates),
+            Condition::BalanceAvailable { ref address, .. } => {
+                if let Some(address) = address {
+                    deps.api.addr_validate(address.as_str()).map_err(|_| {
+                        StdError::generic_err(format!(
+                            "Invalid address to check for balance: {address}"
+                        ))
+                    })?;
+                }
+
+                Ok(self)
+            }
+            Condition::CanSwap(ref swap) => {
+                swap.validate(deps, env)?;
+                Ok(self)
+            }
+            Condition::StrategyStatus {
+                ref manager_contract,
+                ref contract_address,
+                ..
+            } => {
+                deps.querier
+                    .query_wasm_smart::<Strategy>(
+                        manager_contract,
+                        &ManagerQueryMsg::Strategy {
+                            address: contract_address.clone(),
+                        },
+                    )
+                    .map_err(|e| {
+                        StdError::generic_err(format!(
+                            "Failed to query strategy status for {contract_address}: {e}"
+                        ))
+                    })?;
+
+                Ok(self)
+            }
+            Condition::FinLimitOrderFilled {
+                ref pair_address,
+                ref side,
+                price,
+                ..
+            } => {
+                let pair = deps
+                    .querier
+                    .query_wasm_smart::<ConfigResponse>(pair_address, &QueryMsg::Config {})?;
+
+                let limit_order = FinLimitOrder {
+                    pair_address: pair_address.clone(),
+                    side: side.clone(),
+                    bid_amount: Amount::Fraction(Decimal::percent(100)),
+                    bid_denom: if side == &Side::Base {
+                        pair.denoms.base()
+                    } else {
+                        pair.denoms.quote()
+                    }
+                    .to_string(),
+                    min_fill_ratio: None,
+                    strategy: PriceStrategy::Fixed(price),
+                    current_order: None,
+                };
+
+                limit_order.init(deps, env, &[])?;
+
+                Ok(self)
+            }
+            Condition::OraclePrice { ref asset, .. } => {
+                Asset::from_denom(asset).map_err(|e| {
+                    StdError::generic_err(format!(
+                        "Denom ({asset}) not a valid asset: {e}"
+                    ))
+                })?;
+
+                Ok(self)
+            }
+            Condition::AssetValueRatio(ref asset_value_ratio) => {
+                asset_value_ratio.validate(deps)?;
+                Ok(self)
+            }
+            Condition::BlocksCompleted(_) | Condition::TimestampElapsed(_) => Ok(self),
+        }
+    }
+
+    fn execute(self, deps: Deps, env: &Env) -> StdResult<(Vec<CosmosMsg>, Condition)> {
+        match self {
+            Condition::Schedule(schedule) => schedule.execute(deps, env),
+            _ => Ok((vec![], self)),
+        }
+    }
+}
+
+impl StatefulOperation<Condition> for Condition {
+    fn commit(self, deps: Deps, env: &Env) -> StdResult<Condition> {
+        match self {
+            Condition::Schedule(schedule) => schedule.commit(deps, env),
+            _ => Ok(self),
+        }
+    }
+
+    fn balances(&self, _deps: Deps, _env: &Env) -> StdResult<Coins> {
+        Ok(Coins::default())
+    }
+
+    fn cancel(self, _deps: Deps, _env: &Env) -> StdResult<(Vec<CosmosMsg>, Condition)> {
+        Ok((vec![], self))
+    }
+}
+
+#[cfg(test)]
+mod conditions_tests {
+    use super::*;
+    use std::str::FromStr;
+
+    use cosmwasm_std::{
+        from_json,
+        testing::{mock_dependencies, mock_env},
+        to_json_binary, Addr, Coin, ContractResult, Decimal, SystemResult, Timestamp, Uint128,
+        WasmQuery,
+    };
+    use rujira_rs::fin::{
+        BookItemResponse, BookResponse, Denoms, OrderResponse, Price, Side, SimulationResponse,
+        Tick,
+    };
+
+    use crate::{
+        actions::{
+            swaps::fin::FinRoute,
+            swaps::swap::{SwapAmountAdjustment, SwapRoute},
+        },
+        manager::{Strategy, StrategyStatus},
+    };
+
+    #[test]
+    fn timestamp_elapsed_check() {
+        let deps = mock_dependencies();
+        let env = mock_env();
+
+        assert!(Condition::TimestampElapsed(env.block.time.minus_seconds(1))
+            .is_satisfied(deps.as_ref(), &env)
+            .unwrap());
+
+        assert!(Condition::TimestampElapsed(env.block.time)
+            .is_satisfied(deps.as_ref(), &env)
+            .unwrap());
+
+        assert!(!Condition::TimestampElapsed(env.block.time.plus_seconds(1))
+            .is_satisfied(deps.as_ref(), &env)
+            .unwrap());
+    }
+
+    #[test]
+    fn blocks_completed_check() {
+        let deps = mock_dependencies();
+        let env = mock_env();
+
+        assert!(Condition::BlocksCompleted(0)
+            .is_satisfied(deps.as_ref(), &env)
+            .unwrap());
+        assert!(Condition::BlocksCompleted(env.block.height - 1)
+            .is_satisfied(deps.as_ref(), &env)
+            .unwrap());
+        assert!(Condition::BlocksCompleted(env.block.height)
+            .is_satisfied(deps.as_ref(), &env)
+            .unwrap());
+        assert!(!Condition::BlocksCompleted(env.block.height + 1)
+            .is_satisfied(deps.as_ref(), &env)
+            .unwrap());
+    }
+
+    #[test]
+    fn balance_available_check() {
+        let mut deps = mock_dependencies();
+        let env = mock_env();
+
+        assert!(Condition::BalanceAvailable {
+            address: None,
+            amount: Coin::new(0u128, "rune"),
+        }
+        .is_satisfied(deps.as_ref(), &env)
+        .unwrap());
+
+        assert!(!Condition::BalanceAvailable {
+            address: None,
+            amount: Coin::new(1u128, "rune"),
+        }
+        .is_satisfied(deps.as_ref(), &env)
+        .unwrap());
+
+        deps.querier.bank.update_balance(
+            env.contract.address.clone(),
+            vec![Coin::new(100u128, "rune")],
+        );
+
+        assert!(Condition::BalanceAvailable {
+            address: None,
+            amount: Coin::new(99u128, "rune"),
+        }
+        .is_satisfied(deps.as_ref(), &env)
+        .unwrap());
+
+        assert!(Condition::BalanceAvailable {
+            address: None,
+            amount: Coin::new(100u128, "rune"),
+        }
+        .is_satisfied(deps.as_ref(), &env)
+        .unwrap());
+
+        assert!(!Condition::BalanceAvailable {
+            address: None,
+            amount: Coin::new(101u128, "rune"),
+        }
+        .is_satisfied(deps.as_ref(), &env)
+        .unwrap());
+    }
+
+    #[test]
+    fn can_swap_check() {
+        let mut deps = mock_dependencies();
+        let env = mock_env();
+
+        deps.querier.update_wasm(|query| {
+            SystemResult::Ok(ContractResult::Ok(match query {
+                WasmQuery::Smart { msg, .. } => match from_json(msg).unwrap() {
+                    QueryMsg::Simulate(_) => to_json_binary(&SimulationResponse {
+                        returned: Uint128::new(100),
+                        fee: Uint128::new(1),
+                    })
+                    .unwrap(),
+                    QueryMsg::Config {} => to_json_binary(&ConfigResponse {
+                        denoms: Denoms::new("rune", "x/ruji"),
+                        oracles: None,
+                        market_makers: vec![],
+                        tick: Tick::new(6),
+                        range_delta: Decimal::zero(),
+                        range_min: Decimal::one(),
+                        fee_taker: Decimal::percent(1),
+                        fee_maker: Decimal::percent(1),
+                        fee_range: Decimal::zero(),
+                        fee_address: "feetaker".to_string(),
+                    })
+                    .unwrap(),
+                    QueryMsg::Book { .. } => to_json_binary(&BookResponse {
+                        base: vec![
+                            BookItemResponse {
+                                price: Decimal::from_str("1").unwrap(),
+                                total: Uint128::new(30_000_000),
+                            };
+                            10
+                        ],
+                        quote: vec![
+                            BookItemResponse {
+                                price: Decimal::from_str("1").unwrap(),
+                                total: Uint128::new(30_000_000),
+                            };
+                            10
+                        ],
+                    })
+                    .unwrap(),
+                    _ => panic!("Unexpected query: {:?}", msg),
+                },
+                _ => panic!("Unexpected query: {:?}", query),
+            }))
+        });
+
+        deps.querier
+            .bank
+            .update_balance(&env.contract.address, vec![Coin::new(1000u128, "rune")]);
+
+        assert!(!Condition::CanSwap(Swap {
+            swap_amount: Coin::new(100u128, "rune"),
+            minimum_receive_amount: Coin::new(101u128, "rune"),
+            routes: vec![SwapRoute::Fin(FinRoute {
+                pair_address: Addr::unchecked("fin_pair")
+            })],
+            maximum_slippage_bps: 100,
+            adjustment: SwapAmountAdjustment::Fixed
+        })
+        .is_satisfied(deps.as_ref(), &env)
+        .unwrap());
+
+        assert!(Condition::CanSwap(Swap {
+            swap_amount: Coin::new(100u128, "rune"),
+            minimum_receive_amount: Coin::new(100u128, "rune"),
+            routes: vec![SwapRoute::Fin(FinRoute {
+                pair_address: Addr::unchecked("fin_pair")
+            })],
+            maximum_slippage_bps: 100,
+            adjustment: SwapAmountAdjustment::Fixed
+        })
+        .is_satisfied(deps.as_ref(), &env)
+        .unwrap());
+
+        assert!(Condition::CanSwap(Swap {
+            swap_amount: Coin::new(100u128, "rune"),
+            minimum_receive_amount: Coin::new(99u128, "rune"),
+            routes: vec![SwapRoute::Fin(FinRoute {
+                pair_address: Addr::unchecked("fin_pair")
+            })],
+            maximum_slippage_bps: 100,
+            adjustment: SwapAmountAdjustment::Fixed
+        })
+        .is_satisfied(deps.as_ref(), &env)
+        .unwrap());
+    }
+
+    #[test]
+    fn limit_order_filled_check() {
+        let mut deps = mock_dependencies();
+        let env = mock_env();
+
+        deps.querier.update_wasm(move |_| {
+            SystemResult::Ok(ContractResult::Ok(
+                to_json_binary(&OrderResponse {
+                    remaining: Uint128::new(100),
+                    filled: Uint128::new(100),
+                    owner: "owner".to_string(),
+                    side: Side::Base,
+                    price: Price::Fixed(Decimal::from_str("1.0").unwrap()),
+                    rate: Some(Decimal::from_str("1.0").unwrap()),
+                    updated_at: Timestamp::from_seconds(env.block.time.seconds()),
+                    offer: Uint128::new(21029),
+                })
+                .unwrap(),
+            ))
+        });
+
+        assert!(!Condition::FinLimitOrderFilled {
+            owner: None,
+            pair_address: Addr::unchecked("pair"),
+            side: Side::Base,
+            price: Decimal::from_str("1.0").unwrap(),
+        }
+        .is_satisfied(deps.as_ref(), &env)
+        .unwrap());
+
+        deps.querier.update_wasm(move |_| {
+            SystemResult::Ok(ContractResult::Ok(
+                to_json_binary(&OrderResponse {
+                    remaining: Uint128::new(0),
+                    filled: Uint128::new(100),
+                    owner: "owner".to_string(),
+                    side: Side::Base,
+                    price: Price::Fixed(Decimal::from_str("1.0").unwrap()),
+                    rate: Some(Decimal::from_str("1.0").unwrap()),
+                    updated_at: Timestamp::from_seconds(env.block.time.seconds()),
+                    offer: Uint128::new(21029),
+                })
+                .unwrap(),
+            ))
+        });
+
+        assert!(Condition::FinLimitOrderFilled {
+            owner: None,
+            pair_address: Addr::unchecked("pair"),
+            side: Side::Base,
+            price: Decimal::from_str("1.0").unwrap(),
+        }
+        .is_satisfied(deps.as_ref(), &env)
+        .unwrap());
+    }
+
+    #[test]
+    fn strategy_status_check() {
+        let mut deps = mock_dependencies();
+        let env = mock_env();
+
+        deps.querier.update_wasm(move |_| {
+            SystemResult::Ok(ContractResult::Ok(
+                to_json_binary(&Strategy {
+                    id: 1,
+                    source: None,
+                    contract_address: Addr::unchecked("strategy"),
+                    status: StrategyStatus::Active,
+                    owner: Addr::unchecked("owner"),
+                    created_at: 0,
+                    updated_at: 0,
+                    label: "label".to_string(),
+                })
+                .unwrap(),
+            ))
+        });
+
+        let strategy_address = Addr::unchecked("strategy");
+
+        assert!(Condition::StrategyStatus {
+            manager_contract: Addr::unchecked("manager"),
+            contract_address: strategy_address.clone(),
+            status: StrategyStatus::Active,
+        }
+        .is_satisfied(deps.as_ref(), &env)
+        .unwrap());
+
+        assert!(!Condition::StrategyStatus {
+            manager_contract: Addr::unchecked("manager"),
+            contract_address: strategy_address.clone(),
+            status: StrategyStatus::Paused,
+        }
+        .is_satisfied(deps.as_ref(), &env)
+        .unwrap());
+    }
+}

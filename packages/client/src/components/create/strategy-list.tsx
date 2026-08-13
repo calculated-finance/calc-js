@@ -479,7 +479,21 @@ export function StrategyList({
     .filter(matchesFilter)
     .sort((a, b) => (sortBy === "valuable" ? valueOf(b) - valueOf(a) : createdAt(b) - createdAt(a)));
 
+  // With nothing selected (page open, filter switch, deleted draft), select
+  // the top row of the current filter. Deferred so selection lands after the
+  // render that produced the rows.
+  const topRowId = rows.at(0)?.id;
 
+  useEffect(() => {
+    if (selectedId !== undefined || topRowId === undefined) return;
+    const timer = setTimeout(() => {
+      const top = new Map(Object.entries(handles)).get(String(topRowId));
+      if (top) onSelect(top);
+    }, 0);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [selectedId, topRowId, handles, onSelect]);
 
   return (
     // Controls sit BELOW the list: the panel is bottom-anchored, so the list

@@ -30,7 +30,7 @@ export const useConnectedWallet = () => {
   const { selectedWalletType, setSelectedWalletType } = useConnectionStore();
 
   const connected = wallets.filter((wallet) => wallet.connection.status === "connected");
-  const wallet = connected.find((w) => w.type === selectedWalletType) ?? (connected[0]);
+  const wallet = connected.find((w) => w.type === selectedWalletType) ?? connected.at(0);
 
   return {
     wallet,

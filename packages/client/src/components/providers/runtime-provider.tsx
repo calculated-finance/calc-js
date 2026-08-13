@@ -1,5 +1,7 @@
+import { Socket } from "@effect/platform";
 import { CalcService } from "@template/domain/calc";
 import { WalletService } from "@template/domain/clients";
+import { RujiraIndexer } from "@template/domain/indexer";
 import { Effect, Layer, ManagedRuntime } from "effect";
 import React, { createContext } from "react";
 
@@ -8,6 +10,8 @@ export interface AppRuntimes {
   calc: ManagedRuntime.ManagedRuntime<CalcService, unknown>;
   /** Wallet discovery/connection services. */
   wallet: ManagedRuntime.ManagedRuntime<WalletService, unknown>;
+  /** Rujira indexer client (GraphQL queries + subscriptions). */
+  indexer: ManagedRuntime.ManagedRuntime<RujiraIndexer, unknown>;
 }
 
 const memoMap = Effect.runSync(Layer.makeMemoMap);
@@ -23,12 +27,17 @@ const memoMap = Effect.runSync(Layer.makeMemoMap);
 const runtimes: AppRuntimes = {
   calc: ManagedRuntime.make(CalcService.Default, memoMap),
   wallet: ManagedRuntime.make(WalletService.Default, memoMap),
+  indexer: ManagedRuntime.make(
+    RujiraIndexer.Default.pipe(Layer.provide(Socket.layerWebSocketConstructorGlobal)),
+    memoMap,
+  ),
 };
 
 if (import.meta.hot) {
   import.meta.hot.dispose(() => {
     void runtimes.calc.dispose();
     void runtimes.wallet.dispose();
+    void runtimes.indexer.dispose();
   });
 }
 

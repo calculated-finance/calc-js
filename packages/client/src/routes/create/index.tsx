@@ -23,6 +23,7 @@ import { useConnectedWallet } from "../../hooks/use-connection";
 import { useDraftStrategies } from "../../hooks/use-draft-strategies";
 import { useNodeModalStore } from "../../hooks/use-node-modal-store";
 import { useNodeVisibilityStore } from "../../hooks/use-node-visibility";
+import { useOrderUpdates } from "../../hooks/use-order-updates";
 import { useStrategies } from "../../hooks/use-strategies";
 import { useStrategy } from "../../hooks/use-strategy";
 import { useStrategyChain } from "../../hooks/use-strategy-chain";
@@ -61,6 +62,7 @@ const nodeTypes = {
 
 export default function CreateStrategy() {
   const { wallet } = useConnectedWallet();
+  useOrderUpdates();
   const { chain, setChain: setStrategyChain } = useStrategyChain();
   const [isSwitchingStrategyChain, setIsSwitchingStrategyChain] = useState(false);
 

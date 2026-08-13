@@ -302,15 +302,63 @@ export class CalcError extends Schema.TaggedError<CalcError>()("CalcError", {
     cause: Schema.Defect
 }) {}
 
+const asCalcError = (cause: unknown) => new CalcError({ cause })
+
+/**
+ * The manager contract's strategy handles, as returned on the wire: the
+ * StrategyHandle union minus the chainId we attach locally.
+ */
+const ChainStrategyHandleCommon = StrategyHandleCommon.omit("chainId")
+
+const ChainStrategyHandles = Schema.Array(Schema.Union(
+    Schema.Struct({
+        ...ChainStrategyHandleCommon.fields,
+        status: Schema.Literal("draft")
+    }),
+    Schema.Struct({
+        ...ChainStrategyHandleCommon.fields,
+        contract_address: Schema.NonEmptyTrimmedString,
+        status: Schema.Literal("active", "paused", "archived")
+    })
+))
+
+/**
+ * A strategy contract's config response. The action carries no node ids on
+ * the wire, so it stays a raw object here; consumers attach ids and decode
+ * the full Strategy schema themselves.
+ */
+export const StrategyConfig = Schema.Struct({
+    strategy: Schema.Struct({
+        action: Schema.Record({ key: Schema.String, value: Schema.Unknown })
+    })
+})
+
+export type StrategyConfig = Schema.Schema.Type<typeof StrategyConfig>
+
 export class CalcService extends Effect.Service<CalcService>()("CalcService", {
     effect: Effect.gen(function*() {
         const cosmWasm = yield* CosmWasm
 
+        const queryContract = <A, I>(
+            chainId: ChainId,
+            contractAddress: string,
+            query: Record<string, unknown>,
+            schema: Schema.Schema<A, I, never>
+        ) =>
+            Effect.gen(function*() {
+                const raw = yield* cosmWasm
+                    .queryContractSmart(chainId, contractAddress, query)
+                    .pipe(Effect.mapError(asCalcError))
+
+                return yield* Schema.decodeUnknown(schema)(raw).pipe(Effect.mapError(asCalcError))
+            })
+
         return {
-            queryManager: <A>(
+            queryManager: <A, I>(
                 chainId: ChainId,
-                query: Record<string, any>
-            ): Effect.Effect<A, Error, any> =>
+                query: Record<string, unknown>,
+                schema: Schema.Schema<A, I, never>
+            ) =>
                 Effect.gen(function*() {
                     const chain = CHAINS_BY_ID[chainId]
 
@@ -320,13 +368,14 @@ export class CalcService extends Effect.Service<CalcService>()("CalcService", {
                         )
                     }
 
-                    return yield* cosmWasm.queryContractSmart(chainId, chain.managerContract!, query)
+                    return yield* queryContract(chainId, chain.managerContract, query, schema)
                 }),
 
-            queryScheduler: <A>(
+            queryScheduler: <A, I>(
                 chainId: ChainId,
-                query: Record<string, any>
-            ): Effect.Effect<A, Error, any> =>
+                query: Record<string, unknown>,
+                schema: Schema.Schema<A, I, never>
+            ) =>
                 Effect.gen(function*() {
                     const chain = CHAINS_BY_ID[chainId]
 
@@ -336,14 +385,15 @@ export class CalcService extends Effect.Service<CalcService>()("CalcService", {
                         )
                     }
 
-                    return yield* cosmWasm.queryContractSmart(chainId, chain.schedulerContract!, query)
+                    return yield* queryContract(chainId, chain.schedulerContract, query, schema)
                 }),
 
-            queryStrategy: <A>(
+            queryStrategy: <A, I>(
                 chainId: ChainId,
                 contractAddress: string,
-                query: Record<string, unknown>
-            ): Effect.Effect<A, Error, never> =>
+                query: Record<string, unknown>,
+                schema: Schema.Schema<A, I, never>
+            ) =>
                 Effect.gen(function*() {
                     const chain = CHAINS_BY_ID[chainId]
 
@@ -353,7 +403,7 @@ export class CalcService extends Effect.Service<CalcService>()("CalcService", {
                         )
                     }
 
-                    return yield* cosmWasm.queryContractSmart(chainId, contractAddress, query)
+                    return yield* queryContract(chainId, contractAddress, query, schema)
                 }),
 
             getStrategyHandles: (
@@ -365,7 +415,7 @@ export class CalcService extends Effect.Service<CalcService>()("CalcService", {
 
                 if (!client) {
                     return yield* Effect.fail(
-                        new Error(`CosmWasm client for chain ${chainId} is not available`)
+                        new CalcError({ cause: `CosmWasm client for chain ${chainId} is not available` })
                     )
                 }
 
@@ -374,11 +424,11 @@ export class CalcService extends Effect.Service<CalcService>()("CalcService", {
 
                 if (chain.type !== "cosmos" || !managerContract) {
                     return yield* Effect.fail(
-                        new Error(`Chain type ${chain.displayName} is not supported for strategies`)
+                        new CalcError({ cause: `Chain type ${chain.displayName} is not supported for strategies` })
                     )
                 }
 
-                const strategyHandles = yield* Effect.tryPromise({
+                const raw = yield* Effect.tryPromise({
                     try: () =>
                         client.queryContractSmart(managerContract, {
                             strategies: {
@@ -386,20 +436,14 @@ export class CalcService extends Effect.Service<CalcService>()("CalcService", {
                                 status
                             }
                         }),
-                    catch: (cause) => {
-                        console.error("Error fetching strategy handles", cause)
-                        return new Error(`Failed to fetch strategy handles for chain ${chainId}`)
-                    }
+                    catch: asCalcError
                 })
 
-                // Omit distributes poorly over the StrategyHandle union (it
-                // drops the contract_address discriminant), so re-assert the
-                // union once chainId is attached. The data is raw contract
-                // JSON either way; this is the trust boundary.
-                return (strategyHandles as Array<Omit<StrategyHandle, "chainId">>).map((handle) => ({
-                    ...handle,
-                    chainId
-                })) as Array<StrategyHandle>
+                const handles = yield* Schema.decodeUnknown(ChainStrategyHandles)(raw).pipe(
+                    Effect.mapError(asCalcError)
+                )
+
+                return handles.map((handle): StrategyHandle => ({ ...handle, chainId }))
             }),
 
             getStrategy: (
@@ -410,7 +454,7 @@ export class CalcService extends Effect.Service<CalcService>()("CalcService", {
 
                 if (!client) {
                     return yield* Effect.fail(
-                        new Error(`CosmWasm client for chain ${chainId} is not available`)
+                        new CalcError({ cause: `CosmWasm client for chain ${chainId} is not available` })
                     )
                 }
 
@@ -419,24 +463,21 @@ export class CalcService extends Effect.Service<CalcService>()("CalcService", {
 
                 if (chain.type !== "cosmos" || !managerContract) {
                     return yield* Effect.fail(
-                        new Error(`Chain type ${chain.displayName} is not supported for strategies`)
+                        new CalcError({ cause: `Chain type ${chain.displayName} is not supported for strategies` })
                     )
                 }
 
-                const strategy = yield* Effect.tryPromise({
+                const raw = yield* Effect.tryPromise({
                     try: () =>
                         client.queryContractSmart(contractAddress, {
                             config: {}
                         }),
-                    catch: (error) => {
-                        console.error("Error fetching strategy", error)
-                        throw new Error(`Failed to fetch strategy from contract ${contractAddress}`)
-                    }
+                    catch: asCalcError
                 })
 
-                console.log("Fetched strategy:", strategy)
+                yield* Effect.logDebug("Fetched strategy config", { chainId, contractAddress })
 
-                return strategy
+                return yield* Schema.decodeUnknown(StrategyConfig)(raw).pipe(Effect.mapError(asCalcError))
             })
         }
     }),

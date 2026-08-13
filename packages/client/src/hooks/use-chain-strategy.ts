@@ -25,9 +25,7 @@ export const useChainStrategy = (handle: StrategyHandle | undefined) => {
           }
 
           const CALC = yield* CalcService;
-          const config = (yield* CALC.getStrategy(handle.chainId, handle.contract_address)) as {
-            strategy: { action: Record<string, unknown> };
-          };
+          const config = yield* CALC.getStrategy(handle.chainId, handle.contract_address);
 
           // Raw contract actions carry no ids; the builder needs one per node.
           function addUuidToActions(action: Record<string, unknown>): Record<string, unknown> {

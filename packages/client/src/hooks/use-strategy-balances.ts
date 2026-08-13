@@ -27,11 +27,7 @@ export const useStrategyBalances = (strategy: Strategy | undefined) => {
             
                     const CALC = yield* CalcService;
 
-                    const balances = yield* CALC.queryStrategy<typeof Amount.Encoded[]>(strategy.chainId, strategy.address, {
-                        balances: [],
-                    });
-
-                    return balances.map((b) => Schema.decodeSync(Amount)(b));
+                    return yield* CALC.queryStrategy(strategy.chainId, strategy.address, { balances: [] }, Schema.Array(Amount));
                 }),
                 { signal },
             ),

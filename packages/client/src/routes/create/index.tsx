@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { StrategyHandle } from "@template/domain/calc";
-import { COSMOS_CHAINS_BY_ID } from "@template/domain/chains";
+import { CalcService, ChainStrategyHandle, StrategyHandle } from "@template/domain/calc";
+import { type ChainId, COSMOS_CHAINS_BY_ID } from "@template/domain/chains";
 import {
   type Edge,
   type Node,
@@ -14,16 +14,19 @@ import {
   useReactFlow,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { useCallback, useEffect, useState } from "react";
+import { Effect } from "effect";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { v4 } from "uuid";
 import { actionNodeTypes } from "../../components/create/actions";
 import { StrategyList } from "../../components/create/strategy-list";
 import { WalletPanel } from "../../components/wallet/wallet-panel";
+import { useAddressBook } from "../../hooks/use-address-book";
 import { useConnectedWallet } from "../../hooks/use-connection";
 import { useDraftStrategies } from "../../hooks/use-draft-strategies";
 import { useNodeModalStore } from "../../hooks/use-node-modal-store";
 import { useNodeVisibilityStore } from "../../hooks/use-node-visibility";
 import { useOrderUpdates } from "../../hooks/use-order-updates";
+import { useRuntime } from "../../hooks/use-runtime";
 import { useStrategies } from "../../hooks/use-strategies";
 import { useStrategy } from "../../hooks/use-strategy";
 import { useStrategyChain } from "../../hooks/use-strategy-chain";
@@ -32,6 +35,12 @@ import { NODE_SPACING } from "../../lib/layout/constants";
 import { layoutStrategy } from "../../lib/layout/layout-strategy";
 
 export const Route = createFileRoute("/create/")({
+  // Shareable selection: /create?chain=thorchain&strategy=<contract_address>
+  validateSearch: (search: Record<string, unknown>) => ({
+    strategy: typeof search.strategy === "string" && search.strategy.length > 0 ? search.strategy : undefined,
+    chain:
+      typeof search.chain === "string" && search.chain in COSMOS_CHAINS_BY_ID ? (search.chain as ChainId) : undefined,
+  }),
   component: () => (
     <ReactFlowProvider>
       <CreateStrategy />
@@ -77,12 +86,78 @@ export default function CreateStrategy() {
   const { data: strategyHandles, isLoading: isLoadingStrategies } = useStrategies(chain.id, strategyFilter);
   const [selectedHandle, setStrategyHandle] = useState<StrategyHandle>();
 
-  // The active handle is derived: fall back to the first available handle
-  // whenever the selection is missing from the current set.
+  // The active handle is derived: chain-strategy selections stick (they may
+  // come from a shared URL before the listing includes them), while drafts
+  // must still exist in the store so deletion clears the canvas. With no
+  // usable selection, fall back to the first available handle.
   const strategyHandle =
-    selectedHandle && strategyHandles?.[selectedHandle.id]
+    selectedHandle && (selectedHandle.status !== "draft" || strategyHandles?.[selectedHandle.id])
       ? selectedHandle
       : (Object.values(strategyHandles ?? {})[0] as StrategyHandle | undefined);
+
+  const { strategy: sharedStrategyAddress, chain: sharedChainId } = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const runtime = useRuntime();
+  const { addEntry } = useAddressBook();
+  // Block writing the URL until an inbound ?strategy= has been resolved,
+  // otherwise the initial render would wipe the shared parameter. A ref is
+  // enough: resolving also sets the selection, which re-runs the URL sync.
+  const consumedSharedStrategy = useRef(!sharedStrategyAddress);
+
+  useEffect(() => {
+    if (sharedChainId && sharedChainId !== chain.id) setStrategyChain(sharedChainId);
+    // Applied once: the URL seeds the chain, after that the picker owns it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // URL -> selection: resolve a shared contract address into a handle via
+  // the manager, remember its owner so the listing includes the strategy,
+  // and select it under its own status filter.
+  useEffect(() => {
+    if (!sharedStrategyAddress || consumedSharedStrategy.current) return;
+    if (
+      strategyHandle &&
+      strategyHandle.status !== "draft" &&
+      strategyHandle.contract_address === sharedStrategyAddress
+    ) {
+      consumedSharedStrategy.current = true;
+      return;
+    }
+
+    const chainId = sharedChainId ?? chain.id;
+    let cancelled = false;
+
+    runtime
+      .runPromise(
+        Effect.gen(function* () {
+          const CALC = yield* CalcService;
+          return yield* CALC.queryManager(chainId, { strategy: { address: sharedStrategyAddress } }, ChainStrategyHandle);
+        }),
+      )
+      .then((handle) => {
+        if (cancelled) return;
+        consumedSharedStrategy.current = true;
+        addEntry({ chainId, address: handle.owner, label: "shared" });
+        setStrategyFilter(handle.status);
+        setStrategyHandle({ ...handle, chainId });
+      })
+      .catch(() => {
+        if (!cancelled) consumedSharedStrategy.current = true;
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [sharedStrategyAddress, sharedChainId, strategyHandle, chain.id, runtime, addEntry]);
+
+  // Selection -> URL: keep the address bar shareable for chain strategies.
+  useEffect(() => {
+    if (!consumedSharedStrategy.current) return;
+    const nextStrategy =
+      strategyHandle && strategyHandle.status !== "draft" ? strategyHandle.contract_address : undefined;
+    if (nextStrategy === sharedStrategyAddress && chain.id === sharedChainId) return;
+    void navigate({ search: { strategy: nextStrategy, chain: chain.id }, replace: true });
+  }, [strategyHandle, chain.id, sharedStrategyAddress, sharedChainId, navigate]);
 
   const { add, update } = useDraftStrategies(chain.id);
   const { data: strategy, isPending: isPendingStrategy } = useStrategy(strategyHandle);
@@ -190,6 +265,9 @@ export default function CreateStrategy() {
               <code
                 key={filter}
                 onClick={() => {
+                  // Explicitly deselect: chain-strategy selections are sticky
+                  // and would otherwise survive into the new filter's list.
+                  setStrategyHandle(undefined);
                   setStrategyFilter(filter);
                 }}
                 className={`cursor-pointer text-lg hover:underline ${

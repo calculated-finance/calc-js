@@ -60,5 +60,5 @@ export function useAddressBook() {
   }, [wallets, addEntry]);
 
   const addressBook = addressBookStore((s) => s.addressBook);
-  return { addressBook };
+  return { addressBook, addEntry };
 }

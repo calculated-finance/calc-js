@@ -50,4 +50,35 @@ describe("draft strategy store persistence", () => {
     useStrategyDraftsStore.getState().deleteStrategy("thorchain", "draft-1");
     expect(useStrategyDraftsStore.getState().fetch("thorchain", "draft-1")).toBeUndefined();
   });
+
+  it("drops corrupt persisted drafts on rehydration and keeps valid ones", async () => {
+    const valid = { ...encodedStrategy, id: "survivor" };
+    const corrupt = {
+      id: "stale",
+      chainId: "thorchain",
+      label: "Old Schema",
+      status: "draft",
+      action: {
+        id: "action-x",
+        swap: {
+          adjustment: { linear_scalar: { base_receive_amount: { amount: "1", denom: "rune" }, minimum_swap_amount: null, scalar: 99 } },
+          maximum_slippage_bps: 300,
+          routes: [{ thorchain: {} }],
+          minimum_receive_amount: { amount: "1", denom: "rune" },
+          swap_amount: { amount: "1", denom: "unknown-denom-gone" },
+        },
+      },
+    };
+
+    localStorage.setItem(
+      "calc_strategies",
+      JSON.stringify({ state: { strategies: { thorchain: { survivor: valid, stale: corrupt } } }, version: 0 }),
+    );
+
+    await useStrategyDraftsStore.persist.rehydrate();
+
+    const strategies = useStrategyDraftsStore.getState().strategies.thorchain ?? {};
+    expect(Object.keys(strategies)).toEqual(["survivor"]);
+  });
+
 });

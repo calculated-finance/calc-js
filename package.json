@@ -9,7 +9,8 @@
     "check": "tsc -b tsconfig.json",
     "check-recursive": "pnpm --recursive exec tsc -b tsconfig.json",
     "test": "vitest",
-    "coverage": "vitest --coverage"
+    "coverage": "vitest --coverage",
+    "lint": "eslint ."
   },
   "devDependencies": {
     "@babel/cli": "^8.0.4",
@@ -19,12 +20,15 @@
     "@effect/build-utils": "latest",
     "@effect/language-service": "latest",
     "@effect/vitest": "latest",
+    "@eslint/js": "^10.0.1",
     "@types/node": "^26.2.0",
     "babel-plugin-annotate-pure-calls": "^0.4.0",
     "effect": "latest",
+    "eslint": "^10.8.1",
     "glob": "^13.0.6",
     "tsx": "^4.23.12",
     "typescript": "^6.0.3",
+    "typescript-eslint": "^8.67.0",
     "vitest": "^3.2.0"
   }
 }

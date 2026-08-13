@@ -1,6 +1,6 @@
 import { Strategy, StrategyHandle, StrategyId } from "@template/domain/calc";
 import type { ChainId } from "@template/domain/chains";
-import { Effect, Schema } from "effect";
+import { Either, Schema } from "effect";
 import { useMemo } from "react";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
@@ -59,6 +59,9 @@ export const useStrategyDraftsStore = create<StrategyStore>()(
     }),
     {
       name: "calc_strategies",
+      // Both directions tolerate individual bad entries: a draft persisted
+      // under an older schema (or corrupted storage) is dropped rather than
+      // poisoning rehydration for every other draft at boot.
       storage: createJSONStorage<StrategyStore>(() => localStorage, {
         replacer: (key, value) => {
           if (key !== "strategies") return value;
@@ -66,10 +69,10 @@ export const useStrategyDraftsStore = create<StrategyStore>()(
             (acc, [chainId, strategies]) => ({
               ...acc,
               [chainId]: Object.values(strategies).reduce<Record<string, typeof Strategy.Encoded>>(
-                (chainAcc, strategy) => ({
-                  ...chainAcc,
-                  [strategy.id]: Effect.runSync(Schema.encode(Strategy)(strategy)),
-                }),
+                (chainAcc, strategy) => {
+                  const encoded = Schema.encodeUnknownEither(Strategy)(strategy);
+                  return Either.isRight(encoded) ? { ...chainAcc, [strategy.id]: encoded.right } : chainAcc;
+                },
                 {},
               ),
             }),
@@ -82,10 +85,10 @@ export const useStrategyDraftsStore = create<StrategyStore>()(
             (acc, [chainId, strategies]) => ({
               ...acc,
               [chainId]: Object.values(strategies).reduce<Record<string, Strategy>>(
-                (chainAcc, strategy) => ({
-                  ...chainAcc,
-                  [strategy.id]: Effect.runSync(Schema.decode(Strategy)(strategy)),
-                }),
+                (chainAcc, strategy) => {
+                  const decoded = Schema.decodeUnknownEither(Strategy)(strategy);
+                  return Either.isRight(decoded) ? { ...chainAcc, [decoded.right.id]: decoded.right } : chainAcc;
+                },
                 {},
               ),
             }),

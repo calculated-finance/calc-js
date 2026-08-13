@@ -2,7 +2,13 @@ import type { StrategyHandle } from "@template/domain/calc";
 import { useChainStrategy } from "./use-chain-strategy";
 import { useDraftStrategies } from "./use-draft-strategies";
 
-(BigInt.prototype as any).toJSON = function () {
+declare global {
+  interface BigInt {
+    toJSON(): string;
+  }
+}
+
+BigInt.prototype.toJSON = function () {
   return this.toString();
 };
 

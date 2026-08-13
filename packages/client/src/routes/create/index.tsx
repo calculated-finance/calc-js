@@ -4,6 +4,8 @@ import { Strategy, StrategyHandle } from "@template/domain/calc";
 import { Chain, COSMOS_CHAINS_BY_ID } from "@template/domain/chains";
 import { TransactionData, type Wallet } from "@template/domain/clients";
 import {
+  type Edge,
+  type Node,
   Background,
   BackgroundVariant,
   Panel,
@@ -87,7 +89,7 @@ function DraftStrategyHandle({
               setIsDeleting(false);
               onSelect();
             }}
-            className={`${isSelected ? "" : "ml-[18.5px] cursor-pointer hover:underline"}`}
+            className={isSelected ? "" : "ml-[18.5px] cursor-pointer hover:underline"}
           >
             {`${handle.label}${isSelected ? " |" : ""}`}
           </Code>
@@ -97,12 +99,12 @@ function DraftStrategyHandle({
             {!isDeleting && (
               <>
                 {" "}
-                <code onClick={() => setIsStarting(true)} className="cursor-pointer text-green-300 hover:underline">
+                <code onClick={() => { setIsStarting(true); }} className="cursor-pointer text-green-300 hover:underline">
                   Start
                 </code>
                 {" 🚀"}
                 <code> | </code>
-                <code onClick={() => setIsDeleting(true)} className="cursor-pointer text-red-300 hover:underline">
+                <code onClick={() => { setIsDeleting(true); }} className="cursor-pointer text-red-300 hover:underline">
                   Delete
                 </code>
                 {" 🗑️"}
@@ -135,7 +137,7 @@ function DraftStrategyHandle({
           </>
         )}
       </code>
-      <Modal open={!!isStarting} onOpenChange={(open) => (open ? null : setIsStarting(false))}>
+      <Modal open={isStarting} onOpenChange={(open) => { if (!open) setIsStarting(false); }}>
         <ModalHeader className="hidden">
           <ModalTitle>title</ModalTitle>
         </ModalHeader>
@@ -158,7 +160,7 @@ function ActiveStrategyHandle({
 }) {
   const [executableTransactionData, setExecutableTransactionData] = useState<{
     chain: Chain;
-    getDataWithSender: (sender: String) => TransactionData;
+    getDataWithSender: (sender: string) => TransactionData;
     callToAction?: string;
     onBack: () => void;
   }>();
@@ -171,7 +173,7 @@ function ActiveStrategyHandle({
     <>
       <code key={handle.id} className={`flex gap-2 text-lg text-zinc-200 ${!isSelected ? "opacity-35" : ""}`}>
         {isSelected ? "* " : ""}
-        <Code onClick={onSelect} className={`${isSelected ? "" : "ml-[18.5px] cursor-pointer hover:underline"}`}>
+        <Code onClick={onSelect} className={isSelected ? "" : "ml-[18.5px] cursor-pointer hover:underline"}>
           {`${handle.label}${isSelected ? " |" : ""}`}
         </Code>
         {isSelected && (
@@ -199,7 +201,7 @@ function ActiveStrategyHandle({
                     ],
                   }),
                   callToAction: "Withdraw Funds",
-                  onBack: () => setExecutableTransactionData(undefined),
+                  onBack: () => { setExecutableTransactionData(undefined); },
                 });
               }}
               className="cursor-pointer text-green-300 hover:underline"
@@ -234,7 +236,7 @@ function ActiveStrategyHandle({
                     ],
                   }),
                   callToAction: "Pause Strategy",
-                  onBack: () => setExecutableTransactionData(undefined),
+                  onBack: () => { setExecutableTransactionData(undefined); },
                 });
               }}
               className="cursor-pointer text-blue-300 hover:underline"
@@ -269,7 +271,7 @@ function ActiveStrategyHandle({
                     ],
                   }),
                   callToAction: "Archive Strategy",
-                  onBack: () => setExecutableTransactionData(undefined),
+                  onBack: () => { setExecutableTransactionData(undefined); },
                 });
               }}
               className="cursor-pointer text-red-300 hover:underline"
@@ -280,7 +282,7 @@ function ActiveStrategyHandle({
             <code> | </code>
             <code
               onClick={() => {
-                navigator.clipboard.writeText(handle.contract_address);
+                void navigator.clipboard.writeText(handle.contract_address);
               }}
               className="cursor-pointer text-zinc-300 hover:underline"
             >
@@ -292,7 +294,7 @@ function ActiveStrategyHandle({
       </code>
       <Modal
         open={!!executableTransactionData}
-        onOpenChange={(open) => (open ? null : setExecutableTransactionData(undefined))}
+        onOpenChange={(open) => { if (!open) setExecutableTransactionData(undefined); }}
       >
         <ModalHeader className="hidden">
           <ModalTitle>title</ModalTitle>
@@ -333,19 +335,19 @@ export function ConnectionItem({ wallet }: { wallet: Wallet }) {
 
   return (
     <div className="flex flex-col gap-2">
-      {wallet.connection?.status === "connecting" ? (
+      {wallet.connection.status === "connecting" ? (
         <code>Connecting {wallet.type}...</code>
-      ) : wallet.connection?.status === "disconnecting" ? (
+      ) : wallet.connection.status === "disconnecting" ? (
         <code>Disconnecting {wallet.type}...</code>
       ) : (
-        wallet.connection?.status === "connected" && (
+        wallet.connection.status === "connected" && (
           <code className="text-right text-lg">
             {isDisconnecting ? (
               <code className="flex justify-end gap-2 text-lg">
                 Are you sure?{" "}
                 <code
                   onClick={() => {
-                    disconnect(wallet);
+                    void disconnect(wallet);
                     setIsDisconnecting(false);
                   }}
                   className="cursor-pointer text-lg text-red-300 hover:underline"
@@ -354,7 +356,7 @@ export function ConnectionItem({ wallet }: { wallet: Wallet }) {
                 </code>
                 <code>/</code>
                 <code
-                  onClick={() => setIsDisconnecting(false)}
+                  onClick={() => { setIsDisconnecting(false); }}
                   className="cursor-pointer pl-[2px] text-green-300 hover:underline"
                 >
                   No
@@ -367,7 +369,7 @@ export function ConnectionItem({ wallet }: { wallet: Wallet }) {
                   {wallet.connection.address.substring(wallet.connection.address.length - 7)}){" | "}
                 </code>
                 <code
-                  onClick={() => wallet.connection.status === "connected" && setIsDisconnecting(true)}
+                  onClick={() => { if (wallet.connection.status === "connected") setIsDisconnecting(true); }}
                   className="cursor-pointer text-lg text-red-300 hover:underline"
                 >
                   Disconnect
@@ -378,7 +380,7 @@ export function ConnectionItem({ wallet }: { wallet: Wallet }) {
           </code>
         )
       )}
-      {wallet.connection?.status === "connected" &&
+      {wallet.connection.status === "connected" &&
         (typeof wallet.connection.chain !== "string" ? (
           <div className="flex flex-col items-end gap-2">
             {!isSwitchingWalletChain ? (
@@ -392,7 +394,7 @@ export function ConnectionItem({ wallet }: { wallet: Wallet }) {
                 </code>
                 <code> | </code>
                 <code
-                  onClick={() => setIsSwitchingWalletChain(true)}
+                  onClick={() => { setIsSwitchingWalletChain(true); }}
                   className="cursor-pointer text-green-300 hover:underline"
                 >
                   Switch
@@ -406,7 +408,7 @@ export function ConnectionItem({ wallet }: { wallet: Wallet }) {
                   style={{ color: chain.color }}
                   className="cursor-pointer text-right text-lg hover:underline"
                   onClick={() => {
-                    switchChain(wallet, chain.id);
+                    void switchChain(wallet, chain.id);
                     setIsSwitchingWalletChain(false);
                   }}
                 >
@@ -420,10 +422,10 @@ export function ConnectionItem({ wallet }: { wallet: Wallet }) {
         ) : wallet.connection.chain === "adding_chain" ? (
           <code className="text-right text-lg">Adding Chain...</code>
         ) : (
-          wallet.connection.chain === "unsupported" && (
+          (
             <code
               className="cursor-pointer text-right text-lg hover:underline"
-              onClick={() => setIsSwitchingWalletChain(true)}
+              onClick={() => { setIsSwitchingWalletChain(true); }}
             >
               Unsupported Chain
             </code>
@@ -440,7 +442,14 @@ export default function CreateStrategy() {
 
   const [strategyFilter, setStrategyFilter] = useState<"draft" | "active" | "paused" | "archived">("active");
   const { data: strategyHandles, isLoading: isLoadingStrategies } = useStrategies(chain.id, strategyFilter);
-  const [strategyHandle, setStrategyHandle] = useState<StrategyHandle>();
+  const [selectedHandle, setStrategyHandle] = useState<StrategyHandle>();
+
+  // The active handle is derived: fall back to the first available handle
+  // whenever the selection is missing from the current set.
+  const strategyHandle =
+    selectedHandle && strategyHandles?.[selectedHandle.id]
+      ? selectedHandle
+      : (Object.values(strategyHandles ?? {})[0] as StrategyHandle | undefined);
 
   const { add, update, deleteStrategy } = useDraftStrategies(chain.id);
   const { data: strategy, isPending: isPendingStrategy } = useStrategy(strategyHandle);
@@ -448,34 +457,28 @@ export default function CreateStrategy() {
   const { fitView } = useReactFlow();
 
   useEffect(() => {
-    if (strategyHandle && strategyHandles?.[strategyHandle.id]) {
-      return;
-    }
-    setStrategyHandle(Object.values(strategyHandles || {})[0]);
-    fitView();
-  }, [strategyFilter, strategyHandles, strategyHandle, strategy]);
+    void fitView();
+  }, [strategyFilter, strategyHandle, fitView]);
 
   const [isShowingWallets, setIsShowingWallets] = useState(false);
 
   const { wallets, connect } = useWallets();
   const { isVisible } = useNodeVisibilityStore();
 
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
+  // The generic matches the default, but without it the empty literal infers never[].
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-arguments
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
   const layoutNodes = useCallback(() => {
     if (isLoadingStrategies) {
-      setNodes([
-        { id: "loading", type: "loadingStrategies", data: { status: strategyFilter }, position: { x: 0, y: 0 } },
-      ] as any);
+      setNodes([{ id: "loading", type: "loadingStrategies", data: { status: strategyFilter }, position: { x: 0, y: 0 } }]);
       setEdges([]);
       return;
     }
 
     if (isPendingStrategy && strategyHandle) {
-      setNodes([
-        { id: "loading", type: "loadingStrategy", data: { label: strategyHandle.label }, position: { x: 0, y: 0 } },
-      ] as any);
+      setNodes([{ id: "loading", type: "loadingStrategy", data: { label: strategyHandle.label }, position: { x: 0, y: 0 } }]);
       setEdges([]);
       return;
     }
@@ -495,10 +498,12 @@ export default function CreateStrategy() {
       },
     );
 
-    setNodes(layout.nodes as any);
-    setEdges(layout.edges as any);
-    fitView();
-  }, [strategyFilter, isPendingStrategy, isLoadingStrategies, strategy, strategyHandle, setNodes, setEdges]);
+    // xyflow's Node data slot wants an index signature our param aliases
+    // can't carry; the shapes are otherwise identical.
+    setNodes(layout.nodes as unknown as Node[]);
+    setEdges(layout.edges);
+    void fitView();
+  }, [strategyFilter, isPendingStrategy, isLoadingStrategies, strategy, strategyHandle, update, fitView, setNodes, setEdges]);
 
   useEffect(() => {
     layoutNodes();
@@ -516,7 +521,7 @@ export default function CreateStrategy() {
       <ReactFlow
         nodes={nodes}
         edges={
-          edges.map((edge: any) => ({
+          edges.map((edge) => ({
             ...edge,
             style: {
               ...edge.style,
@@ -545,32 +550,32 @@ export default function CreateStrategy() {
           <Panel position="top-left" className="flex flex-col gap-2">
             <div className="flex items-start gap-6 pt-1 pl-2">
               <code
-                onClick={() => setStrategyFilter("draft")}
+                onClick={() => { setStrategyFilter("draft"); }}
                 className={`cursor-pointer text-lg hover:underline ${strategyFilter === "draft" ? "text-zinc-200 underline" : "text-zinc-600"}`}
               >
                 Drafts
               </code>
               <code
-                onClick={() => setStrategyFilter("active")}
+                onClick={() => { setStrategyFilter("active"); }}
                 className={`cursor-pointer text-lg hover:underline ${strategyFilter === "active" ? "text-zinc-200 underline" : "text-zinc-600"}`}
               >
                 Active
               </code>
               <code
-                onClick={() => setStrategyFilter("paused")}
+                onClick={() => { setStrategyFilter("paused"); }}
                 className={`cursor-pointer text-lg hover:underline ${strategyFilter === "paused" ? "text-zinc-200 underline" : "text-zinc-600"}`}
               >
                 Paused
               </code>
               <code
-                onClick={() => setStrategyFilter("archived")}
+                onClick={() => { setStrategyFilter("archived"); }}
                 className={`cursor-pointer text-lg hover:underline ${strategyFilter === "archived" ? "text-zinc-200 underline" : "text-zinc-600"}`}
               >
                 Archived
               </code>
               <div className="flex flex-col items-start gap-2">
                 <code
-                  onClick={() => setIsSwitchingStrategyChain(true)}
+                  onClick={() => { setIsSwitchingStrategyChain(true); }}
                   className="cursor-pointer text-lg hover:underline"
                   style={{
                     color: chain.color,
@@ -604,7 +609,7 @@ export default function CreateStrategy() {
                       (w) => w.supportedChains.some((c) => c.id === chain.id) && w.connection.status === "connected",
                     );
                     const handle = {
-                      id: `${v4()}`,
+                      id: v4(),
                       chainId: chain.id,
                       owner:
                         connectedChainWallet?.connection.status === "connected"
@@ -629,7 +634,7 @@ export default function CreateStrategy() {
         }
         <Panel position="bottom-left">
           <div className="flex flex-col items-start gap-4 pb-2 pl-[10px]">
-            {Object.values(strategyHandles || {})
+            {Object.values(strategyHandles ?? {})
               .filter((s) => s.status === strategyFilter)
               .map((s) => {
                 const isSelected = strategyHandle?.id === s.id;
@@ -661,7 +666,7 @@ export default function CreateStrategy() {
               <ConnectionItem wallet={wallet} />
             ) : !isShowingWallets && wallets.length - connectedWallets.length > 0 ? (
               <code
-                onClick={() => setIsShowingWallets(!isShowingWallets)}
+                onClick={() => { setIsShowingWallets(!isShowingWallets); }}
                 className="cursor-pointer text-lg hover:underline"
               >
                 Connect
@@ -673,7 +678,7 @@ export default function CreateStrategy() {
                     key={wallet.type}
                     wallet={wallet}
                     connect={() => {
-                      connect(wallet);
+                      void connect(wallet);
                       setIsShowingWallets(false);
                     }}
                   />
@@ -683,7 +688,7 @@ export default function CreateStrategy() {
           </div>
         </Panel>
         <ViewportPortal>
-          <Modal open={!!startingStrategy} onOpenChange={(open) => (open ? null : setStartingStrategy(undefined))}>
+          <Modal open={!!startingStrategy} onOpenChange={(open) => { if (!open) setStartingStrategy(undefined); }}>
             <ModalHeader className="hidden">
               <ModalTitle>title</ModalTitle>
             </ModalHeader>

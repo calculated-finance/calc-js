@@ -3,21 +3,16 @@ import type { Action } from "@template/domain/calc";
 
 export const getDefaultDeposits = (action: Action): Record<string, Amount> => {
   if ("many" in action) {
-    return action.many.reduce(
+    return action.many.reduce<Record<string, Amount>>(
       (acc, action) =>
-        Object.values(getDefaultDeposits(action)).reduce(
-          (acc, deposit) => ({
+        Object.values(getDefaultDeposits(action)).reduce((acc, deposit) => {
+          const existing = acc[deposit.denom] as Amount | undefined;
+          return {
             ...acc,
-            [deposit.denom]: acc[deposit.denom]
-              ? {
-                  ...deposit,
-                  amount: acc[deposit.denom].amount + deposit.amount,
-                }
-              : deposit,
-          }),
-          acc,
-        ),
-      {} as Record<string, Amount>,
+            [deposit.denom]: existing ? { ...deposit, amount: existing.amount + deposit.amount } : deposit,
+          };
+        }, acc),
+      {},
     );
   }
 

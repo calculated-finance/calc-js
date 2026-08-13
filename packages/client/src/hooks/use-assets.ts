@@ -6,9 +6,9 @@ export const useAssets = () => {
     
     return {
         assets, 
-        assetsByDenom: assets.reduce((acc, asset) => ({
+        assetsByDenom: assets.reduce<Partial<Record<string, Asset>>>((acc, asset) => ({
             ...acc,
             [asset.denom]: asset,
-        }), {} as Record<string, Asset>)
+        }), {})
     }
 }

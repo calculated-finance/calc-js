@@ -25,8 +25,8 @@ export function AddAction({
     const newAction = {
       id: actionId,
       ...action,
-    };
-    onAdd(newAction as any);
+    } as Action;
+    onAdd(newAction);
     setOpenId(actionId);
   };
 
@@ -84,7 +84,7 @@ export function AddAction({
                 : () => {
                     addAction({
                       distribute: {
-                        denoms: denoms || [],
+                        denoms: denoms ?? [],
                         destinations: [],
                       },
                     });

@@ -1,4 +1,4 @@
-import { Action, Many, ManyAction } from "@template/domain/calc";
+import { Action, ActionsExcludingMany, Many, ManyAction } from "@template/domain/calc";
 import "@xyflow/react/dist/style.css";
 import { Effect, Schema } from "effect";
 import { useState } from "react";
@@ -18,7 +18,7 @@ export function ManyNode({
   const addAction = (action: Action) => {
     update({
       id,
-      many: [...many, action as any],
+      many: [...many, action as ActionsExcludingMany],
     });
   };
 
@@ -31,9 +31,9 @@ export function ManyNode({
       handleLeft
       handleRight={many.length > 0}
       isHelping={isHelpOpen}
-      setHelp={() => setIsHelpOpen(!isHelpOpen)}
+      setHelp={() => { setIsHelpOpen(!isHelpOpen); }}
       isEditingJson={isEditingJson}
-      setIsEditingJson={() => setIsEditingJson(!isEditingJson)}
+      setIsEditingJson={() => { setIsEditingJson(!isEditingJson); }}
       onDelete={remove}
       title={<code className="rounded bg-zinc-900 px-1 py-[1px] font-mono text-4xl text-zinc-100">GROUP</code>}
       summary={
@@ -50,7 +50,7 @@ export function ManyNode({
                 if ("many" in action) {
                   throw new Error("Invalid action type for many node");
                 }
-                return addAction(action);
+                addAction(action);
               }}
               denoms={Object.values(getDefaultDeposits({ id: id, many })).map((d) => d.denom)}
               isHelpOpen={isHelpOpen}

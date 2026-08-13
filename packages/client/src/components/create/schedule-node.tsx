@@ -7,6 +7,7 @@ import duration from "humanize-duration";
 import { useState } from "react";
 import { BaseNode } from "../../components/create/base-node";
 import { type ActionNodeParams, type CustomNodeData } from "../../lib/layout/layout";
+import { fieldErrors } from "../../lib/validation";
 import { Input } from "../ui/input";
 import { AddAction } from "./add-action";
 import { JsonEditor } from "./json-editor";
@@ -38,16 +39,7 @@ export function ScheduleNode({
 
         if ("issues" in validationResult) {
           return {
-            fields: validationResult.issues?.reduce(
-              (acc, issue) =>
-                !issue.path
-                  ? acc
-                  : {
-                      [issue.path.join(".")]: issue.message,
-                      ...acc,
-                    },
-              {} as Record<string, string>,
-            ),
+            fields: fieldErrors(validationResult.issues),
           };
         }
 
@@ -67,9 +59,9 @@ export function ScheduleNode({
       handleLeft
       handleRight={!!schedule.action}
       isHelping={isHelpOpen}
-      setHelp={() => setIsHelpOpen(!isHelpOpen)}
+      setHelp={() => { setIsHelpOpen(!isHelpOpen); }}
       isEditingJson={isEditingJson}
-      setIsEditingJson={() => setIsEditingJson(!isEditingJson)}
+      setIsEditingJson={() => { setIsEditingJson(!isEditingJson); }}
       onDelete={remove}
       title={<code className="rounded bg-zinc-900 px-1 py-[1px] font-mono text-4xl text-zinc-100">WHEN</code>}
       summary={
@@ -159,7 +151,7 @@ export function ScheduleNode({
                                   : 0
                               }
                               onChange={(e) =>
-                                field.handleChange(
+                                { field.handleChange(
                                   e.target.valueAsNumber *
                                     {
                                       seconds: 1,
@@ -167,21 +159,21 @@ export function ScheduleNode({
                                       hours: 60 * 60,
                                       days: 24 * 60 * 60,
                                     }[timeUnit],
-                                )
+                                ); }
                               }
                               tabIndex={-1}
                               autoFocus={false}
                             />
                             <code
                               onClick={() =>
-                                setTimeUnit(
+                                { setTimeUnit(
                                   {
                                     seconds: "minutes" as const,
                                     minutes: "hours" as const,
                                     hours: "days" as const,
                                     days: "seconds" as const,
                                   }[timeUnit],
-                                )
+                                ); }
                               }
                               className="cursor-pointer pr-3 text-lg text-zinc-400 hover:underline"
                             >
@@ -208,7 +200,7 @@ export function ScheduleNode({
                             className="w-full"
                             type="number"
                             value={field.state.value}
-                            onChange={(e) => field.handleChange(e.target.valueAsNumber)}
+                            onChange={(e) => { field.handleChange(e.target.valueAsNumber); }}
                             tabIndex={-1}
                             autoFocus={false}
                           />
@@ -232,7 +224,7 @@ export function ScheduleNode({
                             placeholder="* * * * * *"
                             className="w-full"
                             value={field.state.value}
-                            onChange={(e) => field.handleChange(e.target.value)}
+                            onChange={(e) => { field.handleChange(e.target.value); }}
                             tabIndex={-1}
                             autoFocus={false}
                           />
@@ -254,11 +246,11 @@ export function ScheduleNode({
                   if ("schedule" in action) {
                     throw new Error("Invalid action type for schedule node");
                   }
-                  return update({
+                  update({
                     id,
                     schedule: {
                       ...schedule,
-                      action: action as any,
+                      action: action as Schedule["action"],
                     },
                   });
                 }}

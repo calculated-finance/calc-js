@@ -12,27 +12,31 @@ export interface LayoutContext {
   nodeSpacing: number;
 }
 
-export type StrategyNodeParams = {
+export interface StrategyNodeParams {
   strategy: Strategy;
   update: (strategy: Strategy) => void;
-};
+}
 
-export type ActionNodeParams<T extends Action = Action> = {
+export interface ActionNodeParams<T extends Action = Action> {
   action: T;
   update: (action: T) => void;
   remove: () => void;
-};
+}
 
-export type WalletNodeParams = {
+export interface WalletNodeParams {
   wallet: Wallet;
-};
+}
 
 export type NodeParams = StrategyNodeParams | ActionNodeParams | WalletNodeParams;
 
-export type CustomNodeData<T> = {
+export interface CustomNodeData<T> {
   data: T;
-};
+}
 
+// Node's data slot wants Record<string, unknown>, but our param aliases can't
+// carry an index signature without breaking exactness elsewhere — `any` is the
+// only constraint TS accepts for both.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export interface LayoutResult<T extends Record<string, any>> {
   nodes: Node<T>[];
   edges: Edge[];
@@ -42,13 +46,14 @@ export interface LayoutResult<T extends Record<string, any>> {
   };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type LayoutFunction<T extends Record<string, any>> = (
   nodeData: T,
   context: LayoutContext,
   layout: LayoutFunction<T>,
 ) => LayoutResult<T>;
 
-const layoutFunctions: Record<string, LayoutFunction<ActionNodeParams>> = {
+const layoutFunctions: Partial<Record<string, LayoutFunction<ActionNodeParams>>> = {
   swap: layoutSwapAction,
   many: layoutManyAction,
   schedule: layoutScheduleAction,
@@ -59,10 +64,6 @@ export const layoutAction = (
   { action, ...params }: ActionNodeParams,
   context: LayoutContext,
 ): LayoutResult<ActionNodeParams> => {
-  if (!action || typeof action !== "object") {
-    throw new Error("Invalid data provided for layoutAction");
-  }
-
   const actionType = Object.keys(action)[1];
   const layoutFunction = layoutFunctions[actionType];
 

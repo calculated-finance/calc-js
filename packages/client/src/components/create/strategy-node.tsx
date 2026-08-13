@@ -7,6 +7,7 @@ import { useState } from "react";
 import { BaseNode } from "../../components/create/base-node";
 import { useStrategyBalances } from "../../hooks/use-strategy-balances";
 import { type CustomNodeData, type StrategyNodeParams } from "../../lib/layout/layout";
+import { fieldErrors } from "../../lib/validation";
 import { Input } from "../ui/input";
 import { AddAction } from "./add-action";
 import { Code } from "./code";
@@ -19,18 +20,8 @@ export function StrategyNode({ data: { strategy, update } }: CustomNodeData<Stra
         const validationResult = Schema.standardSchemaV1(Strategy)["~standard"].validate(value);
 
         if ("issues" in validationResult) {
-          console.log(validationResult.issues);
           return {
-            fields: validationResult.issues?.reduce(
-              (acc, issue) =>
-                !issue.path
-                  ? acc
-                  : {
-                      [issue.path.join(".")]: issue.message,
-                      ...acc,
-                    },
-              {} as Record<string, string>,
-            ),
+            fields: fieldErrors(validationResult.issues),
           };
         }
 
@@ -56,7 +47,7 @@ export function StrategyNode({ data: { strategy, update } }: CustomNodeData<Stra
                   placeholder="Strategy Label"
                   className="w-full"
                   value={field.state.value}
-                  onChange={(e) => field.handleChange(e.target.value)}
+                  onChange={(e) => { field.handleChange(e.target.value); }}
                   tabIndex={-1}
                   autoFocus={false}
                   readOnly={strategy.status !== "draft"}
@@ -78,7 +69,7 @@ export function StrategyNode({ data: { strategy, update } }: CustomNodeData<Stra
                   placeholder="Strategy Owner"
                   className="w-full"
                   value={field.state.value}
-                  onChange={(e) => field.handleChange(e.target.value)}
+                  onChange={(e) => { field.handleChange(e.target.value); }}
                   tabIndex={-1}
                   autoFocus={false}
                 />
@@ -100,7 +91,7 @@ export function StrategyNode({ data: { strategy, update } }: CustomNodeData<Stra
                     placeholder="Strategy Address"
                     className="w-full"
                     value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
+                    onChange={(e) => { field.handleChange(e.target.value); }}
                     tabIndex={-1}
                     autoFocus={false}
                     readOnly={strategy.status !== "draft"}
@@ -119,7 +110,7 @@ export function StrategyNode({ data: { strategy, update } }: CustomNodeData<Stra
             {balances.length > 1 ? (
               <code className="flex flex-wrap gap-2 text-lg">
                 <Code>
-                  {balances.map((b) => `${formatNumber(b.amount)} ${b.displayName?.toUpperCase()}`).join(" | ")}
+                  {balances.map((b) => `${formatNumber(b.amount)} ${b.displayName.toUpperCase()}`).join(" | ")}
                 </Code>
               </code>
             ) : (
@@ -130,10 +121,10 @@ export function StrategyNode({ data: { strategy, update } }: CustomNodeData<Stra
         {!strategy.action && (
           <AddAction
             onAdd={(action) =>
-              update({
+              { update({
                 ...strategy,
                 action,
-              })
+              }); }
             }
             isHelpOpen={isHelpOpen}
             helpMessage="Select the root action for this strategy. You can choose a simple action like a execute a swap or set a limit order, however it's often more useful to start with a schedule or a group action."
@@ -152,7 +143,7 @@ export function StrategyNode({ data: { strategy, update } }: CustomNodeData<Stra
       details={<Code className="text-md text-zinc-300">{strategy.label}</Code>}
       modal={renderForm()}
       isHelping={isHelpOpen}
-      setHelp={() => setIsHelpOpen(!isHelpOpen)}
+      setHelp={() => { setIsHelpOpen(!isHelpOpen); }}
     />
   );
 }

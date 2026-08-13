@@ -6,6 +6,7 @@ import { useState } from "react";
 import { BaseNode } from "../../components/create/base-node";
 import { useAssets } from "../../hooks/use-assets";
 import { type ActionNodeParams, type CustomNodeData } from "../../lib/layout/layout";
+import { fieldErrors } from "../../lib/validation";
 import { Input } from "../ui/input";
 import { Code } from "./code";
 import { JsonEditor } from "./json-editor";
@@ -27,18 +28,8 @@ export function DistributeNode({
         const validationResult = Schema.standardSchemaV1(Distribute)["~standard"].validate(value);
 
         if ("issues" in validationResult) {
-          console.log("Validation issues:", validationResult.issues);
           return {
-            fields: validationResult.issues?.reduce(
-              (acc, issue) =>
-                !issue.path
-                  ? acc
-                  : {
-                      [issue.path.join(".")]: issue.message,
-                      ...acc,
-                    },
-              {} as Record<string, string>,
-            ),
+            fields: fieldErrors(validationResult.issues),
           };
         }
 
@@ -57,9 +48,9 @@ export function DistributeNode({
       id={id}
       handleLeft
       isHelping={isHelpOpen}
-      setHelp={() => setIsHelpOpen(!isHelpOpen)}
+      setHelp={() => { setIsHelpOpen(!isHelpOpen); }}
       isEditingJson={isEditingJson}
-      setIsEditingJson={() => setIsEditingJson(!isEditingJson)}
+      setIsEditingJson={() => { setIsEditingJson(!isEditingJson); }}
       onDelete={remove}
       title={<code className="rounded bg-zinc-900 px-1 py-[1px] font-mono text-4xl text-zinc-100">SEND</code>}
       summary={
@@ -96,7 +87,7 @@ export function DistributeNode({
                       <div className="flex flex-wrap gap-2">
                         {field.state.value.map((denom) => (
                           <div key={denom} className="flex items-center gap-3 rounded bg-zinc-900 px-3 py-1">
-                            <Code>{assetsByDenom[denom]?.displayName || denom}</Code>
+                            <Code>{assetsByDenom[denom]?.displayName ?? denom}</Code>
                             <code className="mt-[-2px] cursor-pointer text-zinc-600 hover:text-zinc-300">x</code>
                           </div>
                         ))}
@@ -125,7 +116,7 @@ export function DistributeNode({
                                           placeholder="address"
                                           className="w-full"
                                           value={field.state.value || ""}
-                                          onChange={(e) => field.handleChange(e.target.value)}
+                                          onChange={(e) => { field.handleChange(e.target.value); }}
                                           data-1p-ignore
                                           autoFocus={false}
                                           tabIndex={-1}

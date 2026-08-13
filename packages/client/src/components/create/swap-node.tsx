@@ -8,6 +8,7 @@ import { Input } from "../../components/ui/input";
 import { useAssets } from "../../hooks/use-assets";
 import { useAvailableRoutes } from "../../hooks/use-available-routes";
 import { type ActionNodeParams, type CustomNodeData } from "../../lib/layout/layout";
+import { fieldErrors } from "../../lib/validation";
 import { BaseNode } from "./base-node";
 import { Code } from "./code";
 import { JsonEditor } from "./json-editor";
@@ -20,18 +21,7 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
         const validationResult = Schema.standardSchemaV1(SwapAction)["~standard"].validate(value);
 
         if ("issues" in validationResult) {
-          return {
-            fields: validationResult.issues?.reduce(
-              (acc, issue) =>
-                !issue.path
-                  ? acc
-                  : {
-                      [issue.path.join(".")]: issue.message,
-                      ...acc,
-                    },
-              {} as Record<string, string>,
-            ),
-          };
+          return { fields: fieldErrors(validationResult.issues) };
         }
 
         update(value);
@@ -39,7 +29,9 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
     },
   });
 
-  useEffect(form.reset, [action]);
+  useEffect(() => {
+    form.reset();
+  }, [action, form]);
 
   const [isSelectingSwapDenom, setIsSelectingSwapDenom] = useState(false);
   const [isSelectingReceiveDenom, setIsSelectingReceiveDenom] = useState(false);
@@ -111,9 +103,9 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
       onDelete={remove}
       handleLeft
       isHelping={isHelpOpen}
-      setHelp={() => setIsHelpOpen(!isHelpOpen)}
+      setHelp={() => { setIsHelpOpen(!isHelpOpen); }}
       isEditingJson={isEditingJson}
-      setIsEditingJson={() => setIsEditingJson(!isEditingJson)}
+      setIsEditingJson={() => { setIsEditingJson(!isEditingJson); }}
       isValid={form.state.isValid && form.state.values.swap.routes.length > 0}
       title={<code className="rounded bg-zinc-900 px-1 py-[1px] font-mono text-4xl text-zinc-100">SWAP</code>}
       summary={
@@ -175,15 +167,15 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
                               name={field.name}
                               value={field.state.value}
                               onBlur={field.handleBlur}
-                              onChange={(e) => field.handleChange(e.target.valueAsNumber)}
+                              onChange={(e) => { field.handleChange(e.target.valueAsNumber); }}
                               inputMode="decimal"
-                              onWheel={(e) => e.currentTarget.blur()}
+                              onWheel={(e) => { e.currentTarget.blur(); }}
                               tabIndex={-1}
                               autoFocus={false}
                             />
                             <div
                               className="mt-2.5 flex-1 cursor-pointer items-center pr-3"
-                              onClick={() => setIsSelectingSwapDenom(true)}
+                              onClick={() => { setIsSelectingSwapDenom(true); }}
                             >
                               <code
                                 className="rounded px-1 py-[1px] font-mono hover:underline"
@@ -234,13 +226,13 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
                                 field.handleChange(e.target.valueAsNumber || 0);
                               }}
                               inputMode="decimal"
-                              onWheel={(e) => e.currentTarget.blur()}
+                              onWheel={(e) => { e.currentTarget.blur(); }}
                               tabIndex={-1}
                               autoFocus={false}
                             />
                             <div
                               className="mt-2.5 flex-1 cursor-pointer items-center pr-3"
-                              onClick={() => setIsSelectingReceiveDenom(true)}
+                              onClick={() => { setIsSelectingReceiveDenom(true); }}
                             >
                               <code
                                 className="rounded px-1 py-[1px] font-mono hover:underline"
@@ -262,7 +254,7 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
                                 isBuying
                                   ? form.state.values.swap.minimum_receive_amount.displayName
                                   : form.state.values.swap.swap_amount.displayName
-                              } at ${isBuying ? "<" : ">"} \$${
+                              } at ${isBuying ? "<" : ">"} $${
                                 isBuying
                                   ? formatNumber(
                                       field.state.value === 0
@@ -282,7 +274,7 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
                             </Code>
                             <code
                               className="mt-[-1px] mr-1 cursor-pointer text-sm text-zinc-500 underline"
-                              onClick={() => setIsBuying(!isBuying)}
+                              onClick={() => { setIsBuying(!isBuying); }}
                             >
                               switch
                             </code>
@@ -404,9 +396,9 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
                                         name={field.name}
                                         value={field.state.value / 100}
                                         onBlur={field.handleBlur}
-                                        onChange={(e) => field.handleChange(Math.round(e.target.valueAsNumber) * 100)}
+                                        onChange={(e) => { field.handleChange(Math.round(e.target.valueAsNumber) * 100); }}
                                         inputMode="decimal"
-                                        onWheel={(e) => e.currentTarget.blur()}
+                                        onWheel={(e) => { e.currentTarget.blur(); }}
                                         tabIndex={-1}
                                         autoFocus={false}
                                       />
@@ -476,7 +468,7 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
                           </div>
                           <form.Field
                             name="swap.maximum_slippage_bps"
-                            children={(_) =>
+                            children={() =>
                               !form.state.fieldMeta["swap.maximum_slippage_bps"]?.isValid && (
                                 <p className="font-mono text-sm text-red-500/60">
                                   {form.state.fieldMeta["swap.maximum_slippage_bps"]?.errors.join(", ")}
@@ -530,7 +522,7 @@ export function SwapNode({ data: { action, update, remove } }: CustomNodeData<Ac
                                             field.handleChange(e.target.valueAsNumber);
                                           }}
                                           inputMode="decimal"
-                                          onWheel={(e) => e.currentTarget.blur()}
+                                          onWheel={(e) => { e.currentTarget.blur(); }}
                                           tabIndex={-1}
                                           autoFocus={false}
                                         />

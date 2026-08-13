@@ -1,5 +1,5 @@
 import type { Action } from "@template/domain/calc";
-import type { BuiltInEdge, Edge, Node } from "@xyflow/react";
+import type { BuiltInEdge, Edge } from "@xyflow/react";
 import type { ActionNodeParams, LayoutContext, LayoutFunction, LayoutResult } from "./layout";
 
 export const layoutManyAction: LayoutFunction<ActionNodeParams> = (
@@ -32,7 +32,7 @@ export const layoutManyAction: LayoutFunction<ActionNodeParams> = (
   let tempCurrentChildY = context.startY;
   const tempChildrenStartX = context.startX + 550;
 
-  actions?.forEach((childAction) => {
+  actions.forEach((childAction) => {
     const tempChildContext = {
       ...context,
       startX: tempChildrenStartX,
@@ -57,12 +57,12 @@ export const layoutManyAction: LayoutFunction<ActionNodeParams> = (
 
   const childrenStartX = context.startX + (actions.length > 1 ? 400 : 300);
 
-  let allChildNodes: Node[] = [];
+  let allChildNodes: LayoutResult<ActionNodeParams>["nodes"] = [];
   let allChildEdges: Edge[] = [];
   const childLayoutResults: LayoutResult<ActionNodeParams>[] = [];
   let currentChildY = context.startY;
 
-  actions?.forEach((childAction, index) => {
+  actions.forEach((childAction, index) => {
     const childContext = {
       ...context,
       startX: childrenStartX,
@@ -78,11 +78,11 @@ export const layoutManyAction: LayoutFunction<ActionNodeParams> = (
           }
           const newActions = [...actions];
           newActions[index] = action;
-          params.update({ id: params.action.id, many: newActions } as any);
+          params.update({ id: params.action.id, many: newActions });
         },
         remove: () => {
           const newActions = actions.filter((action) => action.id !== childAction.id);
-          params.update({ id: params.action.id, many: newActions } as any);
+          params.update({ id: params.action.id, many: newActions });
         },
       },
       childContext,
@@ -98,7 +98,7 @@ export const layoutManyAction: LayoutFunction<ActionNodeParams> = (
 
   const manyNodeY = context.startY + totalChildrenHeight / 2 - 75;
 
-  const containerNode: Node = {
+  const containerNode: LayoutResult<ActionNodeParams>["nodes"][number] = {
     id: params.action.id,
     type: "manyNode",
     position: { x: context.startX, y: manyNodeY },
@@ -132,13 +132,13 @@ export const layoutManyAction: LayoutFunction<ActionNodeParams> = (
 
   allChildNodes.forEach((node) => {
     minX = Math.min(minX, node.position.x);
-    maxX = Math.max(maxX, node.position.x + (node.width || 300));
+    maxX = Math.max(maxX, node.position.x + (node.width ?? 300));
     minY = Math.min(minY, node.position.y);
-    maxY = Math.max(maxY, node.position.y + (node.height || 120));
+    maxY = Math.max(maxY, node.position.y + (node.height ?? 120));
   });
 
   return {
-    nodes: allNodes as any[],
+    nodes: allNodes,
     edges: [...allChildEdges, ...parentEdges],
     bounds: {
       width: maxX - minX,

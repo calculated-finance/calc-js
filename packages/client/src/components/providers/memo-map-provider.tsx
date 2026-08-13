@@ -1,11 +1,11 @@
 import { Effect, Layer } from 'effect'
 import React from 'react'
 
-type MemoMapProviderProps = {
+interface MemoMapProviderProps {
   children: React.ReactNode
 }
 
-type MemoMapProviderState = {
+interface MemoMapProviderState {
   memoMap: Layer.MemoMap
 }
 

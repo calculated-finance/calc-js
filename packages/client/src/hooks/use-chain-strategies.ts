@@ -8,7 +8,7 @@ import { useMemoMap } from "./use-memo-map";
 
 export const useChainStrategies = (chainId: ChainId, status: "draft" | "active" | "paused" | "archived") => {
   const { addressBook } = useAddressBook();
-  const addresses = Object.values(addressBook[chainId] || {});
+  const addresses = Object.values(addressBook[chainId] ?? {});
 
   const { memoMap } = useMemoMap();
   const runtime = useMemo(() => ManagedRuntime.make(CalcService.Default, memoMap), [memoMap]);
@@ -22,14 +22,16 @@ export const useChainStrategies = (chainId: ChainId, status: "draft" | "active" 
     queryFn: ({ signal }) =>
       runtime.runPromise(
         Effect.gen(function* () {
+          const empty: Record<StrategyId, StrategyHandle> = {};
+
           if (status === "draft") {
-            return {};
+            return empty;
           }
 
           const CALC = yield* CalcService;
 
           const strategyHandles = yield* Effect.all(
-            (addresses || []).map(({ address }) => CALC.getStrategyHandles(chainId, address, status)),
+            addresses.map(({ address }) => CALC.getStrategyHandles(chainId, address, status)),
             { concurrency: "unbounded" },
           );
 
@@ -38,8 +40,8 @@ export const useChainStrategies = (chainId: ChainId, status: "draft" | "active" 
               ...acc,
               [strategyHandle.id]: strategyHandle,
             }),
-            {},
-          ) as Record<StrategyId, StrategyHandle>;
+            empty,
+          );
         }),
         { signal },
       ),

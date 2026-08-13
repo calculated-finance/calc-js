@@ -46,7 +46,7 @@ function highlightAssetsAndNumbers(text: string, assets: Asset[]): ReactNode {
 }
 
 function highlightNumbers(text: string): ReactNode {
-  const regex = /[\$#]?\d+(?:[,.]\d+)*(?:[.,]\d+)?[%#]?/g;
+  const regex = /[$#]?\d+(?:[,.]\d+)*(?:[.,]\d+)?[%#]?/g;
   const parts: ReactNode[] = [];
   let lastIndex = 0;
   let match: RegExpExecArray | null;

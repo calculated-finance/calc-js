@@ -2,12 +2,12 @@ import { Action } from "@template/domain/calc";
 import { Schema } from "effect";
 import { create } from "zustand";
 
-export type CreateActionStore = {
+export interface CreateActionStore {
   action: Action | undefined;
   updateAction: (action: Action) => void;
   removeAction: () => void;
   generateJson: () => typeof Action.Encoded | undefined;
-};
+}
 
 const action = Schema.decodeSync(Action)({
   id: "action-0",

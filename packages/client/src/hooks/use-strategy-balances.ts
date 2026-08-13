@@ -21,17 +21,17 @@ export const useStrategyBalances = (strategy: Strategy | undefined) => {
         queryFn: ({ signal }) =>
             runtime.runPromise(
                 Effect.gen(function* () {
-                    if (!strategy || !strategy.address) {
+                    if (!strategy?.address) {
                         throw new Error("Cannot fetch strategy balances without a strategy address");
                     }
             
                     const CALC = yield* CalcService;
 
-                    const balances = yield* CALC.queryStrategy<Array<typeof Amount.Encoded>>(strategy.chainId, strategy.address, {
+                    const balances = yield* CALC.queryStrategy<typeof Amount.Encoded[]>(strategy.chainId, strategy.address, {
                         balances: [],
                     });
 
-                    return balances.map((b: any) => Schema.decodeSync(Amount)(b));
+                    return balances.map((b) => Schema.decodeSync(Amount)(b));
                 }),
                 { signal },
             ),

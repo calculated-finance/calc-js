@@ -4,8 +4,5 @@ import { MemoMapProviderContext } from "../components/providers/memo-map-provide
 export const useMemoMap = () => {
   const context = React.useContext(MemoMapProviderContext);
 
-  if (context === undefined)
-    throw new Error("useMemoMap must be used within a MemoMapProvider");
-
   return context;
 };

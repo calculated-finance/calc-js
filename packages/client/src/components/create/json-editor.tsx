@@ -5,12 +5,12 @@ import "prismjs/components/prism-json";
 import { useState } from "react";
 import Editor from "react-simple-code-editor";
 
-export function JsonEditor<T, U>({
+export function JsonEditor<T>({
   data,
   onExit,
 }: {
   data: T;
-  schema: U;
+  schema: unknown;
   onSave: (data: T) => void;
   onExit?: () => void;
 }) {
@@ -44,7 +44,7 @@ export function JsonEditor<T, U>({
         <code
           className="cursor-pointer text-sm text-zinc-500 underline"
           onClick={() => {
-            navigator.clipboard.writeText(localCode);
+            void navigator.clipboard.writeText(localCode);
           }}
         >
           copy

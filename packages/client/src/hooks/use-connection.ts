@@ -47,7 +47,7 @@ export const useConnectedWallet = () => {
     }
 
     setConnectedWallet(connectedWallets.find((w) => w.connection.status === "connected"));
-  }, [connectedWallets, wallet, setConnectedWallet]);
+  }, [connectedWallets, connectedWallet, wallet, setConnectedWallet]);
 
   return { wallet, setConnectedWallet };
 };

@@ -24,5 +24,18 @@ export default tseslint.config([
         tsconfigRootDir: import.meta.dirname,
       },
     },
+    rules: {
+      '@typescript-eslint/restrict-template-expressions': ['error', { allowNumber: true }],
+      '@typescript-eslint/no-empty-function': ['error', { allow: ['arrowFunctions'] }],
+    },
+  },
+  {
+    // Route files export the Route object alongside their component
+    // (TanStack Router convention) and provider files export their hook
+    // alongside the provider component (React context convention).
+    files: ['src/routes/**/*.tsx', 'src/components/providers/*.tsx', 'src/components/ui/*.tsx'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
+    },
   },
 ])

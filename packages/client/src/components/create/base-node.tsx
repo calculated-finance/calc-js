@@ -37,7 +37,6 @@ export function BaseNode({
   width?: number;
 }) {
   const { zoom } = useViewport();
-  const [isTransitioning, setIsTransitioning] = useState(false);
   const { openId, setOpenId } = useNodeModalStore();
 
   const { isVisible } = useNodeVisibilityStore();
@@ -51,18 +50,21 @@ export function BaseNode({
   const currentContentType = getContentType(zoom);
   const [displayedContentType, setDisplayedContentType] = useState(currentContentType);
 
+  // Fading out is derived state: we are mid-transition whenever the displayed
+  // content lags the zoom-derived content. The timer just commits the swap.
+  const isTransitioning = currentContentType !== displayedContentType;
+
   useEffect(() => {
-    if (currentContentType !== displayedContentType) {
-      setIsTransitioning(true);
+    if (!isTransitioning) return;
 
-      const fadeOutTimer = setTimeout(() => {
-        setDisplayedContentType(currentContentType);
-        setIsTransitioning(false);
-      }, 110);
+    const fadeOutTimer = setTimeout(() => {
+      setDisplayedContentType(currentContentType);
+    }, 110);
 
-      return () => clearTimeout(fadeOutTimer);
-    }
-  }, [currentContentType, displayedContentType]);
+    return () => {
+      clearTimeout(fadeOutTimer);
+    };
+  }, [isTransitioning, currentContentType]);
 
   return (
     <div className="group">

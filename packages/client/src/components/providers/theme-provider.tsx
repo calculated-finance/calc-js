@@ -8,17 +8,17 @@ type Theme = typeof Theme.Type;
 const ActualTheme = Schema.Literal("dark", "light");
 type ActualTheme = typeof ActualTheme.Type;
 
-type ThemeProviderProps = {
+interface ThemeProviderProps {
   children: React.ReactNode;
   defaultTheme?: Theme;
   storageKey?: string;
-};
+}
 
-type ThemeProviderState = {
+interface ThemeProviderState {
   theme: Theme;
   actualTheme: ActualTheme;
   setTheme: (theme: Theme) => void;
-};
+}
 
 const initialState: ThemeProviderState = {
   theme: "system",

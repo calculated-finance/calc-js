@@ -4,18 +4,18 @@ import { Effect, ManagedRuntime, Stream } from "effect";
 import React, { useEffect } from "react";
 import { useMemoMap } from "../../hooks/use-memo-map";
 
-type WalletProviderProps = {
+interface WalletProviderProps {
   children: React.ReactNode;
-};
+}
 
-type WalletProviderState = {
-  wallets: Array<Wallet>;
+interface WalletProviderState {
+  wallets: Wallet[];
   connect: (wallet: Wallet) => Promise<void>;
   switchChain: (wallet: Wallet, chainId: ChainId) => Promise<void>;
-  disconnect: (wallet: Wallet) => void;
+  disconnect: (wallet: Wallet) => Promise<void>;
   simulateTransaction: (wallet: Wallet, chain: Chain, data: TransactionData) => Promise<number>;
   signTransaction: (wallet: Wallet, chain: Chain, data: TransactionData) => Promise<void>;
-};
+}
 
 const initialState: WalletProviderState = {
   wallets: [],
@@ -70,7 +70,7 @@ export const WalletProvider = ({ children }: WalletProviderProps) => {
         });
       }),
     );
-  }, []);
+  }, [memoMap]);
 
   return <WalletProviderContext.Provider value={state}>{children}</WalletProviderContext.Provider>;
 };

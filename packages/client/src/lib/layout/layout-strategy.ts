@@ -40,15 +40,15 @@ export const layoutStrategy = (
     {
       action: strategy.action,
       update: (action: Action) =>
-        update({
+        { update({
           ...strategy,
           action,
-        }),
+        }); },
       remove: () =>
-        update({
+        { update({
           ...strategy,
           action: undefined,
-        }),
+        }); },
     },
     layoutContext,
   );

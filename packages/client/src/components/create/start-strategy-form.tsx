@@ -7,6 +7,7 @@ import "@xyflow/react/dist/style.css";
 import { Effect, Schema } from "effect";
 import { useMemo, useState } from "react";
 import { getDefaultDeposits } from "../../lib/strategy";
+import { fieldErrors } from "../../lib/validation";
 import { Input } from "../ui/input";
 import { SignTransactionForm } from "./sign-transaction-form";
 
@@ -27,16 +28,7 @@ export function StartStrategyForm({
 
         if ("issues" in validationResult) {
           return {
-            fields: validationResult.issues?.reduce(
-              (acc, issue) =>
-                !issue.path
-                  ? acc
-                  : {
-                      [issue.path.join(".")]: issue.message,
-                      ...acc,
-                    },
-              {} as Record<string, string>,
-            ),
+            fields: fieldErrors(validationResult.issues),
           };
         }
 
@@ -45,7 +37,7 @@ export function StartStrategyForm({
     },
   });
 
-  const defaultDeposit = useMemo(() => (strategy.action ? getDefaultDeposits(strategy.action) : {}), [strategy.id]);
+  const defaultDeposit = useMemo(() => (strategy.action ? getDefaultDeposits(strategy.action) : {}), [strategy.action]);
 
   const [deposit, setDeposit] = useState<Record<string, Amount>>(defaultDeposit);
 
@@ -70,7 +62,7 @@ export function StartStrategyForm({
                       placeholder="Strategy Label"
                       className="w-full"
                       value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
+                      onChange={(e) => { field.handleChange(e.target.value); }}
                       tabIndex={-1}
                       autoFocus={false}
                     />
@@ -124,7 +116,7 @@ export function StartStrategyForm({
             </div>
             <div className="flex w-full justify-end gap-4">
               <code
-                onClick={() => setIsSigning(true)}
+                onClick={() => { setIsSigning(true); }}
                 className="w-fit cursor-pointer pr-1 text-end text-lg text-green-300 hover:underline"
               >
                 Start Strategy
@@ -142,19 +134,22 @@ export function StartStrategyForm({
           <SignTransactionForm
             chain={RUJIRA}
             getDataWithSender={(sender) => {
-              function removeIds(obj: any): any {
+              function removeIds(obj: unknown): unknown {
                 if (Array.isArray(obj)) {
                   return obj.map(removeIds);
                 }
                 if (obj && typeof obj === "object") {
-                  const { id, ...rest } = obj;
-                  return Object.fromEntries(Object.entries(rest).map(([k, v]) => [k, removeIds(v)]));
+                  return Object.fromEntries(
+                    Object.entries(obj)
+                      .filter(([k]) => k !== "id")
+                      .map(([k, v]) => [k, removeIds(v)]),
+                  );
                 }
                 return obj;
               }
 
               const encodedStrategy = Effect.runSync(Schema.encode(Strategy)(form.state.values));
-              const strategyWithoutIds = removeIds(encodedStrategy); // TODO: Manage this with schema transformations
+              const strategyWithoutIds = removeIds(encodedStrategy) as Record<string, unknown>; // TODO: Manage this with schema transformations
 
               return {
                 type: "cosmos",
@@ -184,7 +179,7 @@ export function StartStrategyForm({
               };
             }}
             callToAction="Start Strategy"
-            onBack={() => setIsSigning(false)}
+            onBack={() => { setIsSigning(false); }}
             onSuccess={() => {
               deleteStrategy(strategy.id);
             }}

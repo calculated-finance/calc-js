@@ -21,41 +21,46 @@ export const useChainStrategy = (handle: StrategyHandle | undefined) => {
       runtime.runPromise(
         Effect.gen(function* () {
           if (!handle || handle.status === "draft") {
-            throw new Error(`Cannot fetch strategy with handle: ${handle}`);
+            throw new Error(`Cannot fetch strategy with handle: ${JSON.stringify(handle)}`);
           }
 
           const CALC = yield* CalcService;
-          const config = yield* CALC.getStrategy(handle.chainId, handle.contract_address);
+          const config = (yield* CALC.getStrategy(handle.chainId, handle.contract_address)) as {
+            strategy: { action: Record<string, unknown> };
+          };
 
-          function addUuidToActions(action: any): any {
-            if ("many" in action) {
+          // Raw contract actions carry no ids; the builder needs one per node.
+          function addUuidToActions(action: Record<string, unknown>): Record<string, unknown> {
+            if (Array.isArray(action.many)) {
               return {
                 id: v4(),
-                many: action.many.map(addUuidToActions),
+                many: action.many.map((child) => addUuidToActions(child as Record<string, unknown>)),
               };
             }
-            if ("schedule" in action) {
+            if (typeof action.schedule === "object" && action.schedule !== null) {
+              const schedule = action.schedule as Record<string, unknown>;
               return {
                 id: v4(),
                 schedule: {
-                  ...action.schedule,
-                  action: addUuidToActions(action.schedule.action),
+                  ...schedule,
+                  action: addUuidToActions(schedule.action as Record<string, unknown>),
                 },
               };
             }
-            if ("conditional" in action) {
+            if (typeof action.conditional === "object" && action.conditional !== null) {
+              const conditional = action.conditional as Record<string, unknown>;
               return {
                 id: v4(),
                 conditional: {
-                  ...action.conditional,
-                  action: addUuidToActions(action.conditional.action),
+                  ...conditional,
+                  action: addUuidToActions(conditional.action as Record<string, unknown>),
                 },
               };
             }
             return { id: v4(), ...action };
           }
 
-          return yield* Schema.decode(Strategy)({
+          return yield* Schema.decodeUnknown(Strategy)({
             ...handle,
             address: handle.contract_address,
             action: addUuidToActions(config.strategy.action),

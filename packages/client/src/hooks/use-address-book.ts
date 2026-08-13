@@ -3,13 +3,13 @@ import { useEffect } from "react";
 import { create } from "zustand";
 import { useWallets } from "./use-wallets";
 
-type AddressBookEntry = {
+interface AddressBookEntry {
   chainId: ChainId;
   address: string;
   label: string;
-};
+}
 
-type AddressBook = Record<ChainId, Record<string, AddressBookEntry>>;
+type AddressBook = Partial<Record<ChainId, Record<string, AddressBookEntry>>>;
 
 interface AddressBookState {
   addressBook: AddressBook;
@@ -22,18 +22,18 @@ const ADDRESS_BOOK_KEY = "address-book";
 const addressBookStore = create<AddressBookState>((set) => ({
   addressBook: {},
   addEntry: (entry) =>
-    set((state) => {
+    { set((state) => {
       const updated = {
         ...state.addressBook,
         [entry.chainId]: { ...state.addressBook[entry.chainId], [entry.address]: entry },
       };
       localStorage.setItem(ADDRESS_BOOK_KEY, JSON.stringify(updated));
       return { addressBook: updated };
-    }),
+    }); },
   loadFromStorage: () => {
     const stored = localStorage.getItem(ADDRESS_BOOK_KEY);
     if (stored) {
-      set({ addressBook: JSON.parse(stored) });
+      set({ addressBook: JSON.parse(stored) as AddressBook });
     }
   },
 }));

@@ -3,7 +3,7 @@ import { FinPair, PAIRS_BY_CHAIN_ID } from '@template/domain/rujira'
 
 const pairs = PAIRS_BY_CHAIN_ID[RUJIRA.id] ?? []
 
-const pairsByDenom = pairs.reduce(
+const pairsByDenom = pairs.reduce<Partial<Record<string, Partial<Record<string, FinPair>>>>>(
   (acc, pair) => ({
     ...acc,
     [pair.denoms[0]]: {
@@ -15,7 +15,7 @@ const pairsByDenom = pairs.reduce(
       [pair.denoms[0]]: pair,
     },
   }),
-  {} as Record<string, Record<string, FinPair>>,
+  {},
 )
 
 export const useFinPairs = () => {

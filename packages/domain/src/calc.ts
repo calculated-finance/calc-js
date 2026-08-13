@@ -342,8 +342,8 @@ export class CalcService extends Effect.Service<CalcService>()("CalcService", {
             queryStrategy: <A>(
                 chainId: ChainId,
                 contractAddress: string,
-                query: Record<string, any>
-            ): Effect.Effect<A, Error, any> =>
+                query: Record<string, unknown>
+            ): Effect.Effect<A, Error, never> =>
                 Effect.gen(function*() {
                     const chain = CHAINS_BY_ID[chainId]
 
@@ -392,10 +392,14 @@ export class CalcService extends Effect.Service<CalcService>()("CalcService", {
                     }
                 })
 
+                // Omit distributes poorly over the StrategyHandle union (it
+                // drops the contract_address discriminant), so re-assert the
+                // union once chainId is attached. The data is raw contract
+                // JSON either way; this is the trust boundary.
                 return (strategyHandles as Array<Omit<StrategyHandle, "chainId">>).map((handle) => ({
                     ...handle,
                     chainId
-                }))
+                })) as Array<StrategyHandle>
             }),
 
             getStrategy: (

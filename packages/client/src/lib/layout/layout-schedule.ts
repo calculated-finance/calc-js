@@ -1,4 +1,4 @@
-import { type Action } from "@template/domain/calc";
+import { type Action, type Schedule } from "@template/domain/calc";
 import type { BuiltInEdge } from "@xyflow/react";
 import { type ActionNodeParams, type LayoutContext, type LayoutFunction, type LayoutResult } from "./layout";
 
@@ -45,18 +45,18 @@ export const layoutScheduleAction: LayoutFunction<ActionNodeParams> = (
           id: params.action.id,
           schedule: {
             ...schedule,
-            action: action as any,
+            action: action as Schedule["action"],
           },
         });
       },
       remove: () =>
-        params.update({
+        { params.update({
           id: params.action.id,
           schedule: {
             ...schedule,
             action: undefined,
           },
-        }),
+        }); },
     },
     childContext,
     layoutAction,

@@ -127,7 +127,7 @@ function ModalContent({ children, dialogProps, drawerProps, ...props }: ModalCon
         {...props}
         {...dialogProps}
         aria-describedby="modal-description"
-        className={`h-fit w-fit overflow-auto rounded-xl border bg-black p-10 ${dialogProps?.className || ""}`}
+        className={`h-fit w-fit overflow-auto rounded-xl border bg-black p-10 ${dialogProps?.className ?? ""}`}
       >
         {children}
       </DialogContent>
@@ -138,7 +138,7 @@ function ModalContent({ children, dialogProps, drawerProps, ...props }: ModalCon
     <DrawerContent
       {...props}
       {...drawerProps}
-      className={`border-none px-6 pt-2 pb-10 ${drawerProps?.className || ""}`}
+      className={`border-none px-6 pt-2 pb-10 ${drawerProps?.className ?? ""}`}
     >
       {children}
     </DrawerContent>

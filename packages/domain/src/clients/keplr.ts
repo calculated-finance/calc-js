@@ -14,7 +14,6 @@ import {
     TransactionSimulationFailed,
     TransactionSubmissionFailed
 } from "./model.js"
-import { createCosmosSigningClient } from "../cosmos.js"
 import { EIP1193Providers } from "../evm.js"
 import { StorageService } from "../storage.js"
 import { makeConnectionStore } from "./connection.js"
@@ -336,26 +335,3 @@ export const executeCosmosTransaction = (chainId: ChainId, data: CosmosTransacti
                     cause: cause instanceof Error ? cause.message : `Failed to submit transaction: ${String(cause)}`
                 })
         }))
-
-export const createKeplrSigningClient = (chainId: ChainId) =>
-    Effect.gen(function*() {
-        if (!window.keplr) {
-            return yield* Effect.fail(new ClientNotAvailableError({ cause: "Keplr extension not available" }))
-        }
-
-        const chain = SUPPORTED_CHAINS_BY_ID[chainId]
-
-        if (chain.type === "cosmos") {
-            const signer = yield* Effect.tryPromise({
-                try: () => window.keplr!.getOfflineSignerAuto(`${chain.id}`),
-                catch: (cause) =>
-                    new SignerNotAvailableError({ cause: `Keplr signer not available: ${String(cause)}` })
-            })
-
-            return yield* createCosmosSigningClient(chain, signer)
-        }
-
-        return yield* Effect.fail(
-            new ChainNotSupportedError({ walletType: "Keplr", chainId })
-        )
-    })

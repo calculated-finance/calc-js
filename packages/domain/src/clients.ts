@@ -1,22 +1,9 @@
-import { Context, Effect, Layer, Stream } from "effect";
+import { Effect, Stream } from "effect";
 import type { ChainId } from "./chains.js";
 import { Chain } from "./chains.js";
-import { createKeplrSigningClient, KeplrService } from "./clients/keplr.js";
-import {
-  createQueryClientFromEnv,
-  createSigningClientFromEnv,
-} from "./clients/local.js";
+import { KeplrService } from "./clients/keplr.js";
 import { MetaMaskService } from "./clients/metamask.js";
-import type {
-  Transaction,
-  TransactionData,
-  TransactionSimulationFailed,
-  TransactionSimulationResult,
-  TransactionSubmissionFailed,
-  TransactionSubmissionResult,
-  Wallet,
-  WalletClient,
-} from "./clients/model.js";
+import type { TransactionData, Wallet, WalletClient } from "./clients/model.js";
 import { ClientNotAvailableError } from "./clients/model.js";
 
 export * from "./clients/model.js";
@@ -64,43 +51,3 @@ export class WalletService extends Effect.Service<WalletService>()(
     dependencies: [MetaMaskService.Default, KeplrService.Default],
   }
 ) {}
-
-export class SigningClient extends Context.Tag("SigningClient")<
-  SigningClient,
-  {
-    type: "cosmos" | "evm";
-    chainId: ChainId;
-    address: string;
-    simulateTransaction: (
-      transaction: Transaction
-    ) => Effect.Effect<
-      TransactionSimulationResult,
-      TransactionSimulationFailed
-    >;
-    signAndSubmitTransaction: (
-      transaction: Transaction
-    ) => Effect.Effect<
-      TransactionSubmissionResult,
-      TransactionSubmissionFailed
-    >;
-  }
->() {
-  static fromEnv = Layer.scoped(this, createSigningClientFromEnv());
-  static fromKeplr = (chainId: ChainId) =>
-    Layer.scoped(this, createKeplrSigningClient(chainId));
-}
-
-export class QueryClient extends Context.Tag("QueryClient")<
-  QueryClient,
-  {
-    fetchTransactions: (
-      address: string,
-      afterBlock: number
-    ) => Effect.Effect<Array<Transaction>, Error>;
-    fetchBalances: (
-      address: string
-    ) => Effect.Effect<Array<{ denom: string; amount: string }>, Error>;
-  }
->() {
-  static fromEnv = Layer.scoped(this, createQueryClientFromEnv());
-}

@@ -1,6 +1,5 @@
-import type { DeliverTxResponse } from "@cosmjs/stargate";
 import { Data, Effect, Schema, Stream } from "effect";
-import type { ChainId, ChainType } from "../chains.js";
+import type { ChainId } from "../chains.js";
 import { Chain } from "../chains.js";
 
 /**
@@ -79,58 +78,7 @@ export const TransactionData = Schema.Union(
   })
 );
 
-export const CosmosChainId = Schema.Literal(
-  "cosmoshub-4", // Cosmos Hub
-  "thorchain" // Rujira
-);
-
-export const EvmChainId = Schema.Literal(
-  1, // Ethereum Mainnet
-  56 // Binance Smart Chain
-);
-
-export const TransactionCommon = Schema.Struct({
-  signer: Schema.NonEmptyTrimmedString,
-  memo: Schema.optional(Schema.NonEmptyTrimmedString),
-  hash: Schema.optional(Schema.NonEmptyTrimmedString),
-  events: Schema.optional(Schema.Array(Schema.Unknown)),
-});
-
-export const Transaction = Schema.Union(
-  Schema.Struct({
-    type: Schema.Literal("cosmos"),
-    chainId: CosmosChainId,
-    data: CosmosTransactionMsgs,
-    ...TransactionCommon.fields,
-  }),
-  Schema.Struct({
-    type: Schema.Literal("evm"),
-    chainId: EvmChainId,
-    data: Schema.Unknown,
-    ...TransactionCommon.fields,
-  })
-);
-
-export type Transaction = Schema.Schema.Type<typeof Transaction>;
-
-export type TransactionSimulationResult = { type: "cosmos"; result: number };
-
-export type TransactionSubmissionResult =
-  | { type: "cosmos"; result: DeliverTxResponse }
-  | {
-      type: "evm";
-      result: string;
-    };
-
-
 export type TransactionData = Schema.Schema.Type<typeof TransactionData>;
-
-export class ChainTypeMismatchError extends Data.TaggedError(
-  "ChainTypeMismatchError"
-)<{
-  required: ChainType;
-  actual: ChainType;
-}> {}
 
 export class ChainNotSupportedError extends Data.TaggedError(
   "ChainNotSupportedError"
@@ -188,24 +136,6 @@ export class TransactionSimulationFailed extends Data.TaggedError(
 
 export class TransactionSubmissionFailed extends Data.TaggedError(
   "TransactionSubmissionFailed"
-)<{
-  cause: string;
-}> {}
-
-export class DecodeTransactionFailed extends Data.TaggedError(
-  "DecodeTransactionFailed"
-)<{
-  cause: string;
-}> {}
-
-export class TransactionFetchFailed extends Data.TaggedError(
-  "TransactionFetchFailed"
-)<{
-  cause: string;
-}> {}
-
-export class BalancesFetchFailed extends Data.TaggedError(
-  "BalancesFetchFailed"
 )<{
   cause: string;
 }> {}

@@ -21,37 +21,37 @@ export const ASSETS = {
     displayName: "RUJI",
     significantFigures: 8,
     coinGeckoId: "rujira",
-    color: "#ab3ddb",
+    color: "#C36AEC",
   },
   "thor.lqdy": {
     displayName: "LQDY",
     significantFigures: 8,
     coinGeckoId: "liquidy",
-    color: "#24776B",
+    color: "#3FB39E",
   },
   "thor.auto": {
     displayName: "AUTO",
     significantFigures: 8,
     coinGeckoId: "auto-2",
-    color: "#161C24",
+    color: "#9DB4CC",
   },
   "eth-usdc-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48": {
     displayName: "USDC",
     significantFigures: 8,
     coinGeckoId: "usd-coin",
-    color: "#2775CA",
+    color: "#4D9FEE",
   },
   tcy: {
     displayName: "TCY",
     significantFigures: 8,
     coinGeckoId: "tcy",
-    color: "#102A22",
+    color: "#45C7A8",
   },
   "gaia-atom": {
     displayName: "ATOM",
     significantFigures: 8,
     coinGeckoId: "cosmos-hub",
-    color: "#2E3148",
+    color: "#A6ADE0",
   },
   "avax-avax": {
     displayName: "AVAX",
@@ -63,7 +63,7 @@ export const ASSETS = {
     displayName: "USDC.AVAX",
     significantFigures: 8,
     coinGeckoId: "usd-coin-avalanche-bridged-usdc-e",
-    color: "#2775CA",
+    color: "#4D9FEE",
   },
   "avax-usdt-0x9702230a8ea53601f5cd2dc00fdbc13d4df4a8c7": {
     displayName: "USDT.AVAX",
@@ -81,7 +81,7 @@ export const ASSETS = {
     displayName: "USDC.BASE",
     significantFigures: 8,
     coinGeckoId: "bridged-usd-coin-base",
-    color: "#2775CA",
+    color: "#4D9FEE",
   },
   "bch-bch": {
     displayName: "BCH",
@@ -99,7 +99,7 @@ export const ASSETS = {
     displayName: "USDC.BSC",
     significantFigures: 8,
     coinGeckoId: "binance-bridged-usdc-bnb-smart-chain",
-    color: "#2775CA",
+    color: "#4D9FEE",
   },
   "bsc-usdt-0x55d398326f99059ff775485246999027b3197955": {
     displayName: "USDT.BSC",
@@ -135,7 +135,7 @@ export const ASSETS = {
     displayName: "USDP",
     significantFigures: 8,
     coinGeckoId: "paxos-standard",
-    color: "#00845D",
+    color: "#0BBF8B",
   },
   "eth-usdt-0xdac17f958d2ee523a2206206994597c13d831ec7": {
     displayName: "USDT.ETH",
@@ -153,7 +153,7 @@ export const ASSETS = {
     displayName: "LTC",
     significantFigures: 8,
     coinGeckoId: "litecoin",
-    color: "#345D9D",
+    color: "#7FA8DC",
   },
   "thor.nami": {
     displayName: "NAMI",
@@ -171,7 +171,7 @@ export const ASSETS = {
     displayName: "TRX",
     significantFigures: 8,
     coinGeckoId: "tron",
-    color: "#EB0029",
+    color: "#FF4D5E",
   },
   "tron-usdt-tr7nhqjekqxgtci8q8zy4pl8otszgjlj6t": {
     displayName: "USDT.TRON",
@@ -183,7 +183,7 @@ export const ASSETS = {
     displayName: "XRP",
     significantFigures: 8,
     coinGeckoId: "ripple",
-    color: "#23292F",
+    color: "#D7DEE6",
   },
   "x/brune": {
     displayName: "bRUNE",

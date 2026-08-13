@@ -1,0 +1,36 @@
+[workspace]
+members = [
+  "packages/*",
+  "contracts/*",
+  "tests",
+]
+resolver = "1"
+
+[profile.release]
+opt-level = 3
+debug = false
+rpath = false
+lto = true
+debug-assertions = false
+codegen-units = 1
+panic = 'abort'
+incremental = false
+overflow-checks = true
+
+[workspace.dependencies]
+anybuf = "1.0"
+anyhow = "1"
+calc-rs = { path = "packages/calc-rs" }
+calc-rs-test = { path = "packages/calc-rs-test" }
+cosmwasm-schema = "2.2.0"
+cosmwasm-std = { version = "2.2.2", features = ["cosmwasm_2_1", "stargate"] }
+cosmwasm-storage = "1.5.2"
+cw-multi-test = { version = "2", features = ["cosmwasm_2_1"] }
+cw-storage-plus = "2.0.0"
+calc-manager = { path = "contracts/manager" }
+prost = "0.13"
+rujira-rs = { git = "https://gitlab.com/thorchain/rujira.git", rev = "6039721871f46cfb927d94c6d68dc1354a8cc443", features = ["interface-fin", "query", "oracle"] }
+calc-scheduler = { path = "contracts/scheduler" }
+calc-strategy = { path = "contracts/strategy" }
+serde = { version = "1.0.197", default-features = false, features = ["derive"] }
+thiserror = { version = "1.0.58" }

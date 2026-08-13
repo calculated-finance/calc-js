@@ -1,5 +1,4 @@
 import { toUtf8 } from "@cosmjs/encoding";
-import { useForm } from "@tanstack/react-form";
 import { Amount } from "@template/domain/assets";
 import { Strategy, StrategyId } from "@template/domain/calc";
 import { RUJIRA } from "@template/domain/chains";
@@ -7,9 +6,9 @@ import "@xyflow/react/dist/style.css";
 import { Effect, Schema } from "effect";
 import { useMemo, useState } from "react";
 import { getDefaultDeposits } from "../../lib/strategy";
-import { fieldErrors } from "../../lib/validation";
 import { Input } from "../ui/input";
 import { SignTransactionForm } from "./sign-transaction-form";
+import { useDecodedSchemaForm } from "../../hooks/use-schema-form";
 
 export function StartStrategyForm({
   strategy,
@@ -20,22 +19,7 @@ export function StartStrategyForm({
   update: (value: Strategy) => void;
   deleteStrategy: (id: StrategyId) => void;
 }) {
-  const form = useForm({
-    defaultValues: strategy,
-    validators: {
-      onChange: ({ value }) => {
-        const validationResult = Schema.standardSchemaV1(Strategy)["~standard"].validate(value);
-
-        if ("issues" in validationResult) {
-          return {
-            fields: fieldErrors(validationResult.issues),
-          };
-        }
-
-        update(value);
-      },
-    },
-  });
+  const form = useDecodedSchemaForm(Strategy, strategy, update);
 
   const defaultDeposit = useMemo(() => (strategy.action ? getDefaultDeposits(strategy.action) : {}), [strategy.action]);
 

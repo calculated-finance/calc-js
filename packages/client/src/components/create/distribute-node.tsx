@@ -1,12 +1,11 @@
-import { useForm } from "@tanstack/react-form";
 import { Distribute, DistributeAction } from "@template/domain/calc";
 import "@xyflow/react/dist/style.css";
 import { Effect, Schema } from "effect";
 import { useState } from "react";
 import { BaseNode } from "../../components/create/base-node";
 import { useAssets } from "../../hooks/use-assets";
+import { useEncodedSchemaForm } from "../../hooks/use-schema-form";
 import { type ActionNodeParams, type CustomNodeData } from "../../lib/layout/layout";
-import { fieldErrors } from "../../lib/validation";
 import { Input } from "../ui/input";
 import { Code } from "./code";
 import { JsonEditor } from "./json-editor";
@@ -21,24 +20,8 @@ export function DistributeNode({
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isEditingJson, setIsEditingJson] = useState(false);
 
-  const form = useForm({
-    defaultValues: Effect.runSync(Schema.encode(Distribute)(distribute)),
-    validators: {
-      onChange: ({ value }) => {
-        const validationResult = Schema.standardSchemaV1(Distribute)["~standard"].validate(value);
-
-        if ("issues" in validationResult) {
-          return {
-            fields: fieldErrors(validationResult.issues),
-          };
-        }
-
-        update({
-          id,
-          distribute: Schema.decodeSync(Distribute)(value),
-        });
-      },
-    },
+  const form = useEncodedSchemaForm(Distribute, distribute, (updated) => {
+    update({ id, distribute: updated });
   });
 
   const { assetsByDenom } = useAssets();

@@ -1,4 +1,3 @@
-import { useForm } from "@tanstack/react-form";
 import { Swap, SwapAction } from "@template/domain/calc";
 import { formatNumber } from "@template/domain/numbers";
 import "@xyflow/react/dist/style.css";
@@ -7,27 +6,14 @@ import { useEffect, useRef, useState } from "react";
 import { Input } from "../../components/ui/input";
 import { useAssets } from "../../hooks/use-assets";
 import { useAvailableRoutes } from "../../hooks/use-available-routes";
+import { useDecodedSchemaForm } from "../../hooks/use-schema-form";
 import { type ActionNodeParams, type CustomNodeData } from "../../lib/layout/layout";
-import { fieldErrors } from "../../lib/validation";
 import { BaseNode } from "./base-node";
 import { Code } from "./code";
 import { JsonEditor } from "./json-editor";
 
 export function SwapNode({ data: { action, update, remove } }: CustomNodeData<ActionNodeParams<SwapAction>>) {
-  const form = useForm({
-    defaultValues: action,
-    validators: {
-      onChange: ({ value }) => {
-        const validationResult = Schema.standardSchemaV1(SwapAction)["~standard"].validate(value);
-
-        if ("issues" in validationResult) {
-          return { fields: fieldErrors(validationResult.issues) };
-        }
-
-        update(value);
-      },
-    },
-  });
+  const form = useDecodedSchemaForm(SwapAction, action, update);
 
   useEffect(() => {
     form.reset();

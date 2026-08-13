@@ -1,8 +1,6 @@
-import { toUtf8 } from "@cosmjs/encoding";
 import { createFileRoute } from "@tanstack/react-router";
-import { Strategy, StrategyHandle } from "@template/domain/calc";
-import { Chain, COSMOS_CHAINS_BY_ID } from "@template/domain/chains";
-import { TransactionData, type Wallet } from "@template/domain/clients";
+import { StrategyHandle } from "@template/domain/calc";
+import { COSMOS_CHAINS_BY_ID } from "@template/domain/chains";
 import {
   type Edge,
   type Node,
@@ -14,16 +12,13 @@ import {
   useEdgesState,
   useNodesState,
   useReactFlow,
-  ViewportPortal,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { v4 } from "uuid";
-import { Code } from "../../components/create/code";
 import { actionNodeTypes } from "../../components/create/actions";
-import { SignTransactionForm } from "../../components/create/sign-transaction-form";
-import { StartStrategyForm } from "../../components/create/start-strategy-form";
-import { Modal, ModalContent, ModalHeader, ModalTitle } from "../../components/ui/modal";
+import { StrategyList } from "../../components/create/strategy-list";
+import { WalletPanel } from "../../components/wallet/wallet-panel";
 import { useConnectedWallet } from "../../hooks/use-connection";
 import { useDraftStrategies } from "../../hooks/use-draft-strategies";
 import { useNodeModalStore } from "../../hooks/use-node-modal-store";
@@ -32,6 +27,7 @@ import { useStrategies } from "../../hooks/use-strategies";
 import { useStrategy } from "../../hooks/use-strategy";
 import { useStrategyChain } from "../../hooks/use-strategy-chain";
 import { useWallets } from "../../hooks/use-wallets";
+import { NODE_SPACING } from "../../lib/layout/constants";
 import { layoutStrategy } from "../../lib/layout/layout-strategy";
 
 export const Route = createFileRoute("/create/")({
@@ -42,276 +38,20 @@ export const Route = createFileRoute("/create/")({
   ),
 });
 
-function ConnectWallet({ wallet, connect }: { wallet: Wallet; connect: () => void }) {
-  return (
-    <code
-      className="cursor-pointer text-xl hover:underline"
-      style={{
-        color: wallet.color,
-        opacity: 0.9,
-      }}
-      onClick={connect}
-    >
-      {wallet.type}
-      <img src={wallet.icon} alt={wallet.type} className="mt-[-4px] ml-3 inline h-5 w-5" />
-    </code>
-  );
-}
+type StrategyFilter = "draft" | "active" | "paused" | "archived";
 
-function DraftStrategyHandle({
-  handle,
-  isSelected,
-  onSelect,
-}: {
-  handle: StrategyHandle;
-  isSelected: boolean;
-  onSelect: () => void;
-}) {
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [isStarting, setIsStarting] = useState(false);
+const FILTERS: StrategyFilter[] = ["draft", "active", "paused", "archived"];
 
-  const { data: strategy } = useStrategy(handle);
-  const { update, deleteStrategy } = useDraftStrategies(handle.chainId);
-
-  const { setOpenId } = useNodeModalStore();
-
-  return (
-    <>
-      <code key={handle.id} className={`flex gap-2 text-lg text-zinc-200 ${!isSelected ? "opacity-35" : ""}`}>
-        {isSelected ? "* " : ""}
-        {(!isSelected || !isDeleting) && (
-          <Code
-            onClick={() => {
-              setIsDeleting(false);
-              onSelect();
-            }}
-            className={isSelected ? "" : "ml-[18.5px] cursor-pointer hover:underline"}
-          >
-            {`${handle.label}${isSelected ? " |" : ""}`}
-          </Code>
-        )}
-        {isSelected && (
-          <>
-            {!isDeleting && (
-              <>
-                {" "}
-                <code onClick={() => { setIsStarting(true); }} className="cursor-pointer text-green-300 hover:underline">
-                  Start
-                </code>
-                {" 🚀"}
-                <code> | </code>
-                <code onClick={() => { setIsDeleting(true); }} className="cursor-pointer text-red-300 hover:underline">
-                  Delete
-                </code>
-                {" 🗑️"}
-              </>
-            )}
-            {isDeleting && (
-              <div className="flex items-center gap-2">
-                <code>Are you sure?</code>{" "}
-                <code
-                  className="cursor-pointer text-red-300 hover:underline"
-                  onClick={() => {
-                    deleteStrategy(handle.id);
-                    setOpenId(null);
-                    setIsDeleting(false);
-                  }}
-                >
-                  Yes
-                </code>
-                <code>/</code>
-                <code
-                  className="cursor-pointer pl-[2px] text-green-300 hover:underline"
-                  onClick={() => {
-                    setIsDeleting(false);
-                  }}
-                >
-                  No
-                </code>
-              </div>
-            )}
-          </>
-        )}
-      </code>
-      <Modal open={isStarting} onOpenChange={(open) => { if (!open) setIsStarting(false); }}>
-        <ModalHeader className="hidden">
-          <ModalTitle>title</ModalTitle>
-        </ModalHeader>
-        <ModalContent showCloseButton={false}>
-          {strategy && <StartStrategyForm strategy={strategy} update={update} deleteStrategy={deleteStrategy} />}
-        </ModalContent>
-      </Modal>
-    </>
-  );
-}
-
-function ActiveStrategyHandle({
-  handle,
-  isSelected,
-  onSelect,
-}: {
-  handle: StrategyHandle;
-  isSelected: boolean;
-  onSelect: () => void;
-}) {
-  const [executableTransactionData, setExecutableTransactionData] = useState<{
-    chain: Chain;
-    getDataWithSender: (sender: string) => TransactionData;
-    callToAction?: string;
-    onBack: () => void;
-  }>();
-
-  if (handle.status !== "active") {
-    return null;
-  }
-
-  return (
-    <>
-      <code key={handle.id} className={`flex gap-2 text-lg text-zinc-200 ${!isSelected ? "opacity-35" : ""}`}>
-        {isSelected ? "* " : ""}
-        <Code onClick={onSelect} className={isSelected ? "" : "ml-[18.5px] cursor-pointer hover:underline"}>
-          {`${handle.label}${isSelected ? " |" : ""}`}
-        </Code>
-        {isSelected && (
-          <>
-            <code
-              onClick={() => {
-                setExecutableTransactionData({
-                  chain: COSMOS_CHAINS_BY_ID[handle.chainId],
-                  getDataWithSender: (sender) => ({
-                    type: "cosmos",
-                    msgs: [
-                      {
-                        typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
-                        value: {
-                          sender,
-                          contract: handle.contract_address,
-                          msg: toUtf8(
-                            JSON.stringify({
-                              withdraw: [],
-                            }),
-                          ),
-                          funds: [],
-                        },
-                      },
-                    ],
-                  }),
-                  callToAction: "Withdraw Funds",
-                  onBack: () => { setExecutableTransactionData(undefined); },
-                });
-              }}
-              className="cursor-pointer text-green-300 hover:underline"
-            >
-              Withdraw
-            </code>
-            {" 🏛️"}
-            <code> | </code>
-            <code
-              onClick={() => {
-                setExecutableTransactionData({
-                  chain: COSMOS_CHAINS_BY_ID[handle.chainId],
-                  getDataWithSender: (sender) => ({
-                    type: "cosmos",
-                    msgs: [
-                      {
-                        typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
-                        value: {
-                          sender,
-                          contract: COSMOS_CHAINS_BY_ID[handle.chainId].managerContract,
-                          msg: toUtf8(
-                            JSON.stringify({
-                              update_strategy_status: {
-                                contract_address: handle.contract_address,
-                                status: "paused",
-                              },
-                            }),
-                          ),
-                          funds: [],
-                        },
-                      },
-                    ],
-                  }),
-                  callToAction: "Pause Strategy",
-                  onBack: () => { setExecutableTransactionData(undefined); },
-                });
-              }}
-              className="cursor-pointer text-blue-300 hover:underline"
-            >
-              Pause
-            </code>
-            {" ⏸️"}
-            <code> | </code>
-            <code
-              onClick={() => {
-                setExecutableTransactionData({
-                  chain: COSMOS_CHAINS_BY_ID[handle.chainId],
-                  getDataWithSender: (sender) => ({
-                    type: "cosmos",
-                    msgs: [
-                      {
-                        typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
-                        value: {
-                          sender,
-                          contract: COSMOS_CHAINS_BY_ID[handle.chainId].managerContract,
-                          msg: toUtf8(
-                            JSON.stringify({
-                              update_strategy_status: {
-                                contract_address: handle.contract_address,
-                                status: "archived",
-                              },
-                            }),
-                          ),
-                          funds: [],
-                        },
-                      },
-                    ],
-                  }),
-                  callToAction: "Archive Strategy",
-                  onBack: () => { setExecutableTransactionData(undefined); },
-                });
-              }}
-              className="cursor-pointer text-red-300 hover:underline"
-            >
-              Archive
-            </code>
-            {" 📂"}
-            <code> | </code>
-            <code
-              onClick={() => {
-                void navigator.clipboard.writeText(handle.contract_address);
-              }}
-              className="cursor-pointer text-zinc-300 hover:underline"
-            >
-              Copy
-            </code>
-            {" 📋"}
-          </>
-        )}
-      </code>
-      <Modal
-        open={!!executableTransactionData}
-        onOpenChange={(open) => { if (!open) setExecutableTransactionData(undefined); }}
-      >
-        <ModalHeader className="hidden">
-          <ModalTitle>title</ModalTitle>
-        </ModalHeader>
-        <ModalContent showCloseButton={false}>
-          {executableTransactionData && (
-            <SignTransactionForm
-              chain={executableTransactionData.chain}
-              getDataWithSender={executableTransactionData.getDataWithSender}
-              callToAction={executableTransactionData.callToAction}
-            />
-          )}
-        </ModalContent>
-      </Modal>
-    </>
-  );
-}
+const FILTER_LABELS: Record<StrategyFilter, string> = {
+  draft: "Drafts",
+  active: "Active",
+  paused: "Paused",
+  archived: "Archived",
+};
 
 const nodeTypes = {
   ...actionNodeTypes,
-  loadingStrategies: ({ data: { status } }: { data: { status: "draft" | "active" | "paused" | "archived" } }) => (
+  loadingStrategies: ({ data: { status } }: { data: { status: StrategyFilter } }) => (
     <code className="text-lg text-zinc-500">Fetching {status} strategies...</code>
   ),
   loadingStrategy: ({ data: { label } }: { data: { label: string } }) => (
@@ -319,120 +59,12 @@ const nodeTypes = {
   ),
 };
 
-export function ConnectionItem({ wallet }: { wallet: Wallet }) {
-  const { switchChain, disconnect } = useWallets();
-
-  const [isDisconnecting, setIsDisconnecting] = useState(false);
-  const [isSwitchingWalletChain, setIsSwitchingWalletChain] = useState(false);
-
-  return (
-    <div className="flex flex-col gap-2">
-      {wallet.connection.status === "connecting" ? (
-        <code>Connecting {wallet.type}...</code>
-      ) : wallet.connection.status === "disconnecting" ? (
-        <code>Disconnecting {wallet.type}...</code>
-      ) : (
-        wallet.connection.status === "connected" && (
-          <code className="text-right text-lg">
-            {isDisconnecting ? (
-              <code className="flex justify-end gap-2 text-lg">
-                Are you sure?{" "}
-                <code
-                  onClick={() => {
-                    void disconnect(wallet);
-                    setIsDisconnecting(false);
-                  }}
-                  className="cursor-pointer text-lg text-red-300 hover:underline"
-                >
-                  Yes
-                </code>
-                <code>/</code>
-                <code
-                  onClick={() => { setIsDisconnecting(false); }}
-                  className="cursor-pointer pl-[2px] text-green-300 hover:underline"
-                >
-                  No
-                </code>
-              </code>
-            ) : (
-              <>
-                <code className="text-right text-lg">
-                  {wallet.connection.label} ({wallet.connection.address.substring(0, 5)}...
-                  {wallet.connection.address.substring(wallet.connection.address.length - 7)}){" | "}
-                </code>
-                <code
-                  onClick={() => { if (wallet.connection.status === "connected") setIsDisconnecting(true); }}
-                  className="cursor-pointer text-lg text-red-300 hover:underline"
-                >
-                  Disconnect
-                </code>
-                {" 🚫"}
-              </>
-            )}
-          </code>
-        )
-      )}
-      {wallet.connection.status === "connected" &&
-        (typeof wallet.connection.chain !== "string" ? (
-          <div className="flex flex-col items-end gap-2">
-            {!isSwitchingWalletChain ? (
-              <code className="text-right text-lg">
-                <code
-                  style={{
-                    color: wallet.connection.chain.color,
-                  }}
-                >
-                  {wallet.connection.chain.displayName}
-                </code>
-                <code> | </code>
-                <code
-                  onClick={() => { setIsSwitchingWalletChain(true); }}
-                  className="cursor-pointer text-green-300 hover:underline"
-                >
-                  Switch
-                </code>
-                {" 🔀"}
-              </code>
-            ) : (
-              wallet.supportedChains.map((chain) => (
-                <code
-                  key={chain.id}
-                  style={{ color: chain.color }}
-                  className="cursor-pointer text-right text-lg hover:underline"
-                  onClick={() => {
-                    void switchChain(wallet, chain.id);
-                    setIsSwitchingWalletChain(false);
-                  }}
-                >
-                  {chain.displayName}
-                </code>
-              ))
-            )}
-          </div>
-        ) : wallet.connection.chain === "switching_chain" ? (
-          <code className="text-right text-lg">Switching Chain...</code>
-        ) : wallet.connection.chain === "adding_chain" ? (
-          <code className="text-right text-lg">Adding Chain...</code>
-        ) : (
-          (
-            <code
-              className="cursor-pointer text-right text-lg hover:underline"
-              onClick={() => { setIsSwitchingWalletChain(true); }}
-            >
-              Unsupported Chain
-            </code>
-          )
-        ))}
-    </div>
-  );
-}
-
 export default function CreateStrategy() {
   const { wallet } = useConnectedWallet();
   const { chain, setChain: setStrategyChain } = useStrategyChain();
   const [isSwitchingStrategyChain, setIsSwitchingStrategyChain] = useState(false);
 
-  const [strategyFilter, setStrategyFilter] = useState<"draft" | "active" | "paused" | "archived">("active");
+  const [strategyFilter, setStrategyFilter] = useState<StrategyFilter>("active");
   const { data: strategyHandles, isLoading: isLoadingStrategies } = useStrategies(chain.id, strategyFilter);
   const [selectedHandle, setStrategyHandle] = useState<StrategyHandle>();
 
@@ -443,7 +75,7 @@ export default function CreateStrategy() {
       ? selectedHandle
       : (Object.values(strategyHandles ?? {})[0] as StrategyHandle | undefined);
 
-  const { add, update, deleteStrategy } = useDraftStrategies(chain.id);
+  const { add, update } = useDraftStrategies(chain.id);
   const { data: strategy, isPending: isPendingStrategy } = useStrategy(strategyHandle);
 
   const { fitView } = useReactFlow();
@@ -452,10 +84,9 @@ export default function CreateStrategy() {
     void fitView();
   }, [strategyFilter, strategyHandle, fitView]);
 
-  const [isShowingWallets, setIsShowingWallets] = useState(false);
-
-  const { wallets, connect } = useWallets();
+  const { wallets } = useWallets();
   const { isVisible } = useNodeVisibilityStore();
+  const { setOpenId } = useNodeModalStore();
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   // The generic matches the default, but without it the empty literal infers never[].
@@ -486,7 +117,7 @@ export default function CreateStrategy() {
       {
         startX: 0,
         startY: 0,
-        nodeSpacing: 50,
+        nodeSpacing: NODE_SPACING,
       },
     );
 
@@ -501,12 +132,22 @@ export default function CreateStrategy() {
     layoutNodes();
   }, [layoutNodes, strategy]);
 
-  const { setOpenId } = useNodeModalStore();
-
-  const [startingStrategy, setStartingStrategy] = useState<Strategy>();
-
-  const connectedWallets = useMemo(() => wallets.filter((w) => w.connection.status === "connected"), [wallets]);
-  const disconnectedWallets = useMemo(() => wallets.filter((w) => w.connection.status === "disconnected"), [wallets]);
+  const createDraft = () => {
+    const connectedChainWallet = wallets.find(
+      (w) => w.supportedChains.some((c) => c.id === chain.id) && w.connection.status === "connected",
+    );
+    const handle = {
+      id: v4(),
+      chainId: chain.id,
+      owner: connectedChainWallet?.connection.status === "connected" ? connectedChainWallet.connection.address : "",
+      label: "New Strategy",
+      status: "draft" as const,
+    };
+    add(handle);
+    setStrategyFilter("draft");
+    setStrategyHandle(handle);
+    setOpenId(handle.id);
+  };
 
   return (
     <div className="flex h-screen w-screen">
@@ -538,159 +179,71 @@ export default function CreateStrategy() {
         className="h-screen w-screen"
       >
         <Background id="1" gap={20} variant={BackgroundVariant.Dots} />
-        {
-          <Panel position="top-left" className="flex flex-col gap-2">
-            <div className="flex items-start gap-6 pt-1 pl-2">
+        <Panel position="top-left" className="flex flex-col gap-2">
+          <div className="flex items-start gap-6 pt-1 pl-2">
+            {FILTERS.map((filter) => (
               <code
-                onClick={() => { setStrategyFilter("draft"); }}
-                className={`cursor-pointer text-lg hover:underline ${strategyFilter === "draft" ? "text-zinc-200 underline" : "text-zinc-600"}`}
+                key={filter}
+                onClick={() => {
+                  setStrategyFilter(filter);
+                }}
+                className={`cursor-pointer text-lg hover:underline ${
+                  strategyFilter === filter ? "text-zinc-200 underline" : "text-zinc-600"
+                }`}
               >
-                Drafts
+                {FILTER_LABELS[filter]}
               </code>
+            ))}
+            <div className="flex flex-col items-start gap-2">
               <code
-                onClick={() => { setStrategyFilter("active"); }}
-                className={`cursor-pointer text-lg hover:underline ${strategyFilter === "active" ? "text-zinc-200 underline" : "text-zinc-600"}`}
+                onClick={() => {
+                  setIsSwitchingStrategyChain(true);
+                }}
+                className="cursor-pointer text-lg hover:underline"
+                style={{
+                  color: chain.color,
+                }}
               >
-                Active
+                {chain.displayName}
               </code>
-              <code
-                onClick={() => { setStrategyFilter("paused"); }}
-                className={`cursor-pointer text-lg hover:underline ${strategyFilter === "paused" ? "text-zinc-200 underline" : "text-zinc-600"}`}
-              >
-                Paused
-              </code>
-              <code
-                onClick={() => { setStrategyFilter("archived"); }}
-                className={`cursor-pointer text-lg hover:underline ${strategyFilter === "archived" ? "text-zinc-200 underline" : "text-zinc-600"}`}
-              >
-                Archived
-              </code>
-              <div className="flex flex-col items-start gap-2">
-                <code
-                  onClick={() => { setIsSwitchingStrategyChain(true); }}
-                  className="cursor-pointer text-lg hover:underline"
-                  style={{
-                    color: chain.color,
-                  }}
-                >
-                  {chain.displayName}
-                </code>
-                {isSwitchingStrategyChain &&
-                  Object.values(COSMOS_CHAINS_BY_ID)
-                    .filter((c) => !!c.managerContract)
-                    .map((c) => (
-                      <code
-                        key={c.id}
-                        style={{ color: c.color }}
-                        className="cursor-pointer text-lg hover:underline"
-                        onClick={() => {
-                          setIsSwitchingStrategyChain(false);
-                          setStrategyChain(c.id);
-                        }}
-                      >
-                        {c.displayName}
-                      </code>
-                    ))}
-              </div>
+              {isSwitchingStrategyChain &&
+                Object.values(COSMOS_CHAINS_BY_ID)
+                  .filter((c) => !!c.managerContract)
+                  .map((c) => (
+                    <code
+                      key={c.id}
+                      style={{ color: c.color }}
+                      className="cursor-pointer text-lg hover:underline"
+                      onClick={() => {
+                        setIsSwitchingStrategyChain(false);
+                        setStrategyChain(c.id);
+                      }}
+                    >
+                      {c.displayName}
+                    </code>
+                  ))}
             </div>
-            {strategyFilter === "draft" && (
-              <div className="flex flex-col gap-4 pl-2">
-                <code
-                  onClick={() => {
-                    const connectedChainWallet = wallets.find(
-                      (w) => w.supportedChains.some((c) => c.id === chain.id) && w.connection.status === "connected",
-                    );
-                    const handle = {
-                      id: v4(),
-                      chainId: chain.id,
-                      owner:
-                        connectedChainWallet?.connection.status === "connected"
-                          ? connectedChainWallet.connection.address
-                          : "",
-                      label: "New Strategy",
-                      status: "draft" as const,
-                    };
-                    add(handle);
-                    setStrategyFilter("draft");
-                    setStrategyHandle(handle);
-                    setOpenId(handle.id);
-                  }}
-                  className="text-blue-300"
-                >
-                  <code className="cursor-pointer text-lg hover:underline">Create draft</code>
-                  {" ✍🏻"}
-                </code>
-              </div>
-            )}
-          </Panel>
-        }
-        <Panel position="bottom-left">
-          <div className="flex flex-col items-start gap-4 pb-2 pl-[10px]">
-            {Object.values(strategyHandles ?? {})
-              .filter((s) => s.status === strategyFilter)
-              .map((s) => {
-                const isSelected = strategyHandle?.id === s.id;
-                return s.status === "draft" ? (
-                  <DraftStrategyHandle
-                    key={s.id}
-                    handle={s}
-                    isSelected={isSelected}
-                    onSelect={() => {
-                      setStrategyHandle(s);
-                    }}
-                  />
-                ) : (
-                  <ActiveStrategyHandle
-                    key={s.id}
-                    handle={s}
-                    isSelected={isSelected}
-                    onSelect={() => {
-                      setStrategyHandle(s);
-                    }}
-                  />
-                );
-              })}
           </div>
+          {strategyFilter === "draft" && (
+            <div className="flex flex-col gap-4 pl-2">
+              <code onClick={createDraft} className="text-blue-300">
+                <code className="cursor-pointer text-lg hover:underline">Create draft</code>
+                {" ✍🏻"}
+              </code>
+            </div>
+          )}
+        </Panel>
+        <Panel position="bottom-left">
+          <StrategyList
+            handles={strategyHandles ?? {}}
+            filter={strategyFilter}
+            selectedId={strategyHandle?.id}
+            onSelect={setStrategyHandle}
+          />
         </Panel>
         <Panel position="top-right">
-          <div className="flex flex-col items-end gap-8 pt-1 pr-1">
-            {wallet ? (
-              <ConnectionItem wallet={wallet} />
-            ) : !isShowingWallets && wallets.length - connectedWallets.length > 0 ? (
-              <code
-                onClick={() => { setIsShowingWallets(!isShowingWallets); }}
-                className="cursor-pointer text-lg hover:underline"
-              >
-                Connect
-              </code>
-            ) : (
-              <div className="flex flex-col items-end gap-2">
-                {disconnectedWallets.map((wallet) => (
-                  <ConnectWallet
-                    key={wallet.type}
-                    wallet={wallet}
-                    connect={() => {
-                      void connect(wallet);
-                      setIsShowingWallets(false);
-                    }}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
+          <WalletPanel wallet={wallet} />
         </Panel>
-        <ViewportPortal>
-          <Modal open={!!startingStrategy} onOpenChange={(open) => { if (!open) setStartingStrategy(undefined); }}>
-            <ModalHeader className="hidden">
-              <ModalTitle>title</ModalTitle>
-            </ModalHeader>
-            <ModalContent showCloseButton={false}>
-              {startingStrategy && (
-                <StartStrategyForm strategy={startingStrategy} update={update} deleteStrategy={deleteStrategy} />
-              )}
-            </ModalContent>
-          </Modal>
-        </ViewportPortal>
       </ReactFlow>
     </div>
   );

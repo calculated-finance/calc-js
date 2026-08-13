@@ -1,4 +1,3 @@
-import { useForm } from "@tanstack/react-form";
 import { Schedule, ScheduleAction } from "@template/domain/calc";
 import "@xyflow/react/dist/style.css";
 import cronstrue from "cronstrue";
@@ -7,10 +6,10 @@ import duration from "humanize-duration";
 import { useState } from "react";
 import { BaseNode } from "../../components/create/base-node";
 import { type ActionNodeParams, type CustomNodeData } from "../../lib/layout/layout";
-import { fieldErrors } from "../../lib/validation";
 import { Input } from "../ui/input";
 import { AddAction } from "./add-action";
 import { JsonEditor } from "./json-editor";
+import { useEncodedSchemaForm } from "../../hooks/use-schema-form";
 
 export function ScheduleNode({
   data: {
@@ -31,24 +30,8 @@ export function ScheduleNode({
           ? cronstrue.toString(schedule.cadence.cron.expr, { throwExceptionOnParseError: false })
           : "";
 
-  const form = useForm({
-    defaultValues: Effect.runSync(Schema.encode(Schedule)(schedule)),
-    validators: {
-      onChange: ({ value }) => {
-        const validationResult = Schema.standardSchemaV1(Schedule)["~standard"].validate(value);
-
-        if ("issues" in validationResult) {
-          return {
-            fields: fieldErrors(validationResult.issues),
-          };
-        }
-
-        update({
-          id,
-          schedule: Schema.decodeSync(Schedule)(value),
-        });
-      },
-    },
+  const form = useEncodedSchemaForm(Schedule, schedule, (updated) => {
+    update({ id, schedule: updated });
   });
 
   const [timeUnit, setTimeUnit] = useState<"seconds" | "minutes" | "hours" | "days">("seconds");

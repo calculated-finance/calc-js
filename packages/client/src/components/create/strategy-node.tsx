@@ -1,34 +1,17 @@
-import { useForm } from "@tanstack/react-form";
 import { Strategy } from "@template/domain/calc";
 import { formatNumber } from "@template/domain/numbers";
 import "@xyflow/react/dist/style.css";
-import { Effect, Schema } from "effect";
 import { useState } from "react";
 import { BaseNode } from "../../components/create/base-node";
 import { useStrategyBalances } from "../../hooks/use-strategy-balances";
+import { useEncodedSchemaForm } from "../../hooks/use-schema-form";
 import { type CustomNodeData, type StrategyNodeParams } from "../../lib/layout/layout";
-import { fieldErrors } from "../../lib/validation";
 import { Input } from "../ui/input";
 import { AddAction } from "./add-action";
 import { Code } from "./code";
 
 export function StrategyNode({ data: { strategy, update } }: CustomNodeData<StrategyNodeParams>) {
-  const form = useForm({
-    defaultValues: Effect.runSync(Schema.encode(Strategy)(strategy)),
-    validators: {
-      onChange: ({ value }) => {
-        const validationResult = Schema.standardSchemaV1(Strategy)["~standard"].validate(value);
-
-        if ("issues" in validationResult) {
-          return {
-            fields: fieldErrors(validationResult.issues),
-          };
-        }
-
-        update(Schema.decodeSync(Strategy)(value));
-      },
-    },
-  });
+  const form = useEncodedSchemaForm(Strategy, strategy, update);
 
   const { data: balances } = useStrategyBalances(strategy);
 

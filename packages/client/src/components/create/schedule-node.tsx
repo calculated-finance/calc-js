@@ -11,7 +11,7 @@ import { AddAction } from "./add-action";
 import { JsonEditor } from "./json-editor";
 
 export function ScheduleNode({
-  data: { id, schedule, update, remove, addNext },
+  data: { id, schedule, update, remove, addNext, hasOutgoing, hasFailure },
 }: CustomNodeData<ScheduleNodeParams>) {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isEditingJson, setIsEditingJson] = useState(false);
@@ -33,7 +33,8 @@ export function ScheduleNode({
     <BaseNode
       id={id}
       handleLeft
-      handleRight={!addNext}
+      handleRight={hasOutgoing}
+      handleBottom={hasFailure}
       isHelping={isHelpOpen}
       setHelp={() => { setIsHelpOpen(!isHelpOpen); }}
       isEditingJson={isEditingJson}

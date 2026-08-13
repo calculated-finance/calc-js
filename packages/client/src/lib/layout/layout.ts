@@ -28,6 +28,13 @@ export interface GraphNodeCallbacks {
   id: string;
   remove: () => void;
   /**
+   * True when a next/on_success pointer leaves this node. Drives the
+   * right-side handle: without it React Flow silently drops the edge.
+   */
+  hasOutgoing: boolean;
+  /** True when an on_failure pointer leaves this node; drives the bottom handle. */
+  hasFailure: boolean;
+  /**
    * Present when the node's primary slot is empty: appends and links a new
    * step, returning the new node's React Flow id (for opening its modal).
    */

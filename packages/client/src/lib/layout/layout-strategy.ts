@@ -44,8 +44,11 @@ export const layoutStrategy = (
     const commitNodes = (updated: CalcNode[]) => {
       update({ ...strategy, nodes: updated });
     };
+    const links = outgoingEdges(node);
     const callbacks = {
       id: rfId(index),
+      hasOutgoing: links.some((link) => link.kind !== "failure"),
+      hasFailure: links.some((link) => link.kind === "failure"),
       remove: () => {
         commitNodes(removeNode(graph, index));
       },
@@ -107,10 +110,14 @@ export const layoutStrategy = (
     };
   };
 
-  /** Places a node and its unplaced descendants; returns the subtree height. */
-  const place = (index: number, x: number, y: number): number => {
+  /**
+   * Places a node and its unplaced descendants. Returns the subtree height
+   * and the node's own row (anchorY) so parents can stay level with their
+   * success path instead of drifting toward failure lanes.
+   */
+  const place = (index: number, x: number, y: number): { height: number; anchorY: number } => {
     const node = byIndex.get(index);
-    if (!node) return 0;
+    if (!node) return { height: 0, anchorY: y };
 
     placed.add(index);
 
@@ -118,17 +125,28 @@ export const layoutStrategy = (
     const childX = x + (links.length > 1 ? MULTI_CHILD_OFFSET_X : CHILD_OFFSET_X);
     let childY = y;
     let laidChildren = 0;
+    let successAnchor: number | undefined;
 
     for (const link of links) {
       edges.push(makeEdge(rfId(index), rfId(link.target), link.kind));
       if (placed.has(link.target) || !byIndex.has(link.target)) continue;
-      const height = place(link.target, childX, childY);
-      childY += height + context.nodeSpacing;
+      // Failure branches always drop a lane, even as an only child, so the
+      // main success/next row stays visually distinct from failure handling.
+      if (link.kind === "failure") {
+        childY = Math.max(childY, y + NODE_HEIGHT + context.nodeSpacing);
+      }
+      const result = place(link.target, childX, childY);
+      childY += result.height + context.nodeSpacing;
       laidChildren += 1;
+      // Stay level with the success/next child's own row; failure children
+      // hang below without dragging the main row down.
+      if (link.kind !== "failure") {
+        successAnchor = result.anchorY;
+      }
     }
 
     const childrenHeight = laidChildren > 0 ? childY - y - context.nodeSpacing : 0;
-    const ownY = laidChildren > 0 ? y + childrenHeight / 2 - NODE_HEIGHT / 2 : y;
+    const ownY = successAnchor ?? y;
 
     nodes.push({
       id: rfId(index),
@@ -137,13 +155,13 @@ export const layoutStrategy = (
       data: paramsFor(node),
     });
 
-    return Math.max(NODE_HEIGHT, childrenHeight);
+    return { height: Math.max(NODE_HEIGHT, childrenHeight), anchorY: ownY };
   };
 
-  const graphHeight = graph.length > 0 ? place(nodeIndex(graph[0]), context.startX + CHILD_OFFSET_X, context.startY - 100) : 0;
+  const entry =
+    graph.length > 0 ? place(nodeIndex(graph[0]), context.startX + CHILD_OFFSET_X, context.startY - 100) : undefined;
 
-  const strategyNodeY =
-    graph.length > 0 ? context.startY - 100 + graphHeight / 2 - NODE_HEIGHT / 2 : context.startY;
+  const strategyNodeY = entry ? entry.anchorY : context.startY;
 
   nodes.push({
     id: `${strategy.id}`,

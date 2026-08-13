@@ -10,7 +10,7 @@ import { Code } from "./code";
 import { JsonEditor } from "./json-editor";
 
 export function DistributeNode({
-  data: { id, distribute, update, remove },
+  data: { id, distribute, update, remove, hasOutgoing },
 }: CustomNodeData<DistributeNodeParams>) {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isEditingJson, setIsEditingJson] = useState(false);
@@ -23,6 +23,7 @@ export function DistributeNode({
     <BaseNode
       id={id}
       handleLeft
+      handleRight={hasOutgoing}
       isHelping={isHelpOpen}
       setHelp={() => { setIsHelpOpen(!isHelpOpen); }}
       isEditingJson={isEditingJson}

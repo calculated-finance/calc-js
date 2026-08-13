@@ -9,6 +9,7 @@ export function BaseNode({
   id,
   handleLeft,
   handleRight,
+  handleBottom,
   title,
   summary,
   details,
@@ -24,6 +25,8 @@ export function BaseNode({
   id: number | string;
   handleLeft?: boolean;
   handleRight?: boolean;
+  /** Source handle for failure edges, so they leave downward into the failure lane. */
+  handleBottom?: boolean;
   title: ReactNode;
   summary: ReactNode;
   details: ReactNode;
@@ -108,6 +111,7 @@ export function BaseNode({
         </div>
         {!isValid && <code className="absolute right-2 bottom-1 text-sm text-red-400">!</code>}
         {handleRight && <Handle type="source" position={Position.Right} />}
+        {handleBottom && <Handle type="source" position={Position.Bottom} id="failure" />}
       </div>
       <Modal
         open={!!id && id == openId}

@@ -25,6 +25,9 @@ export const makeEdge = (source: string, target: string, kind: EdgeKind = "next"
   id: `${source}-to-${target}`,
   source,
   target,
+  // Failure edges leave through the node's bottom handle so they drop into
+  // the failure lane immediately instead of overlaying the success edges.
+  ...(kind === "failure" ? { sourceHandle: "failure" } : {}),
   style: { stroke: EDGE_COLORS[kind], strokeWidth: 2 },
   type: "smoothstep",
   pathOptions: {

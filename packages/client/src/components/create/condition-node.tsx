@@ -54,7 +54,7 @@ const describe = (condition: Condition): string => {
  * The success branch chains via addNext; the payload is edited as JSON.
  */
 export function ConditionNode({
-  data: { id, condition, remove, addNext },
+  data: { id, condition, remove, addNext, hasOutgoing, hasFailure },
 }: CustomNodeData<ConditionNodeParams>) {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isEditingJson, setIsEditingJson] = useState(false);
@@ -65,7 +65,8 @@ export function ConditionNode({
     <BaseNode
       id={id}
       handleLeft
-      handleRight={!addNext}
+      handleRight={hasOutgoing}
+      handleBottom={hasFailure}
       isHelping={isHelpOpen}
       setHelp={() => { setIsHelpOpen(!isHelpOpen); }}
       isEditingJson={isEditingJson}

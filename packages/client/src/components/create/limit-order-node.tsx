@@ -25,7 +25,7 @@ const describePrice = (limitOrder: FinLimitOrder): string => {
  * exists.
  */
 export function LimitOrderNode({
-  data: { id, limitOrder, remove, addNext },
+  data: { id, limitOrder, remove, addNext, hasOutgoing },
 }: CustomNodeData<LimitOrderNodeParams>) {
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isEditingJson, setIsEditingJson] = useState(false);
@@ -42,7 +42,7 @@ export function LimitOrderNode({
     <BaseNode
       id={id}
       handleLeft
-      handleRight={!addNext}
+      handleRight={hasOutgoing}
       isHelping={isHelpOpen}
       setHelp={() => { setIsHelpOpen(!isHelpOpen); }}
       isEditingJson={isEditingJson}

@@ -12,7 +12,7 @@ import { BaseNode } from "./base-node";
 import { Code } from "./code";
 import { JsonEditor } from "./json-editor";
 
-export function SwapNode({ data: { id, swap, update, remove, addNext } }: CustomNodeData<SwapNodeParams>) {
+export function SwapNode({ data: { id, swap, update, remove, addNext, hasOutgoing } }: CustomNodeData<SwapNodeParams>) {
   const form = useDecodedSchemaForm(Swap, swap, update);
 
   useEffect(() => {
@@ -82,7 +82,7 @@ export function SwapNode({ data: { id, swap, update, remove, addNext } }: Custom
       id={id}
       onDelete={remove}
       handleLeft
-      handleRight={!addNext}
+      handleRight={hasOutgoing}
       isHelping={isHelpOpen}
       setHelp={() => { setIsHelpOpen(!isHelpOpen); }}
       isEditingJson={isEditingJson}

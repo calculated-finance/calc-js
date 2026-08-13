@@ -85,12 +85,34 @@ describe("layoutStrategy", () => {
     expect(byId["strategy-1:2"].position.x).toBe(CHILD_OFFSET_X + MULTI_CHILD_OFFSET_X);
     expect(byId["strategy-1:2"].position.y - byId["strategy-1:1"].position.y).toBe(NODE_HEIGHT + NODE_SPACING);
 
-    // condition vertically centred on its branches
-    const centre = (byId["strategy-1:1"].position.y + byId["strategy-1:2"].position.y + NODE_HEIGHT) / 2;
-    expect(byId["strategy-1:0"].position.y + NODE_HEIGHT / 2).toBe(centre);
+    // the condition stays level with its success branch; failure hangs below
+    expect(byId["strategy-1:0"].position.y).toBe(byId["strategy-1:1"].position.y);
 
     const kinds = Object.fromEntries(layout.edges.map((edge) => [`${edge.source}>${edge.target}`, edge.style?.stroke]));
     expect(kinds["strategy-1:0>strategy-1:1"]).not.toBe(kinds["strategy-1:0>strategy-1:2"]);
+  });
+
+  it("drops an only-failure child a lane below the main row", () => {
+    const strategy = strategyWith([balanceNode(0, null, 1), swapNode(1)]);
+    const layout = layoutStrategy({ strategy, update: noop }, context);
+
+    const byId = Object.fromEntries(layout.nodes.map((node) => [node.id, node]));
+
+    expect(byId["strategy-1:1"].position.y - byId["strategy-1:0"].position.y).toBe(NODE_HEIGHT + NODE_SPACING);
+  });
+
+  it("routes failure edges through the bottom handle and flags the node", () => {
+    const strategy = strategyWith([balanceNode(0, null, 1), swapNode(1)]);
+    const layout = layoutStrategy({ strategy, update: noop }, context);
+
+    const head = layout.nodes.find((node) => node.id === "strategy-1:0");
+    expect((head?.data as { hasFailure: boolean }).hasFailure).toBe(true);
+    expect((head?.data as { hasOutgoing: boolean }).hasOutgoing).toBe(false);
+    // primary slot still empty, so chain-building stays available
+    expect((head?.data as { addNext?: unknown }).addNext).toBeTypeOf("function");
+
+    const failureEdge = layout.edges.find((edge) => edge.id === "strategy-1:0-to-strategy-1:1");
+    expect(failureEdge?.sourceHandle).toBe("failure");
   });
 
   it("renders a loop as an edge without re-laying the target", () => {

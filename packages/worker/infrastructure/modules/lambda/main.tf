@@ -89,6 +89,70 @@ resource "aws_lambda_event_source_mapping" "executor_sqs" {
   batch_size       = 10
 }
 
+resource "aws_cloudwatch_metric_alarm" "executor_errors" {
+  count = length(var.signer_secret_arns)
+
+  alarm_name          = "${aws_lambda_function.executor[count.index].function_name}-errors"
+  alarm_description   = "Executor Lambda returned one or more errors"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = 1
+  datapoints_to_alarm = 1
+  metric_name         = "Errors"
+  namespace           = "AWS/Lambda"
+  period              = 300
+  statistic           = "Sum"
+  threshold           = 1
+  treat_missing_data  = "notBreaching"
+  alarm_actions       = var.alarm_actions
+
+  dimensions = {
+    FunctionName = aws_lambda_function.executor[count.index].function_name
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "executor_near_timeout" {
+  count = length(var.signer_secret_arns)
+
+  alarm_name          = "${aws_lambda_function.executor[count.index].function_name}-near-timeout"
+  alarm_description   = "Executor Lambda duration approached its 30-second hard timeout"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = 1
+  datapoints_to_alarm = 1
+  metric_name         = "Duration"
+  namespace           = "AWS/Lambda"
+  period              = 300
+  statistic           = "Maximum"
+  threshold           = 28000
+  treat_missing_data  = "notBreaching"
+  alarm_actions       = var.alarm_actions
+
+  dimensions = {
+    FunctionName = aws_lambda_function.executor[count.index].function_name
+  }
+}
+
+resource "aws_cloudwatch_metric_alarm" "executor_ambiguous_rpc_timeout" {
+  count = length(var.signer_secret_arns)
+
+  alarm_name          = "${aws_lambda_function.executor[count.index].function_name}-ambiguous-rpc-timeout"
+  alarm_description   = "Executor stopped after an RPC request timed out with an ambiguous broadcast outcome"
+  comparison_operator = "GreaterThanOrEqualToThreshold"
+  evaluation_periods  = 1
+  datapoints_to_alarm = 1
+  metric_name         = "RpcAmbiguousTimeout"
+  namespace           = "Calc/Executor"
+  period              = 300
+  statistic           = "Sum"
+  threshold           = 1
+  treat_missing_data  = "notBreaching"
+  alarm_actions       = var.alarm_actions
+
+  dimensions = {
+    ChainId      = var.chain_id
+    FunctionName = aws_lambda_function.executor[count.index].function_name
+  }
+}
+
 data "archive_file" "counter_zip" {
   type        = "zip"
   source_dir  = "${path.module}/../../../dist/handlers/counter"

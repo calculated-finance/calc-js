@@ -55,8 +55,9 @@ module "secrets" {
 module "sqs" {
   source = "./modules/sqs"
 
-  project_name = var.project_name
-  environment  = var.environment
+  project_name  = var.project_name
+  environment   = var.environment
+  alarm_actions = var.alarm_action_arns
 }
 
 module "ecr" {
@@ -96,6 +97,7 @@ module "lambda" {
   signer_secret_arns = module.secrets.signer_secret_arns
   chain_id           = var.chain_id
   triggers_queue_arn = module.sqs.triggers_queue_arn
+  alarm_actions      = var.alarm_action_arns
   # transactions_queue_arn = module.sqs.transactions_queue_arn
   source_dir = "../dist/handlers"
   # events_table_name      = module.dynamodb.events_table_name

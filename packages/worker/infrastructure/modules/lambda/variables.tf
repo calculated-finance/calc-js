@@ -29,6 +29,12 @@ variable "source_dir" {
   type        = string
 }
 
+variable "alarm_actions" {
+  description = "ARNs notified when an executor alarm enters ALARM state"
+  type        = list(string)
+  default     = []
+}
+
 variable "coingecko_api_key" {
   description = "API key for CoinGecko"
   type        = string

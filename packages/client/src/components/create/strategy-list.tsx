@@ -366,7 +366,7 @@ export function StrategyList({
   return (
     // Controls sit BELOW the list: the panel is bottom-anchored, so the list
     // grows upward and the controls keep a fixed position while toggling.
-    <div className="flex flex-col-reverse gap-4.5">
+    <div className="flex flex-col-reverse gap-4.5 pb-4">
       {filter !== "draft" && (
         <div className="flex gap-4 pl-[10px]">
           <code className="text-sm text-zinc-500">sort_by:</code>

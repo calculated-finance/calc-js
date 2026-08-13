@@ -47,6 +47,7 @@
     }
   },
   "devDependencies": {
-    "@keplr-wallet/types": "^0.12.313"
+    "@keplr-wallet/types": "^0.12.313",
+    "graphql": "^17.0.2"
   }
 }

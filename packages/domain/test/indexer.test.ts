@@ -1,5 +1,41 @@
 import { describe, expect, it } from "@effect/vitest"
-import { calcOrderNodeId, decodePhoenixFrame, encodePhoenixFrame } from "../src/indexer.js"
+import { buildSchema, parse, validate } from "graphql"
+import { readFileSync } from "node:fs"
+import { dirname, join } from "node:path"
+import { fileURLToPath } from "node:url"
+import {
+    ACCOUNT_BALANCES_QUERY,
+    accountNodeId,
+    CALC_ORDERS_BALANCES_QUERY,
+    CALC_ORDERS_UPDATED_SUBSCRIPTION,
+    calcOrderNodeId,
+    decodePhoenixFrame,
+    encodePhoenixFrame,
+    FIN_PAIRS_QUERY
+} from "../src/indexer.js"
+
+const schemaPath = join(
+    dirname(fileURLToPath(import.meta.url)),
+    "../../../repos/rujira-ui/packages/developer/data/schema.graphql"
+)
+
+describe("indexer GraphQL documents", () => {
+    // The documents are handwritten; validating them against the vendored
+    // introspection schema catches typos and upstream drift without codegen.
+    // assumeValidSDL: the vendored SDL itself has a duplicate enum value
+    // (Chain.TRON) that graphql-js would otherwise reject.
+    const schema = buildSchema(readFileSync(schemaPath, "utf8"), { assumeValidSDL: true })
+
+    it.each([
+        ["FIN_PAIRS_QUERY", FIN_PAIRS_QUERY],
+        ["CALC_ORDERS_BALANCES_QUERY", CALC_ORDERS_BALANCES_QUERY],
+        ["ACCOUNT_BALANCES_QUERY", ACCOUNT_BALANCES_QUERY],
+        ["CALC_ORDERS_UPDATED_SUBSCRIPTION", CALC_ORDERS_UPDATED_SUBSCRIPTION]
+    ])("%s validates against the vendored schema", (_name, document) => {
+        const errors = validate(schema, parse(document))
+        expect(errors.map((error) => error.message)).toEqual([])
+    })
+})
 
 describe("calcOrderNodeId", () => {
     it("encodes the Relay global id for a strategy address", () => {

@@ -98,7 +98,7 @@ const FinPairsResult = Schema.Struct({
     })
 })
 
-const FIN_PAIRS_QUERY = `{
+export const FIN_PAIRS_QUERY = `{
   finV2(first: 100, sortBy: NAME, sortDir: ASC) {
     edges { node {
       address
@@ -114,11 +114,39 @@ const FIN_PAIRS_QUERY = `{
  */
 export const calcOrderNodeId = (address: string): string => btoa(`CalcOrder:${address}`)
 
-const CalcOrderBalancesResult = Schema.Struct({
+const IndexerBalance = Schema.Struct({
+    amount: Schema.NonEmptyTrimmedString,
+    asset: IndexerAsset
+})
+
+const CalcOrdersBalancesResult = Schema.Struct({
+    nodes: Schema.Array(Schema.NullOr(Schema.Struct({
+        address: Schema.optional(Schema.NonEmptyTrimmedString),
+        balances: Schema.optionalWith(Schema.Array(IndexerBalance), { default: () => [], nullable: true })
+    })))
+})
+
+export const CALC_ORDERS_BALANCES_QUERY = `query ($ids: [ID!]!) {
+  nodes(ids: $ids) {
+    ... on CalcOrder {
+      address
+      balances { amount asset { variants { native { denom } } } }
+    }
+  }
+}`
+
+/** The Relay global id for a THORChain app-layer account. */
+export const accountNodeId = (address: string): string => btoa(`Account:${address}`)
+
+export const CALC_ORDERS_UPDATED_SUBSCRIPTION = `subscription ($owner: Address!) {
+  calcOrdersUpdated(owner: $owner) { node { __typename } }
+}`
+
+const AccountBalancesResult = Schema.Struct({
     node: Schema.NullOr(Schema.Struct({
         balances: Schema.optionalWith(
             Schema.Array(Schema.Struct({
-                amount: Schema.NonEmptyTrimmedString,
+                balance: Schema.NonEmptyTrimmedString,
                 asset: IndexerAsset
             })),
             { default: () => [], nullable: true }
@@ -126,10 +154,10 @@ const CalcOrderBalancesResult = Schema.Struct({
     }))
 })
 
-const CALC_ORDER_BALANCES_QUERY = `query ($id: ID) {
+export const ACCOUNT_BALANCES_QUERY = `query ($id: ID, $addresses: [Address!]!) {
   node(id: $id) {
-    ... on CalcOrder {
-      balances { amount asset { variants { native { denom } } } }
+    ... on Account {
+      balances(addresses: $addresses) { balance asset { variants { native { denom } } } }
     }
   }
 }`
@@ -262,6 +290,57 @@ export class RujiraIndexer extends Effect.Service<RujiraIndexer>()("RujiraIndexe
                 )
             })
 
+        /**
+         * Decode an indexer balance entry into the app's Amount shape.
+         * Entries with denoms we have no asset metadata for are dropped
+         * rather than failing the batch — balances are display-only.
+         */
+        const toAmount = (raw: string, denom: string | undefined): Array<Amount> => {
+            if (!denom) return []
+            const decoded = Schema.decodeUnknownEither(Amount)({ amount: raw, denom })
+            return Either.isRight(decoded) ? [decoded.right] : []
+        }
+
+        /**
+         * Balances for many strategies in one batched Relay nodes lookup,
+         * keyed by strategy address.
+         */
+        const strategiesBalances = (addresses: ReadonlyArray<string>) =>
+            addresses.length === 0
+                ? Effect.succeed({} as Record<string, Array<Amount>>)
+                : query(CalcOrdersBalancesResult, CALC_ORDERS_BALANCES_QUERY, {
+                    ids: addresses.map(calcOrderNodeId)
+                }).pipe(
+                    Effect.map(({ nodes }) =>
+                        nodes.reduce<Record<string, Array<Amount>>>((acc, node) => {
+                            if (!node?.address) return acc
+                            return {
+                                ...acc,
+                                [node.address]: node.balances.flatMap((balance) =>
+                                    toAmount(balance.amount, balance.asset.variants.native?.denom)
+                                )
+                            }
+                        }, {})
+                    )
+                )
+
+        /** A single strategy contract's balances. */
+        const strategyBalances = (address: string) =>
+            strategiesBalances([address]).pipe(Effect.map((balances) => balances[address] ?? []))
+
+        /** A THORChain account's app-layer balances (bank + secured assets). */
+        const accountBalances = (address: string) =>
+            query(AccountBalancesResult, ACCOUNT_BALANCES_QUERY, {
+                id: accountNodeId(address),
+                addresses: [address]
+            }).pipe(
+                Effect.map(({ node }) =>
+                    (node?.balances ?? []).flatMap((balance) =>
+                        toAmount(balance.balance, balance.asset.variants.native?.denom)
+                    )
+                )
+            )
+
         return {
             query,
             subscribe,
@@ -277,23 +356,9 @@ export class RujiraIndexer extends Effect.Service<RujiraIndexer>()("RujiraIndexe
                 )
             ),
 
-            /**
-             * A strategy contract's balances, served from the indexer instead
-             * of a per-strategy RPC round trip. Entries with denoms we have no
-             * asset metadata for are dropped rather than failing the batch —
-             * balances are display-only.
-             */
-            strategyBalances: (address: string) =>
-                query(CalcOrderBalancesResult, CALC_ORDER_BALANCES_QUERY, { id: calcOrderNodeId(address) }).pipe(
-                    Effect.map(({ node }) =>
-                        (node?.balances ?? []).flatMap((balance) => {
-                            const denom = balance.asset.variants.native?.denom
-                            if (!denom) return []
-                            const decoded = Schema.decodeUnknownEither(Amount)({ amount: balance.amount, denom })
-                            return Either.isRight(decoded) ? [decoded.right] : []
-                        })
-                    )
-                ),
+            strategyBalances,
+            strategiesBalances,
+            accountBalances,
 
             /**
              * Fires whenever the indexer observes a CALC order create/update
@@ -301,7 +366,7 @@ export class RujiraIndexer extends Effect.Service<RujiraIndexer>()("RujiraIndexe
              * refetch rather than patch.
              */
             calcOrdersUpdated: (owner: string) =>
-                subscribe(Schema.Unknown, `subscription { calcOrdersUpdated(owner: "${owner}") { node { __typename } } }`)
+                subscribe(Schema.Unknown, CALC_ORDERS_UPDATED_SUBSCRIPTION, { owner })
         }
     })
 }) {}

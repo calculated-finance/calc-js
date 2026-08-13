@@ -1,15 +1,29 @@
 import { toUtf8 } from "@cosmjs/encoding";
+import type { Amount } from "@template/domain/assets";
 import type { StrategyHandle } from "@template/domain/calc";
 import { type Chain, COSMOS_CHAINS_BY_ID } from "@template/domain/chains";
 import type { TransactionData } from "@template/domain/clients";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { formatNumber } from "@template/domain/numbers";
+import { useState } from "react";
 import { useDraftStrategies } from "../../hooks/use-draft-strategies";
 import { useNodeModalStore } from "../../hooks/use-node-modal-store";
+import { useScrollFade } from "../../hooks/use-scroll-fade";
+import { useStrategiesBalances } from "../../hooks/use-strategies-balances";
 import { useStrategy } from "../../hooks/use-strategy";
 import { Modal, ModalContent, ModalHeader, ModalTitle } from "../ui/modal";
 import { Code } from "./code";
 import { SignTransactionForm } from "./sign-transaction-form";
 import { StartStrategyForm } from "./start-strategy-form";
+
+/** A compact one-line balances summary, e.g. "32,207 RUNE · 12 TCY". */
+export function BalancesSummary({ balances }: { balances: Amount[] | undefined }) {
+  if (!balances?.length) return null;
+  return (
+    <code className="text-sm text-zinc-500">
+      {balances.map((b) => `${formatNumber(b.amount)} ${b.displayName.toUpperCase()}`).join(" · ")}
+    </code>
+  );
+}
 
 function DraftStrategyHandle({
   handle,
@@ -140,10 +154,12 @@ const statusUpdateData =
 
 function ActiveStrategyHandle({
   handle,
+  balances,
   isSelected,
   onSelect,
 }: {
   handle: StrategyHandle;
+  balances?: Amount[];
   isSelected: boolean;
   onSelect: () => void;
 }) {
@@ -176,6 +192,7 @@ function ActiveStrategyHandle({
         <Code onClick={onSelect} className={isSelected ? "" : "ml-[18.5px] cursor-pointer hover:underline"}>
           {`${handle.label}${isSelected ? " |" : ""}`}
         </Code>
+        {!isSelected && <BalancesSummary balances={balances} />}
         {isSelected && (
           <>
             <code
@@ -233,6 +250,7 @@ function ActiveStrategyHandle({
               Copy
             </code>
             {" 📋"}
+            <BalancesSummary balances={balances} />
           </>
         )}
       </code>
@@ -259,8 +277,6 @@ function ActiveStrategyHandle({
   );
 }
 
-const FADE_HEIGHT = 32;
-
 export function StrategyList({
   handles,
   filter,
@@ -272,40 +288,15 @@ export function StrategyList({
   selectedId: string | number | undefined;
   onSelect: (handle: StrategyHandle) => void;
 }) {
-  const listRef = useRef<HTMLDivElement>(null);
-  const [fade, setFade] = useState({ top: false, bottom: false });
-
-  // Fade an edge only while more content continues past it, so the fades
-  // themselves signal "there's more to scroll".
-  const updateFade = useCallback(() => {
-    const el = listRef.current;
-    if (!el) return;
-    const top = el.scrollTop > 2;
-    const bottom = el.scrollTop + el.clientHeight < el.scrollHeight - 2;
-    setFade((prev) => (prev.top === top && prev.bottom === bottom ? prev : { top, bottom }));
-  }, []);
-
-  useEffect(() => {
-    updateFade();
-    const el = listRef.current;
-    if (!el) return;
-    const observer = new ResizeObserver(updateFade);
-    observer.observe(el);
-    return () => {
-      observer.disconnect();
-    };
-  }, [updateFade, handles, filter]);
-
-  const maskImage = `linear-gradient(to bottom, ${
-    fade.top ? `transparent, black ${FADE_HEIGHT}px` : "black"
-  }, ${fade.bottom ? `black calc(100% - ${FADE_HEIGHT}px), transparent` : "black"})`;
+  const { ref, onScroll, maskImage } = useScrollFade();
+  const { data: balancesByAddress } = useStrategiesBalances(Object.values(handles));
 
   return (
     // nowheel keeps wheel events scrolling this list instead of zooming the
     // React Flow canvas underneath.
     <div
-      ref={listRef}
-      onScroll={updateFade}
+      ref={ref}
+      onScroll={onScroll}
       className="nowheel flex max-h-[33vh] flex-col items-start gap-4 overflow-y-auto pr-4 pb-2 pl-[10px]"
       style={{ scrollbarWidth: "thin", maskImage, WebkitMaskImage: maskImage }}
     >
@@ -326,6 +317,7 @@ export function StrategyList({
             <ActiveStrategyHandle
               key={handle.id}
               handle={handle}
+              balances={balancesByAddress?.[handle.contract_address]}
               isSelected={isSelected}
               onSelect={() => {
                 onSelect(handle);

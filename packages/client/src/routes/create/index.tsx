@@ -19,6 +19,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { v4 } from "uuid";
 import { actionNodeTypes } from "../../components/create/actions";
 import { StrategyList } from "../../components/create/strategy-list";
+import { WalletBalances } from "../../components/wallet/wallet-balances";
 import { WalletPanel } from "../../components/wallet/wallet-panel";
 import { useAddressBook } from "../../hooks/use-address-book";
 import { useConnectedWallet } from "../../hooks/use-connection";
@@ -338,6 +339,9 @@ export default function CreateStrategy() {
         </Panel>
         <Panel position="top-right">
           <WalletPanel wallet={wallet} />
+        </Panel>
+        <Panel position="bottom-right">
+          <WalletBalances />
         </Panel>
       </ReactFlow>
     </div>

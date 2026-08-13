@@ -16,6 +16,7 @@ import type {
   SchedulerQueryMsg,
 } from "@template/domain/types";
 import { Config, DateTime, Effect, Schedule, Schema, Stream } from "effect";
+import { getFreshBlock } from "./fresh-block.js";
 
 (BigInt.prototype as any).toJSON = function () {
   return this.toString();
@@ -72,7 +73,7 @@ const fetchTimeTriggers = (
   client: RotatingClient<CosmWasmClient>
 ) =>
   Effect.gen(function* () {
-    const block = yield* client.use((c) => c.getBlock());
+    const block = yield* client.use((c) => getFreshBlock(() => c.getBlock()));
 
     const blockTime = DateTime.unsafeFromDate(
       new Date(Date.parse(block.header.time))
@@ -88,7 +89,7 @@ const fetchBlockTriggers = (
   client: RotatingClient<CosmWasmClient>
 ) =>
   Effect.gen(function* () {
-    const block = yield* client.use((c) => c.getBlock());
+    const block = yield* client.use((c) => getFreshBlock(() => c.getBlock()));
 
     return yield* getCosmosChainTriggers(
       chain,

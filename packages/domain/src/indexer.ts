@@ -189,6 +189,7 @@ const AccountBalancesResult = Schema.Struct({
         balances: Schema.optionalWith(
             Schema.Array(Schema.Struct({
                 balance: Schema.NonEmptyTrimmedString,
+                valueUsd: Schema.NonEmptyTrimmedString,
                 asset: IndexerAsset
             })),
             { default: () => [], nullable: true }
@@ -199,7 +200,7 @@ const AccountBalancesResult = Schema.Struct({
 export const ACCOUNT_BALANCES_QUERY = `query ($id: ID, $addresses: [Address!]!) {
   node(id: $id) {
     ... on Account {
-      balances(addresses: $addresses) { balance asset { variants { native { denom } } } }
+      balances(addresses: $addresses) { balance valueUsd asset { variants { native { denom } } } }
     }
   }
 }`
@@ -397,15 +398,25 @@ export class RujiraIndexer extends Effect.Service<RujiraIndexer>()("RujiraIndexe
             strategiesBalances([address]).pipe(Effect.map((balances) => balances[address]?.balances ?? []))
 
         /** A THORChain account's app-layer balances (bank + secured assets). */
+        /**
+         * The account's app-layer balances with their USD values (whole
+         * dollars, from the indexer's 1e8-scaled Bigint), sorted most
+         * valuable first.
+         */
         const accountBalances = (address: string) =>
             query(AccountBalancesResult, ACCOUNT_BALANCES_QUERY, {
                 id: accountNodeId(address),
                 addresses: [address]
             }).pipe(
                 Effect.map(({ node }) =>
-                    (node?.balances ?? []).flatMap((balance) =>
-                        toAmount(balance.balance, balance.asset.variants.native?.denom)
-                    )
+                    (node?.balances ?? [])
+                        .flatMap((balance) =>
+                            toAmount(balance.balance, balance.asset.variants.native?.denom).map((amount) => ({
+                                ...amount,
+                                valueUsd: Number(balance.valueUsd) / 1e8
+                            }))
+                        )
+                        .sort((a, b) => b.valueUsd - a.valueUsd)
                 )
             )
 

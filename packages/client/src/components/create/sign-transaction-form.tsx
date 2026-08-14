@@ -3,8 +3,9 @@ import { TransactionData, type Wallet } from "@template/domain/clients";
 import { formatNumber } from "@template/domain/numbers";
 import { useEffect, useMemo, useState } from "react";
 import { useAssets } from "../../hooks/use-assets";
-import { errorMessage, isUserRejection } from "../../lib/wallet-errors";
+import { txResultOf, useTransactionStore } from "../../hooks/use-transaction-store";
 import { useWallets } from "../../hooks/use-wallets";
+import { errorMessage } from "../../lib/wallet-errors";
 import { Code } from "./code";
 
 export function SignTransactionForm({
@@ -86,9 +87,7 @@ export function SignTransactionForm({
     [wallets, viableConnectionsByWalletType, chain.id],
   );
 
-  const [isExecuting, setIsExecuting] = useState(false);
-
-  const [error, setError] = useState<string>();
+  const { track } = useTransactionStore();
 
   return (
     <div className="flex min-w-100 flex-col gap-4">
@@ -139,9 +138,7 @@ export function SignTransactionForm({
       )}
       {effectiveSender && (
         <div className="mb-[-4px] flex w-full justify-end gap-6">
-          {isExecuting ? (
-            <code className="text-lg text-zinc-500">Executing transaction...</code>
-          ) : simulationResult ? (
+          {simulationResult ? (
             <>
               {onBack && (
                 <code onClick={onBack} className="cursor-pointer text-lg text-zinc-400 hover:underline">
@@ -151,19 +148,21 @@ export function SignTransactionForm({
               <code
                 onClick={() => {
                   if (effectiveSender.connection.status !== "connected") return;
-                  setIsExecuting(true);
-                  signTransaction(effectiveSender, chain, getDataWithSender(effectiveSender.connection.address))
-                    .then(() => {
-                      setIsExecuting(false);
-                      onSuccess?.();
+                  const action = callToAction ?? "Transaction";
+                  // The shared transaction modal owns the lifecycle from here:
+                  // executing state, outcome, and decline handling.
+                  const promise = signTransaction(
+                    effectiveSender,
+                    chain,
+                    getDataWithSender(effectiveSender.connection.address),
+                  );
+                  track(action, promise);
+                  promise
+                    .then((response) => {
+                      if (txResultOf(action, response).status === "success") onSuccess?.();
                     })
-                    .catch((error: unknown) => {
-                      setIsExecuting(false);
-                      // Always findable in the console, even for treated-as-decline cases.
-                      console.error("signTransaction failed", error);
-                      // Declining in the wallet is an expected outcome, not an error.
-                      if (isUserRejection(error)) return;
-                      setError(`Transaction failed: ${errorMessage(error)}`);
+                    .catch(() => {
+                      // Surfaced by the transaction modal.
                     });
                 }}
                 className="cursor-pointer text-lg text-green-300 hover:underline"
@@ -183,11 +182,6 @@ export function SignTransactionForm({
       )}
       {simulationResult && "failure" in simulationResult && (
         <code className="text-sm text-red-500/80">Simulation failed: {simulationResult.failure}</code>
-      )}
-      {error && (
-        <div className="flex flex-col gap-2">
-          <code className="text-sm text-red-500/80">{error}</code>
-        </div>
       )}
     </div>
   );

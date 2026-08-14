@@ -1,20 +1,11 @@
-import { toUtf8 } from "@cosmjs/encoding";
 import type { Amount } from "@template/domain/assets";
 import type { StrategyHandle } from "@template/domain/calc";
-import { type Chain, COSMOS_CHAINS_BY_ID } from "@template/domain/chains";
-import type { TransactionData } from "@template/domain/clients";
 import NumberFlow from "@number-flow/react";
 import { numberFormatOptions } from "@template/domain/numbers";
 import { Fragment, useEffect, useRef, useState } from "react";
-import { useDraftStrategies } from "../../hooks/use-draft-strategies";
-import { useNodeModalStore } from "../../hooks/use-node-modal-store";
 import { useScrollFade } from "../../hooks/use-scroll-fade";
 import { useStrategiesBalances } from "../../hooks/use-strategies-balances";
-import { useStrategy } from "../../hooks/use-strategy";
-import { Modal, ModalContent, ModalHeader, ModalTitle } from "../ui/modal";
 import { Code } from "./code";
-import { SignTransactionForm } from "./sign-transaction-form";
-import { StartStrategyForm } from "./start-strategy-form";
 
 /** The denoms whose amounts changed in the latest balances refetch, with direction. */
 export interface BalanceFlash {
@@ -126,123 +117,16 @@ function DraftStrategyHandle({
   isSelected: boolean;
   onSelect: () => void;
 }) {
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [isStarting, setIsStarting] = useState(false);
-
-  const { data: strategy } = useStrategy(handle);
-  const { update, deleteStrategy } = useDraftStrategies(handle.chainId);
-
-  const { setOpenId } = useNodeModalStore();
-
   return (
-    <>
-      <code
-        key={handle.id}
-        className={`group flex gap-2 text-lg text-zinc-200 ${!isSelected ? "opacity-35 hover:opacity-100" : ""}`}
-      >
-        {!isDeleting && (
-          <Code
-            onClick={() => {
-              setIsDeleting(false);
-              onSelect();
-            }}
-            className={isSelected ? "" : "cursor-pointer hover:underline"}
-          >
-            {handle.label}
-          </Code>
-        )}
-        {!isDeleting && (
-          <span className="hidden items-baseline gap-2 group-hover:flex">
-            <code>|</code>
-            <code
-              onClick={() => {
-                onSelect();
-                setIsStarting(true);
-              }}
-              className="cursor-pointer text-green-300 hover:underline"
-            >
-              Start
-            </code>
-            {" 🚀"}
-            <code> | </code>
-            <code
-              onClick={() => {
-                onSelect();
-                setIsDeleting(true);
-              }}
-              className="cursor-pointer text-red-300 hover:underline"
-            >
-              Delete
-            </code>
-            {" 🗑️"}
-          </span>
-        )}
-        {isDeleting && (
-          <div className="flex items-center gap-2">
-            <code>Are you sure?</code>{" "}
-            <code
-              className="cursor-pointer text-red-300 hover:underline"
-              onClick={() => {
-                deleteStrategy(handle.id);
-                setOpenId(null);
-                setIsDeleting(false);
-              }}
-            >
-              Yes
-            </code>
-            <code>/</code>
-            <code
-              className="cursor-pointer pl-[2px] text-green-300 hover:underline"
-              onClick={() => {
-                setIsDeleting(false);
-              }}
-            >
-              No
-            </code>
-          </div>
-        )}
-      </code>
-      <Modal
-        open={isStarting}
-        onOpenChange={(open) => {
-          if (!open) setIsStarting(false);
-        }}
-      >
-        <ModalHeader className="hidden">
-          <ModalTitle>title</ModalTitle>
-        </ModalHeader>
-        <ModalContent showCloseButton={false}>
-          {strategy && <StartStrategyForm strategy={strategy} update={update} deleteStrategy={deleteStrategy} />}
-        </ModalContent>
-      </Modal>
-    </>
+    <code
+      key={handle.id}
+      onClick={onSelect}
+      className={`group flex gap-2 text-lg text-zinc-200 ${!isSelected ? "cursor-pointer opacity-35 hover:opacity-100" : ""}`}
+    >
+      <Code>{handle.label}</Code>
+    </code>
   );
 }
-
-/** Builds the MsgExecuteContract payload for a manager-level status change. */
-const statusUpdateData =
-  (handle: Extract<StrategyHandle, { contract_address: string }>, status: "paused" | "archived") =>
-  (sender: string): TransactionData => ({
-    type: "cosmos",
-    msgs: [
-      {
-        typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
-        value: {
-          sender,
-          contract: COSMOS_CHAINS_BY_ID[handle.chainId].managerContract,
-          msg: toUtf8(
-            JSON.stringify({
-              update_strategy_status: {
-                contract_address: handle.contract_address,
-                status,
-              },
-            }),
-          ),
-          funds: [],
-        },
-      },
-    ],
-  });
 
 function ActiveStrategyHandle({
   handle,
@@ -257,160 +141,74 @@ function ActiveStrategyHandle({
   isSelected: boolean;
   onSelect: () => void;
 }) {
-  const [executableTransactionData, setExecutableTransactionData] = useState<{
-    chain: Chain;
-    getDataWithSender: (sender: string) => TransactionData;
-    callToAction?: string;
-    onBack: () => void;
-  }>();
-
-  if (handle.status !== "active") {
-    return null;
-  }
-
-  const openTransaction = (getDataWithSender: (sender: string) => TransactionData, callToAction: string) => {
-    setExecutableTransactionData({
-      chain: COSMOS_CHAINS_BY_ID[handle.chainId],
-      getDataWithSender,
-      callToAction,
-      onBack: () => {
-        setExecutableTransactionData(undefined);
-      },
-    });
-  };
-
   return (
-    <>
-      <code key={handle.id} className="group flex gap-2 text-lg text-zinc-200">
-        <Code onClick={onSelect} className={isSelected ? "" : `cursor-pointer hover:underline ${DIM}`}>
-          {handle.label}
-        </Code>
-        {!!balances?.length && (
-          <>
-            <code className={isSelected ? "" : DIM}>|</code>
-            <BalancesSummary balances={balances} dimmed={!isSelected} flash={flash} />
-          </>
-        )}
-        <span className="hidden items-baseline gap-2 group-hover:flex">
-          <code>|</code>
-            <code
-              onClick={() => {
-                onSelect();
-                openTransaction(
-                  (sender) => ({
-                    type: "cosmos",
-                    msgs: [
-                      {
-                        typeUrl: "/cosmwasm.wasm.v1.MsgExecuteContract",
-                        value: {
-                          sender,
-                          contract: handle.contract_address,
-                          msg: toUtf8(JSON.stringify({ withdraw: [] })),
-                          funds: [],
-                        },
-                      },
-                    ],
-                  }),
-                  "Withdraw Funds",
-                );
-              }}
-              className="cursor-pointer text-green-300 hover:underline"
-            >
-              Withdraw
-            </code>
-            {" 🏛️"}
-            <code> | </code>
-            <code
-              onClick={() => {
-                onSelect();
-                openTransaction(statusUpdateData(handle, "paused"), "Pause Strategy");
-              }}
-              className="cursor-pointer text-blue-300 hover:underline"
-            >
-              Pause
-            </code>
-            {" ⏸️"}
-            <code> | </code>
-            <code
-              onClick={() => {
-                onSelect();
-                openTransaction(statusUpdateData(handle, "archived"), "Archive Strategy");
-              }}
-              className="cursor-pointer text-red-300 hover:underline"
-            >
-              Archive
-            </code>
-            {" 📂"}
-            <code> | </code>
-            <code
-              onClick={() => {
-                onSelect();
-                void navigator.clipboard.writeText(handle.contract_address);
-              }}
-              className="cursor-pointer text-zinc-300 hover:underline"
-            >
-              Copy
-            </code>
-            {" 📋"}
-          </span>
-      </code>
-      <Modal
-        open={!!executableTransactionData}
-        onOpenChange={(open) => {
-          if (!open) setExecutableTransactionData(undefined);
-        }}
-      >
-        <ModalHeader className="hidden">
-          <ModalTitle>title</ModalTitle>
-        </ModalHeader>
-        <ModalContent showCloseButton={false}>
-          {executableTransactionData && (
-            <SignTransactionForm
-              chain={executableTransactionData.chain}
-              getDataWithSender={executableTransactionData.getDataWithSender}
-              callToAction={executableTransactionData.callToAction}
-            />
-          )}
-        </ModalContent>
-      </Modal>
-    </>
+    <code
+      key={handle.id}
+      onClick={onSelect}
+      className={`group flex gap-2 text-lg text-zinc-200 ${isSelected ? "" : "cursor-pointer"}`}
+    >
+      <Code className={isSelected ? "" : DIM}>{handle.label}</Code>
+      {!!balances?.length && (
+        <>
+          <code className={isSelected ? "" : DIM}>|</code>
+          <BalancesSummary balances={balances} dimmed={!isSelected} flash={flash} />
+        </>
+      )}
+    </code>
   );
 }
-
-type SortKey = "recent" | "valuable";
-
-const SORT_LABELS: Record<SortKey, string> = {
-  recent: "RECENT",
-  valuable: "VALUE",
-};
 
 export type StatusKey = "draft" | "active" | "completed" | "paused" | "archived";
 
 // ARCHIVED stays out of the picker: the deployed manager can't list
 // archived strategies (its query filter only accepts active|paused).
 const STATUS_LABELS: Partial<Record<StatusKey, string>> = {
-  draft: "DRAFT",
-  active: "ACTIVE",
-  completed: "COMPLETED",
-  paused: "PAUSED",
+  draft: "Draft",
+  active: "Active",
+  completed: "Completed",
+  paused: "Paused",
 };
+
+/** The status picker, rendered by the route in the top-left panel. */
+export function StatusFilter({
+  status,
+  onStatusChange,
+}: {
+  status: StatusKey;
+  onStatusChange: (status: StatusKey) => void;
+}) {
+  return (
+    <div className="flex items-baseline gap-4">
+      {(Object.keys(STATUS_LABELS) as StatusKey[]).map((key, index) => (
+        <Fragment key={key}>
+          {index > 0 && <code className="text-lg text-zinc-600">|</code>}
+          <code
+            onClick={() => {
+              onStatusChange(key);
+            }}
+            className={`cursor-pointer text-lg hover:underline ${status === key ? "text-zinc-200" : "text-zinc-600"}`}
+          >
+            {STATUS_LABELS[key]}
+          </code>
+        </Fragment>
+      ))}
+    </div>
+  );
+}
 
 export function StrategyList({
   handles,
   status,
-  onStatusChange,
   selectedId,
   onSelect,
 }: {
   handles: Record<string | number, StrategyHandle>;
   status: StatusKey;
-  onStatusChange: (status: StatusKey) => void;
   selectedId: string | number | undefined;
   onSelect: (handle: StrategyHandle) => void;
 }) {
   const { ref, onScroll, maskImage } = useScrollFade();
   const { data: balancesByAddress } = useStrategiesBalances(Object.values(handles));
-  const [sortBy, setSortBy] = useState<SortKey>("recent");
 
   // Diff each balances refetch against the previous one: strategies whose
   // amounts moved get their row pulsed and the changed chips flashed. This
@@ -459,8 +257,6 @@ export function StrategyList({
   }, [balancesByAddress]);
 
 
-  const valueOf = (handle: StrategyHandle) =>
-    handle.status !== "draft" ? (balancesByAddress?.[handle.contract_address]?.valueUsd ?? 0) : 0;
   const createdAt = (handle: StrategyHandle) => (handle.status !== "draft" ? (handle.created_at ?? 0) : 0);
 
   // COMPLETED = still active on-chain but holding nothing (fully executed
@@ -477,7 +273,7 @@ export function StrategyList({
 
   const rows = Object.values(handles)
     .filter(matchesFilter)
-    .sort((a, b) => (sortBy === "valuable" ? valueOf(b) - valueOf(a) : createdAt(b) - createdAt(a)));
+    .sort((a, b) => createdAt(b) - createdAt(a));
 
   // With nothing selected (page open, filter switch, deleted draft), select
   // the top row of the current filter. Deferred so selection lands after the
@@ -496,49 +292,7 @@ export function StrategyList({
   }, [selectedId, topRowId, handles, onSelect]);
 
   return (
-    // Controls sit BELOW the list: the panel is bottom-anchored, so the list
-    // grows upward and the controls keep a fixed position while toggling.
-    <div className="flex flex-col-reverse gap-4.5 pb-4">
-      {
-        <div className="flex gap-4 pl-[10px]">
-          <code className="text-sm text-zinc-500">sort_by:</code>
-          {(Object.keys(SORT_LABELS) as SortKey[]).map((key, index) => (
-            <Fragment key={key}>
-              {index > 0 && <code className="text-sm text-zinc-600">|</code>}
-              <code
-                onClick={() => {
-                  setSortBy(key);
-                }}
-                className={`cursor-pointer text-sm hover:underline ${
-                  sortBy === key ? "text-zinc-200" : "text-zinc-600"
-                }`}
-              >
-                {SORT_LABELS[key]}
-              </code>
-            </Fragment>
-          ))}
-        </div>
-      }
-      {(
-        <div className="flex gap-4 pl-[10px]">
-          <code className="text-sm text-zinc-500">filter:</code>
-          {(Object.keys(STATUS_LABELS) as StatusKey[]).map((key, index) => (
-            <Fragment key={key}>
-              {index > 0 && <code className="text-sm text-zinc-600">|</code>}
-              <code
-                onClick={() => {
-                  onStatusChange(key);
-                }}
-                className={`cursor-pointer text-sm hover:underline ${
-                  status === key ? "text-zinc-200" : "text-zinc-600"
-                }`}
-              >
-                {STATUS_LABELS[key]}
-              </code>
-            </Fragment>
-          ))}
-        </div>
-      )}
+    <div className="flex flex-col pb-4">
       {/* nowheel keeps wheel events scrolling this list instead of zooming
           the React Flow canvas underneath. */}
       <div

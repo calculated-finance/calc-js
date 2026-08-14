@@ -47,7 +47,7 @@ export function ScheduleNode({
         <div className="flex flex-col gap-8">
           {!isEditingJson && (
             <div className="flex flex-col gap-4">
-              <code className="text-sm text-zinc-400">cadence</code>
+              <code className="text-sm text-zinc-400">every</code>
               <div className="flex items-center justify-around">
                 <code
                   onClick={() => {

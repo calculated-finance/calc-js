@@ -9,9 +9,10 @@ import { Either, Schema } from "effect";
 import { useEffect, useMemo, useState } from "react";
 import { useAssets } from "../../hooks/use-assets";
 import { useDecodedSchemaForm } from "../../hooks/use-schema-form";
+import { txResultOf, useTransactionStore } from "../../hooks/use-transaction-store";
 import { useWallets } from "../../hooks/use-wallets";
 import { getDefaultDeposits } from "../../lib/strategy";
-import { errorMessage, isUserRejection } from "../../lib/wallet-errors";
+import { errorMessage } from "../../lib/wallet-errors";
 import { Input } from "../ui/input";
 import { Code } from "./code";
 
@@ -27,6 +28,7 @@ export function StartStrategyForm({
   const form = useDecodedSchemaForm(Strategy, strategy, update);
   const { wallets, simulateTransaction, signTransaction } = useWallets();
   const { assetsByDenom } = useAssets();
+  const { track } = useTransactionStore();
 
   const defaultDeposit = useMemo(() => getDefaultDeposits(strategy.nodes), [strategy.nodes]);
 
@@ -74,7 +76,6 @@ export function StartStrategyForm({
 
   const [simulation, setSimulation] = useState<{ status: "simulating" } | { gas: number } | { failure: string }>();
   const [isExecuting, setIsExecuting] = useState(false);
-  const [startError, setStartError] = useState<string>();
 
   // Debounced simulation of the exact transaction the button would sign,
   // re-run whenever the strategy or deposit changes.
@@ -124,21 +125,21 @@ export function StartStrategyForm({
     const data = buildData(sender.connection.address);
     if (!data) return;
 
-    setIsExecuting(true);
-    setStartError(undefined);
-    signTransaction(sender, RUJIRA, data)
-      .then(() => {
+    // The shared transaction modal owns the lifecycle from here; the draft
+    // only leaves the store once the strategy really landed on-chain, and
+    // the modal outlives this form's unmount.
+    const promise = signTransaction(sender, RUJIRA, data);
+    track("Start Strategy", promise);
+    promise
+      .then((response) => {
         setIsExecuting(false);
-        deleteStrategy(strategy.id);
+        if (txResultOf("Start Strategy", response).status === "success") deleteStrategy(strategy.id);
       })
-      .catch((error: unknown) => {
+      .catch(() => {
+        // Surfaced by the transaction modal.
         setIsExecuting(false);
-        // Always findable in the console, even for treated-as-decline cases.
-        console.error("signTransaction failed", error);
-        // Declining in the wallet is an expected outcome, not an error.
-        if (isUserRejection(error)) return;
-        setStartError(`Transaction failed: ${errorMessage(error)}`);
       });
+    setIsExecuting(true);
   };
 
   return (
@@ -200,8 +201,7 @@ export function StartStrategyForm({
         </div>
         <div className="flex w-full flex-col items-end gap-2">
           {!sender && <code className="text-sm text-red-400/80">Connect a wallet to start this strategy.</code>}
-          {startError && <code className="text-sm text-red-400/80">{startError}</code>}
-          {simulation && "failure" in simulation && (
+              {simulation && "failure" in simulation && (
             <code className="text-sm text-red-500/80">Simulation failed: {simulation.failure}</code>
           )}
           <code

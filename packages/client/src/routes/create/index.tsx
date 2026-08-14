@@ -18,13 +18,18 @@ import { Effect } from "effect";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { v4 } from "uuid";
 import { actionNodeTypes } from "../../components/create/actions";
-import { type StatusKey, StrategyList } from "../../components/create/strategy-list";
+import { StrategyActionsNode } from "../../components/create/strategy-actions";
+import { type StatusKey, StatusFilter, StrategyList } from "../../components/create/strategy-list";
+import { TemplateSetupForm } from "../../components/create/template-setup-form";
+import { TransactionModal } from "../../components/create/transaction-modal";
 import { STRATEGY_TEMPLATES, type StrategyTemplate } from "../../components/create/templates";
+import { Drawer, DrawerContent, DrawerHeader, DrawerTitle } from "../../components/ui/drawer";
+import { Modal, ModalContent, ModalHeader, ModalTitle } from "../../components/ui/modal";
 import { useAssets } from "../../hooks/use-assets";
 import { useFinPairs } from "../../hooks/use-fin-pairs";
 import { WalletBalances } from "../../components/wallet/wallet-balances";
 import { WalletPanel } from "../../components/wallet/wallet-panel";
-import { useAddressBook } from "../../hooks/use-address-book";
+import { useConnectedAddress } from "../../hooks/use-connected-address";
 import { useConnectedWallet } from "../../hooks/use-connection";
 import { useDraftStrategies } from "../../hooks/use-draft-strategies";
 import { useNodeModalStore } from "../../hooks/use-node-modal-store";
@@ -34,8 +39,7 @@ import { useRuntime } from "../../hooks/use-runtime";
 import { useStrategies } from "../../hooks/use-strategies";
 import { useStrategy } from "../../hooks/use-strategy";
 import { useStrategyChain } from "../../hooks/use-strategy-chain";
-import { useWallets } from "../../hooks/use-wallets";
-import { NODE_SPACING } from "../../lib/layout/constants";
+import { NODE_SPACING, NODE_WIDTH } from "../../lib/layout/constants";
 import { layoutStrategy } from "../../lib/layout/layout-strategy";
 
 export const Route = createFileRoute("/create/")({
@@ -65,13 +69,7 @@ const FIT_VIEW_OPTIONS = { padding: 1 / 6, maxZoom: 2, minZoom: 0.2 };
 
 const nodeTypes = {
   ...actionNodeTypes,
-  loadingStrategies: () => <code className="text-lg text-zinc-500">Fetching strategies...</code>,
-  loadingStrategy: ({ data: { label } }: { data: { label: string } }) => (
-    <code className="text-lg text-zinc-500">Fetching {label || "strategy"}...</code>
-  ),
-  strategyError: ({ data: { label } }: { data: { label: string } }) => (
-    <code className="max-w-150 text-lg text-red-400/80">Failed to load {label || "strategy"} — see console</code>
-  ),
+  strategyActions: StrategyActionsNode,
 };
 
 export default function CreateStrategy() {
@@ -95,7 +93,6 @@ export default function CreateStrategy() {
   const { strategy: sharedStrategyAddress, chain: sharedChainId } = Route.useSearch();
   const navigate = Route.useNavigate();
   const runtime = useRuntime();
-  const { addEntry } = useAddressBook();
   // Block writing the URL until an inbound ?strategy= has been resolved,
   // otherwise the initial render would wipe the shared parameter. A ref is
   // enough: resolving also sets the selection, which re-runs the URL sync.
@@ -108,8 +105,8 @@ export default function CreateStrategy() {
   }, []);
 
   // URL -> selection: resolve a shared contract address into a handle via
-  // the manager, remember its owner so the listing includes the strategy,
-  // and select it under its own status filter.
+  // the manager and select it under its own status filter. The selection is
+  // sticky, so the shared strategy is viewable without joining the list.
   useEffect(() => {
     if (!sharedStrategyAddress || consumedSharedStrategy.current) return;
     if (
@@ -134,7 +131,6 @@ export default function CreateStrategy() {
       .then((handle) => {
         if (cancelled) return;
         consumedSharedStrategy.current = true;
-        addEntry({ chainId, address: handle.owner, label: "shared" });
         setListStatus(handle.status);
         setStrategyHandle({ ...handle, chainId });
       })
@@ -145,7 +141,7 @@ export default function CreateStrategy() {
     return () => {
       cancelled = true;
     };
-  }, [sharedStrategyAddress, sharedChainId, strategyHandle, chain.id, runtime, addEntry]);
+  }, [sharedStrategyAddress, sharedChainId, strategyHandle, chain.id, runtime]);
 
   // Selection -> URL: keep the address bar shareable for chain strategies.
   useEffect(() => {
@@ -161,11 +157,6 @@ export default function CreateStrategy() {
 
   const { fitView } = useReactFlow();
 
-  useEffect(() => {
-    void fitView(FIT_VIEW_OPTIONS);
-  }, [listStatus, strategyHandle, fitView]);
-
-  const { wallets } = useWallets();
   const { isVisible } = useNodeVisibilityStore();
   const { setOpenId } = useNodeModalStore();
 
@@ -175,14 +166,10 @@ export default function CreateStrategy() {
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
   const layoutNodes = useCallback(() => {
-    if (isLoadingStrategies) {
-      setNodes([{ id: "loading", type: "loadingStrategies", data: {}, position: { x: 0, y: 0 } }]);
-      setEdges([]);
-      return;
-    }
-
-    if (isPendingStrategy && strategyHandle) {
-      setNodes([{ id: "loading", type: "loadingStrategy", data: { label: strategyHandle.label }, position: { x: 0, y: 0 } }]);
+    // Loading and error states render as a screen-centred overlay instead
+    // of flow nodes, so the viewport doesn't zoom to fit a line of text.
+    if (isLoadingStrategies || (strategyHandle && isPendingStrategy)) {
+      setNodes([]);
       setEdges([]);
       return;
     }
@@ -191,7 +178,7 @@ export default function CreateStrategy() {
     // as "no strategy selected".
     if (strategyError && strategyHandle) {
       console.error("Failed to load strategy", strategyHandle, strategyError);
-      setNodes([{ id: "error", type: "strategyError", data: { label: strategyHandle.label }, position: { x: 0, y: 0 } }]);
+      setNodes([]);
       setEdges([]);
       return;
     }
@@ -213,7 +200,25 @@ export default function CreateStrategy() {
 
     // xyflow's Node data slot wants an index signature our param aliases
     // can't carry; the shapes are otherwise identical.
-    setNodes(layout.nodes as unknown as Node[]);
+    const laidOut = layout.nodes as unknown as Node[];
+
+    // Status-appropriate actions (pause/withdraw/restart/...) float above
+    // the layout, centred on its horizontal extent.
+    if (strategyHandle) {
+      const minX = Math.min(...laidOut.map((node) => node.position.x));
+      const maxX = Math.max(...laidOut.map((node) => node.position.x + NODE_WIDTH));
+      const minY = Math.min(...laidOut.map((node) => node.position.y));
+      laidOut.push({
+        id: `${strategyHandle.id}:actions`,
+        type: "strategyActions",
+        position: { x: (minX + maxX) / 2, y: minY - NODE_SPACING * 2 },
+        data: { handle: strategyHandle },
+        draggable: false,
+        selectable: false,
+      });
+    }
+
+    setNodes(laidOut);
     setEdges(layout.edges);
     void fitView(FIT_VIEW_OPTIONS);
   }, [isPendingStrategy, isLoadingStrategies, strategy, strategyError, strategyHandle, update, fitView, setNodes, setEdges]);
@@ -225,35 +230,56 @@ export default function CreateStrategy() {
   const { assetsByDenom } = useAssets();
   const { pairsByDenom } = useFinPairs();
 
-  const createDraft = (label = "New Strategy", nodes: CalcNode[] = []) => {
-    const connectedChainWallet = wallets.find(
-      (w) => w.supportedChains.some((c) => c.id === chain.id) && w.connection.status === "connected",
-    );
+  const connectedAddress = useConnectedAddress(chain.id);
+
+  const createDraft = (
+    label = "New Strategy",
+    nodes: CalcNode[] = [],
+    // Templates collect label/owner in their setup modal, so they skip the
+    // follow-up strategy modal; the blank Create draft still opens it.
+    options: { owner?: string; openModal?: boolean } = {},
+  ) => {
     const handle = {
       id: v4(),
       chainId: chain.id,
-      owner: connectedChainWallet?.connection.status === "connected" ? connectedChainWallet.connection.address : "",
+      owner: options.owner ?? connectedAddress ?? "",
       label,
       status: "draft" as const,
     };
     add({ ...handle, nodes });
     setListStatus("draft");
     setStrategyHandle(handle);
-    setOpenId(handle.id);
+    if (options.openModal ?? true) setOpenId(handle.id);
   };
 
-  const createFromTemplate = (template: StrategyTemplate) => {
-    const connectedChainWallet = wallets.find(
-      (w) => w.supportedChains.some((c) => c.id === chain.id) && w.connection.status === "connected",
-    );
-    const owner =
-      connectedChainWallet?.connection.status === "connected" ? connectedChainWallet.connection.address : undefined;
-    const nodes = template.makeNodes({ assetsByDenom, pairsByDenom, owner });
-    if (nodes) createDraft(template.strategyLabel, nodes);
+  // Create Strategy opens a picker of draft options; templates then open a
+  // setup drawer that collects their parameters before the draft is created.
+  const [isPickingCreate, setIsPickingCreate] = useState(false);
+  const [setupTemplate, setSetupTemplate] = useState<StrategyTemplate>();
+
+  const templateContext = {
+    assetsByDenom,
+    pairsByDenom,
+    owner: connectedAddress,
   };
+
+  const overlay = isLoadingStrategies
+    ? { text: "Fetching strategies...", isError: false }
+    : strategyHandle && strategyError
+      ? { text: `Failed to load ${strategyHandle.label || "strategy"} — see console`, isError: true }
+      : strategyHandle && isPendingStrategy
+        ? { text: `Fetching ${strategyHandle.label || "strategy"}...`, isError: false }
+        : undefined;
 
   return (
-    <div className="flex h-screen w-screen">
+    <div className="relative flex h-screen w-screen">
+      {overlay && (
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+          <code className={`max-w-150 text-lg ${overlay.isError ? "text-red-400/80" : "text-zinc-500"}`}>
+            {overlay.text}
+          </code>
+        </div>
+      )}
       <ReactFlow
         nodes={nodes}
         edges={
@@ -280,52 +306,119 @@ export default function CreateStrategy() {
         <Background id="1" gap={20} variant={BackgroundVariant.Dots} />
         <Panel position="top-left" className="flex flex-col gap-2">
           <div className="flex flex-col gap-4 pt-1 pl-2">
-            <code
-              onClick={() => {
-                createDraft();
+            <StatusFilter
+              status={listStatus}
+              onStatusChange={(next) => {
+                // Explicitly deselect: chain-strategy selections are sticky and
+                // would otherwise survive into the new filter's list.
+                setStrategyHandle(undefined);
+                setListStatus(next);
               }}
-              className="text-blue-300"
-            >
-              <code className="cursor-pointer text-lg hover:underline">Create draft</code>
-              {" ✍🏻"}
-            </code>
-            <div className="flex flex-col gap-2">
-              <code className="text-sm text-zinc-400">templates</code>
-              {STRATEGY_TEMPLATES.map((template) => (
-                <code
-                  key={template.key}
-                  onClick={() => {
-                    createFromTemplate(template);
-                  }}
-                  className="cursor-pointer text-lg text-purple-300 hover:underline"
-                >
-                  {template.label}
-                </code>
-              ))}
-            </div>
+            />
           </div>
         </Panel>
         <Panel position="bottom-left">
           <StrategyList
             handles={strategyHandles}
             status={listStatus}
-            onStatusChange={(next) => {
-              // Explicitly deselect: chain-strategy selections are sticky and
-              // would otherwise survive into the new filter's list.
-              setStrategyHandle(undefined);
-              setListStatus(next);
-            }}
             selectedId={strategyHandle?.id}
             onSelect={setStrategyHandle}
           />
         </Panel>
         <Panel position="top-right">
-          <WalletPanel wallet={wallet} />
+          <WalletPanel wallet={wallet}>
+            <div className="pt-1">
+              <WalletBalances />
+            </div>
+          </WalletPanel>
         </Panel>
         <Panel position="bottom-right">
-          <WalletBalances />
+          <code
+            onClick={() => {
+              setIsPickingCreate(true);
+            }}
+            className="text-blue-300"
+          >
+            <code className="cursor-pointer text-lg hover:underline">Create Strategy</code>
+            {" ✍🏻"}
+          </code>
         </Panel>
       </ReactFlow>
+      <Modal
+        open={isPickingCreate}
+        onOpenChange={(open) => {
+          if (!open) setIsPickingCreate(false);
+        }}
+      >
+        <ModalHeader className="hidden">
+          <ModalTitle>title</ModalTitle>
+        </ModalHeader>
+        <ModalContent showCloseButton={false}>
+          <div className="flex max-w-100 flex-col gap-6">
+            <div className="flex flex-col gap-1">
+              <code
+                onClick={() => {
+                  setIsPickingCreate(false);
+                  createDraft();
+                }}
+                className="cursor-pointer self-start text-lg text-blue-300 hover:underline"
+              >
+                New Strategy
+              </code>
+              <code className="text-sm text-zinc-400">an empty draft — add and connect the nodes yourself</code>
+            </div>
+            {STRATEGY_TEMPLATES.map((template) => (
+              <div key={template.key} className="flex flex-col gap-1">
+                <code
+                  onClick={() => {
+                    setIsPickingCreate(false);
+                    setSetupTemplate(template);
+                  }}
+                  className="cursor-pointer self-start text-lg text-purple-300 hover:underline"
+                >
+                  {template.label}
+                </code>
+                <code className="text-sm text-zinc-400">{template.description}</code>
+              </div>
+            ))}
+          </div>
+        </ModalContent>
+      </Modal>
+      <Drawer
+        direction="right"
+        open={!!setupTemplate}
+        onOpenChange={(open) => {
+          if (!open) setSetupTemplate(undefined);
+        }}
+      >
+        {/* Float the panel off the viewport edge so the modal-style rounded
+            border reads on all sides. after:hidden kills vaul's overscroll
+            cover, which extends right of the panel and paints over the
+            border and gap. */}
+        <DrawerContent className="!inset-y-2 !right-2 rounded-xl border bg-black after:hidden data-[vaul-drawer-direction=right]:sm:max-w-md">
+          <DrawerHeader className="hidden">
+            <DrawerTitle>title</DrawerTitle>
+          </DrawerHeader>
+          {/* relative: the form's absolute help toggle anchors to the panel. */}
+          <div className="relative min-h-0 flex-1 px-6 pt-6 pb-6">
+            {setupTemplate && (
+              <TemplateSetupForm
+                template={setupTemplate}
+                context={templateContext}
+                onCreate={(label, owner, templateNodes) => {
+                  setSetupTemplate(undefined);
+                  createDraft(label, templateNodes, { owner, openModal: false });
+                }}
+                onCancel={() => {
+                  setSetupTemplate(undefined);
+                }}
+              />
+            )}
+          </div>
+        </DrawerContent>
+      </Drawer>
+      {/* One shared lifecycle modal; every tx flow hands it its broadcast. */}
+      <TransactionModal />
     </div>
   );
 }

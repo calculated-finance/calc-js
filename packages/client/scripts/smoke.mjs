@@ -54,13 +54,15 @@ try {
   await page.waitForTimeout(1_500);
 
   // Shell renders
-  await page.getByText("Create draft").waitFor({ timeout: 10_000 });
+  await page.getByText("Create Strategy").waitFor({ timeout: 10_000 });
 
   // Wallet stream delivers (Connect appears once wallets emit)
   await page.getByText("Connect", { exact: true }).waitFor({ timeout: 10_000 });
 
-  // Core builder flow (Create draft is always visible now)
-  await page.getByText("Create draft").click();
+  // Core builder flow: Create Strategy opens the picker, New Strategy
+  // creates a blank draft.
+  await page.getByText("Create Strategy").click();
+  await page.getByText("New Strategy", { exact: true }).click();
   await page.getByText("Schedule", { exact: true }).last().click();
   await page.waitForTimeout(1_000);
   await page.keyboard.press("Escape");

@@ -27,8 +27,10 @@ import {
 } from "./resilience.js";
 
 const RPC_CONNECT_TIMEOUT_MS = 5_000;
+const RPC_QUERY_TIMEOUT_MS = 5_000;
 const RPC_EXECUTE_TIMEOUT_MS = 50_000;
 const RPC_MIN_ATTEMPT_MS = 3_000;
+const RPC_QUERY_MIN_ATTEMPT_MS = 1_000;
 const LAMBDA_TIMEOUT_HEADROOM_MS = 5_000;
 const RPC_CIRCUIT_FAILURE_THRESHOLD = 2;
 const RPC_CIRCUIT_COOLDOWN_MS = 5 * 60_000;
@@ -100,6 +102,144 @@ const errorFields = (error: unknown) => ({
   errorMessage: errorMessage(error),
   errorName: error instanceof Error ? error.name : typeof error,
 });
+
+const isMissingTriggerError = (error: unknown) => {
+  const message = errorMessage(error);
+
+  return (
+    message.includes("calc_rs::scheduler::Trigger") &&
+    message.includes("not found")
+  );
+};
+
+const preflightTriggerIds = async ({
+  context,
+  logContext,
+  metrics,
+  scheduler,
+  signers,
+  startIndex,
+  triggerIds,
+}: {
+  context: LambdaContext;
+  logContext: LogContext;
+  metrics: MetricsLogger;
+  scheduler: string;
+  signers: Signer[];
+  startIndex: number;
+  triggerIds: string[];
+}) => {
+  const normalizedStart = startIndex % signers.length;
+  const orderedSigners = [
+    ...signers.slice(normalizedStart),
+    ...signers.slice(0, normalizedStart),
+  ];
+
+  const results = await Promise.all(
+    triggerIds.map(async (triggerId) => {
+      let missingCount = 0;
+      let notReadyCount = 0;
+      const queryErrors: Array<{ error: unknown; rpcUrl: string }> = [];
+
+      for (const { client, rpcUrl } of orderedSigners) {
+        const timeoutMs = calculateAttemptTimeoutMs({
+          headroomMs: LAMBDA_TIMEOUT_HEADROOM_MS,
+          maxAttemptMs: RPC_QUERY_TIMEOUT_MS,
+          minAttemptMs: RPC_QUERY_MIN_ATTEMPT_MS,
+          remainingTimeMs: context.getRemainingTimeInMillis(),
+        });
+
+        metrics.putMetric("TriggerPreflightQuery", 1, Unit.Count);
+
+        try {
+          const canExecute = await withTimeout(
+            client.queryContractSmart(scheduler, { can_execute: triggerId }),
+            timeoutMs,
+            () =>
+              new Error(
+                `RPC trigger query to ${rpcUrl} exceeded ${timeoutMs}ms`
+              )
+          );
+
+          if (canExecute === true) {
+            return { status: "executable" as const, triggerId };
+          }
+
+          if (canExecute === false) {
+            notReadyCount += 1;
+            continue;
+          }
+
+          queryErrors.push({
+            error: new Error("Unexpected can_execute response"),
+            rpcUrl,
+          });
+        } catch (error) {
+          if (isMissingTriggerError(error)) {
+            missingCount += 1;
+          } else {
+            queryErrors.push({ error, rpcUrl });
+          }
+        }
+      }
+
+      if (
+        orderedSigners.length >= 2 &&
+        missingCount === orderedSigners.length
+      ) {
+        return { status: "stale" as const, triggerId };
+      }
+
+      return {
+        errors: queryErrors.map(({ error, rpcUrl }) => ({
+          rpcUrl,
+          ...errorFields(error),
+        })),
+        missingCount,
+        notReadyCount,
+        status: "retry" as const,
+        triggerId,
+      };
+    })
+  );
+
+  const executableTriggerIds = results
+    .filter(({ status }) => status === "executable")
+    .map(({ triggerId }) => triggerId);
+  const staleTriggerIds = results
+    .filter(({ status }) => status === "stale")
+    .map(({ triggerId }) => triggerId);
+  const retryResults = results.filter(({ status }) => status === "retry");
+
+  if (retryResults.length > 0) {
+    metrics.putMetric("TriggerPreflightRetry", retryResults.length, Unit.Count);
+    structuredLog("WARN", "executor_trigger_preflight_retry", logContext, {
+      retryResults,
+    });
+    throw new Error("Trigger availability could not be confirmed");
+  }
+
+  if (executableTriggerIds.length > 0) {
+    metrics.putMetric(
+      "TriggerPreflightExecutable",
+      executableTriggerIds.length,
+      Unit.Count
+    );
+  }
+  if (staleTriggerIds.length > 0) {
+    metrics.putMetric(
+      "TriggerPreflightStale",
+      staleTriggerIds.length,
+      Unit.Count
+    );
+  }
+  structuredLog("INFO", "executor_trigger_preflight_succeeded", logContext, {
+    executableTriggerIds,
+    staleTriggerIds,
+  });
+
+  return { executableTriggerIds, staleTriggerIds };
+};
 
 const putFailureCategoryMetric = (
   metrics: MetricsLogger,
@@ -324,6 +464,30 @@ export const handler = metricScope(
       );
       const startIndex = rrCursor;
       rrCursor = (rrCursor + 1) % signers.length;
+      const { executableTriggerIds, staleTriggerIds } =
+        await preflightTriggerIds({
+          context,
+          logContext,
+          metrics,
+          scheduler,
+          signers,
+          startIndex,
+          triggerIds,
+        });
+
+      if (executableTriggerIds.length === 0) {
+        metrics.putMetric("ExecutorTransactionSkipped", 1, Unit.Count);
+        metrics.putMetric("ExecutorSuccess", 1, Unit.Count);
+        structuredLog("INFO", "executor_invocation_skipped", logContext, {
+          elapsedMs: Date.now() - startedAt,
+          reason: "no_executable_triggers",
+          staleTriggerIds,
+        });
+        return { batchItemFailures: [] };
+      }
+
+      logContext.triggerIds = executableTriggerIds;
+      metrics.setProperty("ExecutableTriggerIds", executableTriggerIds);
 
       const result = await executeWithRpcFailover({
         circuitBreaker: rpcCircuitBreaker,
@@ -332,7 +496,7 @@ export const handler = metricScope(
           client.execute(
             address,
             scheduler,
-            { execute: triggerIds },
+            { execute: executableTriggerIds },
             "auto"
           ),
         getRemainingTimeInMillis: () => context.getRemainingTimeInMillis(),

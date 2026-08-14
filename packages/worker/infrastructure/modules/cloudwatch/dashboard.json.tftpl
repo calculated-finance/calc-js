@@ -1,0 +1,480 @@
+{
+  "widgets": [
+    {
+      "type": "log",
+      "x": 0,
+      "y": 47,
+      "width": 24,
+      "height": 7,
+      "properties": {
+        "query": ${error_log_query},
+        "region": "${region}",
+        "stacked": false,
+        "title": "Error Logs",
+        "view": "table",
+        "queryLanguage": "CWLI"
+      }
+    },
+    {
+      "type": "log",
+      "x": 0,
+      "y": 40,
+      "width": 24,
+      "height": 7,
+      "properties": {
+        "query": ${execution_log_query},
+        "region": "${region}",
+        "stacked": false,
+        "view": "table",
+        "title": "Execution Logs",
+        "queryLanguage": "CWLI"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 33,
+      "width": 24,
+      "height": 7,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/ECS",
+            "MemoryUtilization",
+            "ServiceName",
+            "${scheduler_service_name}",
+            "ClusterName",
+            "${cluster_name}"
+          ],
+          [
+            ".",
+            "CPUUtilization",
+            ".",
+            ".",
+            ".",
+            "."
+          ]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "${region}",
+        "title": "Producer Infrastructure",
+        "period": 60,
+        "stat": "Average"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 13,
+      "width": 24,
+      "height": 6,
+      "properties": {
+        "metrics": [
+          [
+            "AWS/SQS",
+            "NumberOfMessagesSent",
+            "QueueName",
+            "${triggers_queue_name}",
+            {
+              "region": "${region}"
+            }
+          ],
+          [
+            ".",
+            "NumberOfMessagesDeleted",
+            ".",
+            ".",
+            {
+              "region": "${region}"
+            }
+          ]
+        ],
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "${region}",
+        "period": 60,
+        "stat": "Sum",
+        "title": "Trigger Messages Sent/Deleted"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 26,
+      "width": 24,
+      "height": 7,
+      "properties": {
+        "metrics": ${executor_throttle_metrics},
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "${region}",
+        "title": "Execution Lambda Throttles",
+        "period": 10,
+        "stat": "Sum"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 19,
+      "width": 24,
+      "height": 7,
+      "properties": {
+        "metrics": ${executor_error_metrics},
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "${region}",
+        "title": "Execution Lambda Errors",
+        "period": 10,
+        "stat": "Sum"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 0,
+      "width": 9,
+      "height": 6,
+      "properties": {
+        "metrics": [
+          [
+            "Calc/Custom",
+            "StrategyCount",
+            "ChainId",
+            "${chain_id}",
+            {
+              "region": "${region}",
+              "label": "Strategies Created",
+              "yAxis": "left"
+            }
+          ]
+        ],
+        "sparkline": true,
+        "view": "singleValue",
+        "region": "${region}",
+        "period": 60,
+        "stat": "Maximum",
+        "title": "Total Strategies",
+        "singleValueFullPrecision": false,
+        "setPeriodToTimeRange": true,
+        "stacked": true,
+        "liveData": true
+      }
+    },
+    {
+      "type": "metric",
+      "x": 9,
+      "y": 0,
+      "width": 15,
+      "height": 6,
+      "properties": {
+        "metrics": [
+          [
+            "Calc/Custom",
+            "StrategyCount",
+            "ChainId",
+            "${chain_id}",
+            {
+              "region": "${region}",
+              "label": "Strategies Created",
+              "yAxis": "left"
+            }
+          ]
+        ],
+        "sparkline": true,
+        "view": "timeSeries",
+        "region": "${region}",
+        "period": 60,
+        "stat": "Maximum",
+        "title": "Total Strategies",
+        "singleValueFullPrecision": false,
+        "setPeriodToTimeRange": true,
+        "stacked": false
+      }
+    },
+    {
+      "type": "metric",
+      "x": 9,
+      "y": 6,
+      "width": 15,
+      "height": 7,
+      "properties": {
+        "metrics": [
+          [
+            "Calc/Custom",
+            "TVL",
+            "Denom",
+            "gaia-atom",
+            "ChainId",
+            "${chain_id}",
+            {
+              "region": "${region}"
+            }
+          ],
+          [
+            "...",
+            "thor.auto",
+            ".",
+            ".",
+            {
+              "region": "${region}"
+            }
+          ],
+          [
+            "...",
+            "thor.lqdy",
+            ".",
+            ".",
+            {
+              "region": "${region}"
+            }
+          ],
+          [
+            "...",
+            "eth-usdc-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+            ".",
+            ".",
+            {
+              "region": "${region}"
+            }
+          ],
+          [
+            "...",
+            "btc-btc",
+            ".",
+            ".",
+            {
+              "region": "${region}"
+            }
+          ],
+          [
+            "...",
+            "tcy",
+            ".",
+            ".",
+            {
+              "region": "${region}"
+            }
+          ],
+          [
+            "...",
+            "rune",
+            ".",
+            ".",
+            {
+              "region": "${region}"
+            }
+          ],
+          [
+            "...",
+            "x/ruji",
+            ".",
+            ".",
+            {
+              "region": "${region}"
+            }
+          ],
+          [
+            "...",
+            "eth-eth",
+            ".",
+            ".",
+            {
+              "region": "${region}"
+            }
+          ],
+          [
+            "...",
+            "thor.nami",
+            ".",
+            ".",
+            {
+              "region": "${region}"
+            }
+          ],
+          [
+            "...",
+            "eth-usdt-0xdac17f958d2ee523a2206206994597c13d831ec7",
+            ".",
+            "."
+          ]
+        ],
+        "sparkline": true,
+        "view": "singleValue",
+        "region": "${region}",
+        "stacked": false,
+        "period": 300,
+        "stat": "Maximum",
+        "title": "TVL (USD)"
+      }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 6,
+      "width": 9,
+      "height": 7,
+      "properties": {
+        "metrics": [
+          [
+            {
+              "expression": "SUM(METRICS())",
+              "label": "TVL (USD)",
+              "id": "e1",
+              "color": "#2ca02c",
+              "region": "${region}"
+            }
+          ],
+          [
+            "Calc/Custom",
+            "TVL",
+            "Denom",
+            "gaia-atom",
+            "ChainId",
+            "${chain_id}",
+            {
+              "id": "m1",
+              "visible": false,
+              "region": "${region}"
+            }
+          ],
+          [
+            "...",
+            "thor.nami",
+            ".",
+            ".",
+            {
+              "id": "m2",
+              "visible": false,
+              "region": "${region}"
+            }
+          ],
+          [
+            "...",
+            "btc-btc",
+            ".",
+            ".",
+            {
+              "id": "m3",
+              "visible": false,
+              "region": "${region}"
+            }
+          ],
+          [
+            "...",
+            "rune",
+            ".",
+            ".",
+            {
+              "id": "m4",
+              "visible": false,
+              "region": "${region}"
+            }
+          ],
+          [
+            "...",
+            "tcy",
+            ".",
+            ".",
+            {
+              "id": "m5",
+              "visible": false,
+              "region": "${region}"
+            }
+          ],
+          [
+            "...",
+            "x/ruji",
+            ".",
+            ".",
+            {
+              "id": "m6",
+              "visible": false,
+              "region": "${region}"
+            }
+          ],
+          [
+            "...",
+            "thor.lqdy",
+            ".",
+            ".",
+            {
+              "id": "m7",
+              "visible": false,
+              "region": "${region}"
+            }
+          ],
+          [
+            "...",
+            "thor.auto",
+            ".",
+            ".",
+            {
+              "id": "m8",
+              "visible": false,
+              "region": "${region}"
+            }
+          ],
+          [
+            "...",
+            "eth-usdc-0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+            ".",
+            ".",
+            {
+              "id": "m9",
+              "visible": false,
+              "region": "${region}"
+            }
+          ],
+          [
+            "...",
+            "eth-eth",
+            ".",
+            ".",
+            {
+              "id": "m10",
+              "visible": false,
+              "region": "${region}"
+            }
+          ]
+        ],
+        "sparkline": true,
+        "view": "singleValue",
+        "region": "${region}",
+        "stat": "Average",
+        "period": 300
+      }
+    },
+    {
+      "type": "log",
+      "x": 0,
+      "y": 54,
+      "width": 24,
+      "height": 7,
+      "properties": {
+        "query": ${rpc_outcome_query},
+        "region": "${region}",
+        "stacked": false,
+        "title": "RPC Execute Outcomes by Provider",
+        "view": "timeSeries",
+        "queryLanguage": "CWLI"
+      }
+    },
+    {
+      "type": "log",
+      "x": 0,
+      "y": 61,
+      "width": 24,
+      "height": 7,
+      "properties": {
+        "query": ${unique_strategies_query},
+        "region": "${region}",
+        "stacked": false,
+        "title": "Unique Strategies Executed per 5 Minutes",
+        "view": "timeSeries",
+        "queryLanguage": "CWLI"
+      }
+    }
+  ]
+}

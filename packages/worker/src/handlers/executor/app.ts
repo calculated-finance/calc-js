@@ -33,6 +33,8 @@ const LAMBDA_TIMEOUT_HEADROOM_MS = 5_000;
 const RPC_CIRCUIT_FAILURE_THRESHOLD = 2;
 const RPC_CIRCUIT_COOLDOWN_MS = 5 * 60_000;
 const RESOURCE_TTL_MS = 5 * 60_000;
+const STRATEGY_EXECUTED_EVENT = "wasm-calc-strategy/execute";
+const CONTRACT_ADDRESS_ATTRIBUTE = "_contract_address";
 
 const secrets = new SecretsManagerClient({});
 const rpcCircuitBreaker = new RpcCircuitBreaker({
@@ -424,6 +426,19 @@ export const handler = metricScope(
         structuredLog("INFO", "executor_chain_event", logContext, {
           chainEvent,
         });
+
+        if (chainEvent.type === STRATEGY_EXECUTED_EVENT) {
+          const strategyAddress = chainEvent.attributes.find(
+            ({ key }) => key === CONTRACT_ADDRESS_ATTRIBUTE
+          )?.value;
+
+          if (strategyAddress) {
+            structuredLog("INFO", "executor_strategy_executed", logContext, {
+              strategyAddress,
+              transactionHash: result.transactionHash,
+            });
+          }
+        }
       }
 
       metrics.putMetric("ExecutorSuccess", 1, Unit.Count);

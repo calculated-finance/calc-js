@@ -106,6 +106,18 @@ module "lambda" {
   # strategies_table_arn   = module.dynamodb.strategies_table_arn
 }
 
+module "cloudwatch" {
+  source = "./modules/cloudwatch"
+
+  chain_id                = var.chain_id
+  cluster_name            = module.ecs.cluster_name
+  dashboard_name          = "${upper(var.project_name)}-X"
+  executor_function_names = module.lambda.executor_function_names
+  region                  = var.aws_region
+  scheduler_service_name  = module.ecs.scheduler_service_name
+  triggers_queue_name     = module.sqs.triggers_queue_name
+}
+
 module "apigw" {
   source = "./modules/apigw"
 

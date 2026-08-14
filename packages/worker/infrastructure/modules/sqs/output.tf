@@ -3,6 +3,11 @@ output "triggers_queue_arn" {
   value       = aws_sqs_queue.triggers.arn
 }
 
+output "triggers_queue_name" {
+  description = "Name of the SQS queue for strategy triggers to be executed"
+  value       = aws_sqs_queue.triggers.name
+}
+
 output "triggers_queue_url" {
   description = "URL of the SQS queue for strategy triggers to be executed"
   value       = aws_sqs_queue.triggers.id

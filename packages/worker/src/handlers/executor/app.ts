@@ -197,26 +197,40 @@ const preflightTriggerIds = async ({
         })),
         missingCount,
         notReadyCount,
-        status: "retry" as const,
+        status: "inconclusive" as const,
         triggerId,
       };
     })
   );
 
-  const executableTriggerIds = results
+  const confirmedExecutableTriggerIds = results
     .filter(({ status }) => status === "executable")
     .map(({ triggerId }) => triggerId);
   const staleTriggerIds = results
     .filter(({ status }) => status === "stale")
     .map(({ triggerId }) => triggerId);
-  const retryResults = results.filter(({ status }) => status === "retry");
+  const inconclusiveResults = results.filter(
+    ({ status }) => status === "inconclusive"
+  );
+  const inconclusiveTriggerIds = inconclusiveResults.map(
+    ({ triggerId }) => triggerId
+  );
+  const executableTriggerIds = results
+    .filter(({ status }) => status !== "stale")
+    .map(({ triggerId }) => triggerId);
 
-  if (retryResults.length > 0) {
-    metrics.putMetric("TriggerPreflightRetry", retryResults.length, Unit.Count);
-    structuredLog("WARN", "executor_trigger_preflight_retry", logContext, {
-      retryResults,
-    });
-    throw new Error("Trigger availability could not be confirmed");
+  if (inconclusiveResults.length > 0) {
+    metrics.putMetric(
+      "TriggerPreflightInconclusive",
+      inconclusiveResults.length,
+      Unit.Count
+    );
+    structuredLog(
+      "WARN",
+      "executor_trigger_preflight_inconclusive",
+      logContext,
+      { inconclusiveResults }
+    );
   }
 
   if (executableTriggerIds.length > 0) {
@@ -234,7 +248,9 @@ const preflightTriggerIds = async ({
     );
   }
   structuredLog("INFO", "executor_trigger_preflight_succeeded", logContext, {
+    confirmedExecutableTriggerIds,
     executableTriggerIds,
+    inconclusiveTriggerIds,
     staleTriggerIds,
   });
 

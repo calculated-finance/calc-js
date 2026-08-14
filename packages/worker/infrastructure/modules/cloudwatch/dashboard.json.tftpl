@@ -475,6 +475,22 @@
         "view": "timeSeries",
         "queryLanguage": "CWLI"
       }
+    },
+    {
+      "type": "metric",
+      "x": 0,
+      "y": 68,
+      "width": 24,
+      "height": 7,
+      "properties": {
+        "metrics": ${trigger_preflight_metrics},
+        "view": "timeSeries",
+        "stacked": false,
+        "region": "${region}",
+        "title": "Triggers Executed / Skipped",
+        "period": 300,
+        "stat": "Sum"
+      }
     }
   ]
 }

@@ -18,7 +18,7 @@ import { EIP1193Providers } from "../evm.js"
 import { StorageService } from "../storage.js"
 import { makeConnectionStore } from "./connection.js"
 import type { EvmWalletContext } from "./evm-connection.js"
-import { connectEvm, switchEvmChain } from "./evm-connection.js"
+import { connectEvm } from "./evm-connection.js"
 
 declare global {
     // eslint-disable-next-line @typescript-eslint/no-empty-object-type
@@ -163,7 +163,24 @@ export class KeplrService extends Effect.Service<KeplrService>()(
 
                         if (chain.type === "evm") {
                             const context = yield* makeEvmContext
-                            yield* switchEvmChain(context, chainId)
+                            // A bare switchEvmChain only flips chain state; when the
+                            // previous chain was cosmos the connection would keep its
+                            // bech32 address. connectEvm rebuilds the full connection
+                            // (EVM accounts, label, chain) and switches internally.
+                            yield* SubscriptionRef.update(connectionRef, (connection) =>
+                                connection.status === "connected"
+                                    ? { ...connection, chain: { status: "switching" as const } }
+                                    : connection)
+                            yield* connectEvm(context, chain.id).pipe(
+                                Effect.tapError(() =>
+                                    SubscriptionRef.update(connectionRef, (connection) =>
+                                        connection.status === "connected"
+                                            ? {
+                                                ...connection,
+                                                chain: { status: "unsupported" as const, chainId: chain.id }
+                                            }
+                                            : connection))
+                            )
                         } else {
                             yield* switchToCosmosChain(connectionRef, chain)
                         }

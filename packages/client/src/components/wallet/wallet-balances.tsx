@@ -10,12 +10,20 @@ import { useWalletBalances } from "../../hooks/use-wallet-balances";
  */
 export function WalletBalances() {
   const { wallet } = useConnectedWallet();
-  const address = wallet?.connection.status === "connected" ? wallet.connection.address : undefined;
+  // Only render balances for a settled chain: while the chain is switching
+  // (or a switch failed into "unsupported") the connection still carries the
+  // previous chain's address, and showing its balances is exactly the stale
+  // display a switch is meant to replace.
+  const connected = wallet?.connection.status === "connected" ? wallet.connection : undefined;
+  const readyChain = connected?.chain.status === "ready" ? connected.chain.chain : undefined;
+  const address = readyChain ? connected?.address : undefined;
 
-  const { data: balances } = useWalletBalances(address);
+  const { data: balances } = useWalletBalances(address, readyChain?.id);
   const { ref, onScroll, maskImage } = useScrollFade();
 
   if (!address || !balances?.length) return null;
+
+  const totalUsd = balances.reduce((acc, balance) => acc + balance.valueUsd, 0);
 
   return (
     <div
@@ -24,6 +32,13 @@ export function WalletBalances() {
       className="nowheel flex max-h-[33vh] flex-col items-end gap-2 overflow-y-auto pr-[10px] pb-2 pl-4"
       style={{ scrollbarWidth: "thin", maskImage, WebkitMaskImage: maskImage }}
     >
+      <code className="flex items-baseline gap-2 text-lg">
+        {/* Manual $ prefix: Intl currency style renders "US$" in some locales. */}
+        <span className="text-zinc-200">
+          $<NumberFlow value={totalUsd} format={{ minimumFractionDigits: 2, maximumFractionDigits: 2 }} />
+        </span>
+        <span className="text-zinc-400">USD Total</span>
+      </code>
       {balances.map((balance) => (
         <code key={balance.denom} className="flex items-baseline gap-2 text-lg">
           <span className="text-zinc-200">

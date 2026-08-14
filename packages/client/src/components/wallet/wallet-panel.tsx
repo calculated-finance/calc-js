@@ -1,5 +1,5 @@
 import type { Wallet, WalletType } from "@template/domain/clients";
-import { useMemo, useState } from "react";
+import { type ReactNode, useMemo, useState } from "react";
 import { useWallets } from "../../hooks/use-wallets";
 
 const WALLET_ICONS: Partial<Record<WalletType, string>> = {
@@ -23,7 +23,7 @@ function ConnectWallet({ wallet, connect }: { wallet: Wallet; connect: () => voi
   );
 }
 
-function ConnectionItem({ wallet }: { wallet: Wallet }) {
+function ConnectionItem({ wallet, children }: { wallet: Wallet; children?: ReactNode }) {
   const { switchChain, disconnect } = useWallets();
 
   const [isDisconnecting, setIsDisconnecting] = useState(false);
@@ -110,7 +110,11 @@ function ConnectionItem({ wallet }: { wallet: Wallet }) {
                   style={{ color: chain.color }}
                   className="cursor-pointer text-right text-lg hover:underline"
                   onClick={() => {
-                    void switchChain(wallet, chain.id);
+                    // A rejected/failed switch otherwise vanishes: the domain
+                    // layer flips the chain to "unsupported" but nothing logs.
+                    switchChain(wallet, chain.id).catch((error: unknown) => {
+                      console.error("switchChain failed", error);
+                    });
                     setIsSwitchingWalletChain(false);
                   }}
                 >
@@ -133,12 +137,14 @@ function ConnectionItem({ wallet }: { wallet: Wallet }) {
             Unsupported Chain
           </code>
         ))}
+      {/* e.g. the wallet balances — hidden while the chain switcher is open. */}
+      {!isSwitchingWalletChain && children}
     </div>
   );
 }
 
 /** Top-right wallet corner: active connection details or the connect flow. */
-export function WalletPanel({ wallet }: { wallet: Wallet | undefined }) {
+export function WalletPanel({ wallet, children }: { wallet: Wallet | undefined; children?: ReactNode }) {
   const { wallets, connect } = useWallets();
   const [isShowingWallets, setIsShowingWallets] = useState(false);
 
@@ -148,7 +154,7 @@ export function WalletPanel({ wallet }: { wallet: Wallet | undefined }) {
   return (
     <div className="flex flex-col items-end gap-8 pt-1 pr-1">
       {wallet ? (
-        <ConnectionItem wallet={wallet} />
+        <ConnectionItem wallet={wallet}>{children}</ConnectionItem>
       ) : !isShowingWallets && wallets.length - connectedCount > 0 ? (
         <code
           onClick={() => {

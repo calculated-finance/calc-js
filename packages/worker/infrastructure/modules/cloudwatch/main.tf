@@ -52,6 +52,59 @@ locals {
       { region = var.region },
     ]
   ])
+
+  trigger_preflight_metrics = jsonencode(concat(
+    [
+      [
+        {
+          expression = "SUM(METRICS(\"executed\"))"
+          label      = "Executed"
+          id         = "executed_total"
+          color      = "#2ca02c"
+          region     = var.region
+        }
+      ],
+      [
+        {
+          expression = "SUM(METRICS(\"skipped\"))"
+          label      = "Skipped"
+          id         = "skipped_total"
+          color      = "#d62728"
+          region     = var.region
+        }
+      ],
+    ],
+    [
+      for index, function_name in var.executor_function_names : [
+        "Calc/Executor",
+        "TriggerPreflightExecutable",
+        "ChainId",
+        var.chain_id,
+        "FunctionName",
+        function_name,
+        {
+          id      = "executed_${index}"
+          region  = var.region
+          visible = false
+        },
+      ]
+    ],
+    [
+      for index, function_name in var.executor_function_names : [
+        "Calc/Executor",
+        "TriggerPreflightStale",
+        "ChainId",
+        var.chain_id,
+        "FunctionName",
+        function_name,
+        {
+          id      = "skipped_${index}"
+          region  = var.region
+          visible = false
+        },
+      ]
+    ]
+  ))
 }
 
 # Dashboard sharing is configured separately in the CloudWatch console because
@@ -70,6 +123,7 @@ resource "aws_cloudwatch_dashboard" "main" {
     region                    = var.region
     rpc_outcome_query         = local.rpc_outcome_query
     scheduler_service_name    = var.scheduler_service_name
+    trigger_preflight_metrics = local.trigger_preflight_metrics
     triggers_queue_name       = var.triggers_queue_name
     unique_strategies_query   = local.unique_strategies_query
   })

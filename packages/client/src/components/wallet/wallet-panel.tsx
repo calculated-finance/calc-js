@@ -1,3 +1,4 @@
+import type { ChainId } from "@template/domain/chains";
 import type { Wallet, WalletType } from "@template/domain/clients";
 import { type ReactNode, useMemo, useState } from "react";
 import { useWallets } from "../../hooks/use-wallets";
@@ -28,6 +29,16 @@ function ConnectionItem({ wallet, children }: { wallet: Wallet; children?: React
 
   const [isDisconnecting, setIsDisconnecting] = useState(false);
   const [isSwitchingWalletChain, setIsSwitchingWalletChain] = useState(false);
+  // The chain chosen in the picker; children stay hidden from the moment of
+  // the click until the wallet settles on it, so the old chain's balances
+  // never flash during the switch.
+  const [pendingChainId, setPendingChainId] = useState<ChainId>();
+
+  const settledChainId =
+    wallet.connection.status === "connected" && wallet.connection.chain.status === "ready"
+      ? wallet.connection.chain.chain.id
+      : undefined;
+  const isAwaitingSwitch = pendingChainId !== undefined && pendingChainId !== settledChainId;
 
   return (
     <div className="flex flex-col gap-2">
@@ -110,6 +121,7 @@ function ConnectionItem({ wallet, children }: { wallet: Wallet; children?: React
                   style={{ color: chain.color }}
                   className="cursor-pointer text-right text-lg hover:underline"
                   onClick={() => {
+                    setPendingChainId(chain.id);
                     // A rejected/failed switch otherwise vanishes: the domain
                     // layer flips the chain to "unsupported" but nothing logs.
                     switchChain(wallet, chain.id).catch((error: unknown) => {
@@ -137,8 +149,9 @@ function ConnectionItem({ wallet, children }: { wallet: Wallet; children?: React
             Unsupported Chain
           </code>
         ))}
-      {/* e.g. the wallet balances — hidden while the chain switcher is open. */}
-      {!isSwitchingWalletChain && children}
+      {/* e.g. the wallet balances — hidden while the chain switcher is open
+          and while a chosen switch is still settling. */}
+      {!isSwitchingWalletChain && !isAwaitingSwitch && children}
     </div>
   );
 }

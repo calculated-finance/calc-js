@@ -18,10 +18,12 @@ export function WalletBalances() {
   const readyChain = connected?.chain.status === "ready" ? connected.chain.chain : undefined;
   const address = readyChain ? connected?.address : undefined;
 
-  const { data: balances } = useWalletBalances(address, readyChain?.id);
+  const { data: balances, isPending } = useWalletBalances(address, readyChain?.id);
   const { ref, onScroll, maskImage } = useScrollFade();
 
-  if (!address || !balances?.length) return null;
+  // isPending: a fresh chain gets its own query key, so nothing renders
+  // until the new chain's balances have actually loaded.
+  if (!address || isPending || !balances?.length) return null;
 
   const totalUsd = balances.reduce((acc, balance) => acc + balance.valueUsd, 0);
 

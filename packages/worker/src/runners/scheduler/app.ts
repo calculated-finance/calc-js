@@ -15,8 +15,9 @@ import type {
   ConditionFilter,
   SchedulerQueryMsg,
 } from "@template/domain/types";
-import { Config, DateTime, Effect, Schedule, Schema, Stream } from "effect";
+import { Config, DateTime, Effect, Schema, Stream } from "effect";
 import { getFreshBlock } from "./fresh-block.js";
+import { rpcRetrySchedule } from "./rpc-retry.js";
 
 (BigInt.prototype as any).toJSON = function () {
   return this.toString();
@@ -45,27 +46,14 @@ const getCosmosChainTriggers = (
       );
     }
 
-    return yield* client
-      .use<Array<Trigger>>((c) =>
-        c.queryContractSmart(chain.schedulerContract!, {
-          filtered: {
-            limit: 5,
-            filter,
-          },
-        } as SchedulerQueryMsg)
-      )
-      .pipe(
-        Effect.tapError((error) =>
-          Effect.sync(() =>
-            console.log(
-              `Failed to fetch triggers from chain ${
-                chain.id
-              } with filter ${JSON.stringify(filter)}: ${error}`
-            )
-          )
-        ),
-        Effect.retry(Schedule.exponential("500 millis"))
-      );
+    return yield* client.use<Array<Trigger>>((c) =>
+      c.queryContractSmart(chain.schedulerContract!, {
+        filtered: {
+          limit: 5,
+          filter,
+        },
+      } as SchedulerQueryMsg)
+    );
   });
 
 const fetchTimeTriggers = (
@@ -116,7 +104,15 @@ const scheduler = Effect.gen(function* () {
     rpcUrls: chain.rpcUrls,
     connect: (rpcUrl) => CosmWasmClient.connect(rpcUrl),
     disconnect: (c) => c.disconnect(),
-  });
+  }).pipe(
+    Effect.tapError((error) =>
+      Effect.logWarning(
+        `Failed to connect to chain ${chain.id}; retrying with backoff`,
+        error
+      )
+    ),
+    Effect.retry(rpcRetrySchedule)
+  );
 
   const enqueueTriggers = (triggers: Trigger[]) =>
     Effect.tryPromise({
@@ -155,6 +151,13 @@ const scheduler = Effect.gen(function* () {
 
   const timeFetcher = Stream.repeatEffect(
     fetchTimeTriggers(chain, client).pipe(
+      Effect.tapError((error) =>
+        Effect.logWarning(
+          `Failed to fetch time triggers for chain ${chain.id}; retrying with backoff`,
+          error
+        )
+      ),
+      Effect.retry(rpcRetrySchedule),
       Effect.delay(`${Number(fetchDelay)} millis`),
       Effect.catchAll((error) =>
         Effect.gen(function* () {
@@ -167,6 +170,13 @@ const scheduler = Effect.gen(function* () {
 
   const blockFetcher = Stream.repeatEffect(
     fetchBlockTriggers(chain, client).pipe(
+      Effect.tapError((error) =>
+        Effect.logWarning(
+          `Failed to fetch block triggers for chain ${chain.id}; retrying with backoff`,
+          error
+        )
+      ),
+      Effect.retry(rpcRetrySchedule),
       Effect.delay(`${Number(fetchDelay)} millis`),
       Effect.catchAll((error) =>
         Effect.gen(function* () {

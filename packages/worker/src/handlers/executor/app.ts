@@ -14,21 +14,40 @@ import {
 } from "aws-embedded-metrics";
 import {
   AllRpcEndpointsFailedError,
+  BroadcastOutcomeUnknownError,
   calculateAttemptTimeoutMs,
   classifyRpcFailure,
   deduplicateTriggerIds,
   errorMessage,
   executeWithRpcFailover,
   ExecutionBudgetExhaustedError,
+  parseSequenceMismatch,
+  preferredStartIndex,
   RpcAttemptTimeoutError,
   RpcCircuitBreaker,
   type RpcFailureCategory,
   withTimeout,
 } from "./resilience.js";
+import {
+  awaitInclusion,
+  type Broadcast,
+  rebroadcast,
+  schedulerExecuteMessage,
+  signAndBroadcast,
+  TransactionFailedError,
+} from "./transaction.js";
 
 const RPC_CONNECT_TIMEOUT_MS = 5_000;
 const RPC_QUERY_TIMEOUT_MS = 5_000;
-const RPC_EXECUTE_TIMEOUT_MS = 50_000;
+// Simulate + sign + broadcast_sync only; waiting for the block is separate.
+const RPC_SUBMIT_TIMEOUT_MS = 20_000;
+// THORChain produces a block roughly every 6s.
+const BLOCK_TIME_MS = 6_000;
+const SEQUENCE_MISMATCH_MAX_RETRIES = 3;
+const TX_POLL_INTERVAL_MS = 3_000;
+// Stop waiting for inclusion well before the 55s near-timeout alarm, so a
+// slow block is reported as a pending tx rather than as a Lambda near timeout.
+const TX_POLL_HEADROOM_MS = 10_000;
 const RPC_MIN_ATTEMPT_MS = 3_000;
 const RPC_QUERY_MIN_ATTEMPT_MS = 1_000;
 const LAMBDA_TIMEOUT_HEADROOM_MS = 5_000;
@@ -51,6 +70,7 @@ type Signer = {
 
 type Resources = {
   address: string;
+  gasPrice: GasPrice;
   scheduler: string;
   signers: Signer[];
 };
@@ -75,9 +95,10 @@ let cachedResources: Resources | null = null;
 let initPromise: Promise<Resources> | null = null;
 let resourcesExpireAtMs = 0;
 
-// Rotating start index so a persistently-flaky endpoint does not penalize
-// every call. Module scope persists across warm Lambda invocations.
-let rrCursor = 0;
+// The endpoint that last submitted successfully. We stick to it rather than
+// rotating per invocation; the circuit breaker and failover move us off it
+// when it misbehaves. Module scope persists across warm Lambda invocations.
+let preferredRpcUrl: string | undefined;
 
 const structuredLog = (
   level: "ERROR" | "INFO" | "WARN",
@@ -271,11 +292,57 @@ const putFailureCategoryMetric = (
     metrics.putMetric("RpcHttp502", 1, Unit.Count);
   } else if (category === "http_5xx") {
     metrics.putMetric("RpcHttp5xx", 1, Unit.Count);
+  } else if (category === "sequence_mismatch") {
+    metrics.putMetric("RpcSequenceMismatch", 1, Unit.Count);
+  } else if (category === "ambiguous_broadcast") {
+    metrics.putMetric("RpcAmbiguousBroadcast", 1, Unit.Count);
   } else if (category === "rpc_reported_chain_halted") {
     // Telemetry only. A halt response from one RPC is not treated as proof
     // that every configured RPC observes a chain-wide halt.
     metrics.putMetric("RpcReportedChainHalted", 1, Unit.Count);
   }
+};
+
+/**
+ * The signed bytes may be in a mempool. Push the same bytes to the other
+ * endpoints (never re-sign) so the caller can wait for the hash.
+ */
+const recoverUnknownBroadcast = async ({
+  error,
+  logContext,
+  metrics,
+  signers,
+}: {
+  error: BroadcastOutcomeUnknownError;
+  logContext: LogContext;
+  metrics: MetricsLogger;
+  signers: Signer[];
+}): Promise<Broadcast> => {
+  metrics.putMetric("BroadcastOutcomeUnknown", 1, Unit.Count);
+  const acceptedBy = await rebroadcast({
+    endpoints: signers.filter(({ rpcUrl }) => rpcUrl !== error.rpcUrl),
+    txBytes: error.txBytes,
+    onFailure: ({ error: rebroadcastError, rpcUrl }) => {
+      metrics.putMetric("RebroadcastFailure", 1, Unit.Count);
+      structuredLog("WARN", "executor_rebroadcast_failed", logContext, {
+        rpcUrl,
+        transactionHash: error.transactionHash,
+        ...errorFields(rebroadcastError),
+      });
+    },
+  });
+  structuredLog("WARN", "executor_broadcast_outcome_unknown", logContext, {
+    rebroadcastAcceptedBy: acceptedBy ?? null,
+    rpcUrl: error.rpcUrl,
+    transactionHash: error.transactionHash,
+    ...errorFields(error.cause),
+  });
+
+  return {
+    rpcUrl: error.rpcUrl,
+    transactionHash: error.transactionHash,
+    txBytes: error.txBytes,
+  };
 };
 
 const disposeResources = (resources: Resources | null) => {
@@ -365,9 +432,7 @@ const buildResources = async (
 
     try {
       const client = await withTimeout(
-        SigningCosmWasmClient.connectWithSigner(rpcUrl, wallet, {
-          gasPrice: GasPrice.fromString(chain.defaultGasPrice),
-        }),
+        SigningCosmWasmClient.connectWithSigner(rpcUrl, wallet),
         timeoutMs,
         () => new RpcAttemptTimeoutError(rpcUrl, timeoutMs, "connect")
       );
@@ -406,7 +471,12 @@ const buildResources = async (
   }
 
   const [{ address }] = await wallet.getAccounts();
-  return { signers, address, scheduler };
+  return {
+    signers,
+    address,
+    gasPrice: GasPrice.fromString(chain.defaultGasPrice),
+    scheduler,
+  };
 };
 
 const init = async (
@@ -473,13 +543,12 @@ export const handler = metricScope(
     });
 
     try {
-      const { signers, address, scheduler } = await init(
+      const { signers, address, gasPrice, scheduler } = await init(
         metrics,
         context,
         logContext
       );
-      const startIndex = rrCursor;
-      rrCursor = (rrCursor + 1) % signers.length;
+      const startIndex = preferredStartIndex(signers, preferredRpcUrl);
       const { executableTriggerIds, staleTriggerIds } =
         await preflightTriggerIds({
           context,
@@ -505,20 +574,22 @@ export const handler = metricScope(
       logContext.triggerIds = executableTriggerIds;
       metrics.setProperty("ExecutableTriggerIds", executableTriggerIds);
 
-      const result = await executeWithRpcFailover({
+      const messages = [
+        schedulerExecuteMessage(address, scheduler, executableTriggerIds),
+      ];
+      const broadcast = await executeWithRpcFailover({
         circuitBreaker: rpcCircuitBreaker,
         endpoints: signers,
-        execute: ({ client }) =>
-          client.execute(
-            address,
-            scheduler,
-            { execute: executableTriggerIds },
-            "auto"
-          ),
+        execute: (endpoint) =>
+          signAndBroadcast({ address, endpoint, gasPrice, messages }),
         getRemainingTimeInMillis: () => context.getRemainingTimeInMillis(),
         headroomMs: LAMBDA_TIMEOUT_HEADROOM_MS,
-        maxAttemptMs: RPC_EXECUTE_TIMEOUT_MS,
+        maxAttemptMs: RPC_SUBMIT_TIMEOUT_MS,
         minAttemptMs: RPC_MIN_ATTEMPT_MS,
+        sequenceRetry: {
+          maxRetries: SEQUENCE_MISMATCH_MAX_RETRIES,
+          waitMs: BLOCK_TIME_MS,
+        },
         startIndex,
         hooks: {
           onAttempt: ({ attempt, rpcUrl, timeoutMs }) => {
@@ -558,13 +629,34 @@ export const handler = metricScope(
               metrics.putMetric("RpcCircuitOpened", 1, Unit.Count);
             }
             structuredLog("ERROR", "executor_rpc_execute_failed", logContext, {
-              ambiguousOutcome: category === "ambiguous_timeout",
+              ambiguousOutcome:
+                category === "ambiguous_timeout" ||
+                category === "ambiguous_broadcast",
               attempt,
               category,
               circuitOpenUntilMs: circuit.openUntilMs,
               consecutiveFailures: circuit.consecutiveFailures,
               rpcUrl,
               willRetryAnotherEndpoint,
+              ...errorFields(error),
+            });
+          },
+          onSequenceMismatch: ({
+            attempt,
+            error,
+            maxRetries,
+            retry,
+            rpcUrl,
+            waitMs,
+          }) => {
+            metrics.putMetric("RpcSequenceMismatch", 1, Unit.Count);
+            structuredLog("WARN", "executor_rpc_sequence_mismatch", logContext, {
+              attempt,
+              maxRetries,
+              retry,
+              rpcUrl,
+              waitMs,
+              ...parseSequenceMismatch(error),
               ...errorFields(error),
             });
           },
@@ -587,6 +679,7 @@ export const handler = metricScope(
             }
           },
           onSuccess: ({ attempt, elapsedMs, rpcUrl }) => {
+            preferredRpcUrl = rpcUrl;
             metrics.putMetric("RpcExecuteSuccess", 1, Unit.Count);
             metrics.putMetric(
               "RpcExecuteDuration",
@@ -600,7 +693,53 @@ export const handler = metricScope(
             });
           },
         },
+      }).catch((error: unknown) => {
+        if (!(error instanceof BroadcastOutcomeUnknownError)) throw error;
+        return recoverUnknownBroadcast({ error, logContext, metrics, signers });
       });
+
+      structuredLog("INFO", "executor_transaction_broadcast", logContext, {
+        rpcUrl: broadcast.rpcUrl,
+        transactionHash: broadcast.transactionHash,
+      });
+
+      const result = await awaitInclusion({
+        deadlineMs:
+          Date.now() +
+          context.getRemainingTimeInMillis() -
+          TX_POLL_HEADROOM_MS,
+        // Poll where we broadcast first; other endpoints only on errors.
+        endpoints: [
+          ...signers.filter(({ rpcUrl }) => rpcUrl === broadcast.rpcUrl),
+          ...signers.filter(({ rpcUrl }) => rpcUrl !== broadcast.rpcUrl),
+        ],
+        pollIntervalMs: TX_POLL_INTERVAL_MS,
+        transactionHash: broadcast.transactionHash,
+        onPollFailure: ({ error, rpcUrl }) => {
+          metrics.putMetric("TransactionPollFailure", 1, Unit.Count);
+          structuredLog("WARN", "executor_transaction_poll_failed", logContext, {
+            rpcUrl,
+            transactionHash: broadcast.transactionHash,
+            ...errorFields(error),
+          });
+        },
+      });
+
+      if (!result) {
+        // Acked on purpose: the tx is in a mempool and will most likely land.
+        // Triggers are idempotent on-chain (the scheduler skips IDs it has
+        // already deleted), and if the tx is dropped the scheduler enqueues
+        // whatever is still due again.
+        metrics.putMetric("TransactionPending", 1, Unit.Count);
+        structuredLog("ERROR", "executor_transaction_pending", logContext, {
+          elapsedMs: Date.now() - startedAt,
+          rpcUrl: broadcast.rpcUrl,
+          transactionHash: broadcast.transactionHash,
+        });
+        return { batchItemFailures: [] };
+      }
+
+      if (result.code !== 0) throw new TransactionFailedError(result);
 
       for (const chainEvent of result.events) {
         structuredLog("INFO", "executor_chain_event", logContext, {
@@ -615,7 +754,7 @@ export const handler = metricScope(
           if (strategyAddress) {
             structuredLog("INFO", "executor_strategy_executed", logContext, {
               strategyAddress,
-              transactionHash: result.transactionHash,
+              transactionHash: result.hash,
             });
           }
         }
@@ -624,7 +763,8 @@ export const handler = metricScope(
       metrics.putMetric("ExecutorSuccess", 1, Unit.Count);
       structuredLog("INFO", "executor_invocation_succeeded", logContext, {
         elapsedMs: Date.now() - startedAt,
-        transactionHash: result.transactionHash,
+        height: result.height,
+        transactionHash: result.hash,
       });
       return { batchItemFailures: [] };
     } catch (error) {
@@ -638,6 +778,9 @@ export const handler = metricScope(
       }
       if (error instanceof RpcAttemptTimeoutError) {
         metrics.putMetric("AmbiguousExecution", 1, Unit.Count);
+      }
+      if (error instanceof TransactionFailedError) {
+        metrics.putMetric("TransactionFailed", 1, Unit.Count);
       }
       structuredLog("ERROR", "executor_invocation_failed", logContext, {
         elapsedMs: Date.now() - startedAt,

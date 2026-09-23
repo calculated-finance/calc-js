@@ -58,6 +58,85 @@ export class AllRpcEndpointsFailedError extends Error {
   }
 }
 
+/**
+ * The signed transaction may have reached a mempool before the RPC call
+ * failed. Re-signing through another endpoint could double-submit, so the
+ * caller must resolve it with the same bytes (rebroadcast, poll the hash).
+ */
+export class BroadcastOutcomeUnknownError extends Error {
+  readonly cause: unknown;
+  readonly rpcUrl: string;
+  readonly transactionHash: string;
+  readonly txBytes: Uint8Array;
+
+  constructor(options: {
+    cause: unknown;
+    rpcUrl: string;
+    transactionHash: string;
+    txBytes: Uint8Array;
+  }) {
+    super(
+      `Broadcast of ${options.transactionHash} via ${
+        options.rpcUrl
+      } has an unknown outcome: ${errorMessage(options.cause)}`
+    );
+    this.name = "BroadcastOutcomeUnknownError";
+    this.cause = options.cause;
+    this.rpcUrl = options.rpcUrl;
+    this.transactionHash = options.transactionHash;
+    this.txBytes = options.txBytes;
+  }
+}
+
+const SDK_CODESPACE = "sdk";
+const SDK_ERR_WRONG_SEQUENCE = 32;
+const SDK_ERR_TX_IN_MEMPOOL_CACHE = 19;
+
+const hasSdkCode = (error: unknown, code: number) =>
+  typeof error === "object" &&
+  error !== null &&
+  (error as { codespace?: unknown }).codespace === SDK_CODESPACE &&
+  (error as { code?: unknown }).code === code;
+
+/**
+ * The node validated our tx against a different account sequence than the
+ * one we signed or simulated with. Nothing reached a mempool, and the node
+ * is healthy — it usually just has our previous tx pending, or has not caught
+ * up to the block that committed it.
+ */
+export const isSequenceMismatch = (error: unknown) =>
+  hasSdkCode(error, SDK_ERR_WRONG_SEQUENCE) ||
+  /account sequence mismatch|incorrect account sequence/i.test(
+    errorMessage(error)
+  );
+
+/** The node already holds these exact tx bytes: as good as a broadcast. */
+export const isTxAlreadyKnown = (error: unknown) =>
+  hasSdkCode(error, SDK_ERR_TX_IN_MEMPOOL_CACHE) ||
+  /tx already exists in cache|tx already in mempool/i.test(errorMessage(error));
+
+export const parseSequenceMismatch = (error: unknown) => {
+  const match = /expected (\d+), got (\d+)/.exec(errorMessage(error));
+  return match
+    ? { expectedSequence: Number(match[1]), gotSequence: Number(match[2]) }
+    : {};
+};
+
+/**
+ * Start from the endpoint that last succeeded rather than rotating. Rotating
+ * lands each invocation on a different node right after our previous tx was
+ * committed on another one, which is exactly when nodes disagree about our
+ * account sequence.
+ */
+export const preferredStartIndex = <T>(
+  endpoints: RpcEndpoint<T>[],
+  preferredRpcUrl: string | undefined
+) =>
+  Math.max(
+    0,
+    endpoints.findIndex(({ rpcUrl }) => rpcUrl === preferredRpcUrl)
+  );
+
 export class RpcCircuitBreaker {
   private readonly states = new Map<string, CircuitState>();
 
@@ -160,17 +239,23 @@ export const deduplicateTriggerIds = (triggerIds: readonly string[]) => [
 ];
 
 export type RpcFailureCategory =
+  | "ambiguous_broadcast"
   | "ambiguous_timeout"
   | "connect_timeout"
   | "http_502"
   | "http_5xx"
   | "rpc_reported_chain_halted"
-  | "rpc_error";
+  | "rpc_error"
+  | "sequence_mismatch";
 
 export const classifyRpcFailure = (error: unknown): RpcFailureCategory => {
   if (error instanceof RpcAttemptTimeoutError) {
     return error.phase === "connect" ? "connect_timeout" : "ambiguous_timeout";
   }
+  if (error instanceof BroadcastOutcomeUnknownError) {
+    return "ambiguous_broadcast";
+  }
+  if (isSequenceMismatch(error)) return "sequence_mismatch";
 
   const message = errorMessage(error);
   if (message.includes("THORChain is halted")) {
@@ -230,6 +315,14 @@ type FailoverHooks = {
     rpcUrl: string;
     willRetryAnotherEndpoint: boolean;
   }) => void;
+  onSequenceMismatch?: (details: {
+    attempt: number;
+    error: unknown;
+    maxRetries: number;
+    retry: number;
+    rpcUrl: string;
+    waitMs: number;
+  }) => void;
   onSelection?: (details: {
     forcedProbe: boolean;
     skippedRpcUrls: string[];
@@ -251,6 +344,15 @@ export const executeWithRpcFailover = async <T, A>(options: {
   maxAttemptMs: number;
   minAttemptMs: number;
   now?: () => number;
+  /**
+   * Retry the same endpoint after a sequence mismatch instead of failing
+   * over, waiting roughly a block each time for the node to catch up.
+   */
+  sequenceRetry?: {
+    maxRetries: number;
+    sleep?: (ms: number) => Promise<void>;
+    waitMs: number;
+  };
   startIndex: number;
 }): Promise<A> => {
   const selection = options.circuitBreaker.select(
@@ -264,70 +366,113 @@ export const executeWithRpcFailover = async <T, A>(options: {
 
   let lastError: unknown;
 
+  const sleep =
+    options.sequenceRetry?.sleep ??
+    ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
+  let attempt = 0;
+
   for (let index = 0; index < selection.endpoints.length; index++) {
     const endpoint = selection.endpoints[index];
-    const attempt = index + 1;
-    let timeoutMs: number;
+    let sequenceRetries = 0;
 
-    try {
-      timeoutMs = calculateAttemptTimeoutMs({
-        headroomMs: options.headroomMs,
-        maxAttemptMs: options.maxAttemptMs,
-        minAttemptMs: options.minAttemptMs,
-        remainingTimeMs: options.getRemainingTimeInMillis(),
+    while (true) {
+      attempt++;
+      let timeoutMs: number;
+
+      try {
+        timeoutMs = calculateAttemptTimeoutMs({
+          headroomMs: options.headroomMs,
+          maxAttemptMs: options.maxAttemptMs,
+          minAttemptMs: options.minAttemptMs,
+          remainingTimeMs: options.getRemainingTimeInMillis(),
+        });
+      } catch (error) {
+        if (error instanceof ExecutionBudgetExhaustedError) {
+          options.hooks?.onBudgetExhausted?.({
+            attempt,
+            error,
+            rpcUrl: endpoint.rpcUrl,
+          });
+        }
+        throw error;
+      }
+
+      options.hooks?.onAttempt?.({
+        attempt,
+        rpcUrl: endpoint.rpcUrl,
+        timeoutMs,
       });
-    } catch (error) {
-      if (error instanceof ExecutionBudgetExhaustedError) {
-        options.hooks?.onBudgetExhausted?.({
+      const startedAt = options.now?.() ?? Date.now();
+
+      try {
+        const result = await withTimeout(
+          options.execute(endpoint),
+          timeoutMs,
+          () => new RpcAttemptTimeoutError(endpoint.rpcUrl, timeoutMs)
+        );
+        options.circuitBreaker.recordSuccess(endpoint.rpcUrl);
+        options.hooks?.onSuccess?.({
           attempt,
-          error,
+          elapsedMs: (options.now?.() ?? Date.now()) - startedAt,
           rpcUrl: endpoint.rpcUrl,
         });
+        return result;
+      } catch (error) {
+        lastError = error;
+
+        const retry = options.sequenceRetry;
+        if (
+          retry &&
+          isSequenceMismatch(error) &&
+          sequenceRetries < retry.maxRetries &&
+          // Only wait if another attempt could still start afterwards.
+          options.getRemainingTimeInMillis() -
+            retry.waitMs -
+            options.headroomMs >=
+            options.minAttemptMs
+        ) {
+          // Not an endpoint fault, so the circuit is left alone.
+          sequenceRetries++;
+          options.hooks?.onSequenceMismatch?.({
+            attempt,
+            error,
+            maxRetries: retry.maxRetries,
+            retry: sequenceRetries,
+            rpcUrl: endpoint.rpcUrl,
+            waitMs: retry.waitMs,
+          });
+          await sleep(retry.waitMs);
+          continue;
+        }
+
+        // Either may have happened after the transaction reached a mempool.
+        const ambiguous =
+          error instanceof RpcAttemptTimeoutError ||
+          error instanceof BroadcastOutcomeUnknownError;
+        const category = classifyRpcFailure(error);
+        const circuit = options.circuitBreaker.recordFailure(endpoint.rpcUrl, {
+          // An execute timeout consumes most of the Lambda budget and has an
+          // ambiguous broadcast outcome. Avoid selecting the same endpoint
+          // again on the next warm-container invocation.
+          openImmediately: error instanceof RpcAttemptTimeoutError,
+        });
+        options.hooks?.onFailure?.({
+          attempt,
+          category,
+          circuit,
+          error,
+          rpcUrl: endpoint.rpcUrl,
+          willRetryAnotherEndpoint:
+            !ambiguous && index + 1 < selection.endpoints.length,
+        });
+
+        // Never submit through another endpoint once the outcome is unknown:
+        // that would sign a second transaction. The scheduler contract ignores
+        // trigger IDs already deleted by a successful execution, so the caller
+        // (or an SQS retry) can safely resolve the ambiguous outcome.
+        if (ambiguous) throw error;
+        break;
       }
-      throw error;
-    }
-
-    options.hooks?.onAttempt?.({ attempt, rpcUrl: endpoint.rpcUrl, timeoutMs });
-    const startedAt = options.now?.() ?? Date.now();
-
-    try {
-      const result = await withTimeout(
-        options.execute(endpoint),
-        timeoutMs,
-        () => new RpcAttemptTimeoutError(endpoint.rpcUrl, timeoutMs)
-      );
-      options.circuitBreaker.recordSuccess(endpoint.rpcUrl);
-      options.hooks?.onSuccess?.({
-        attempt,
-        elapsedMs: (options.now?.() ?? Date.now()) - startedAt,
-        rpcUrl: endpoint.rpcUrl,
-      });
-      return result;
-    } catch (error) {
-      lastError = error;
-      const timedOut = error instanceof RpcAttemptTimeoutError;
-      const category = classifyRpcFailure(error);
-      const circuit = options.circuitBreaker.recordFailure(endpoint.rpcUrl, {
-        // An execute timeout consumes nearly the entire Lambda budget and has
-        // an ambiguous broadcast outcome. Avoid selecting the same endpoint
-        // again on the next warm-container invocation.
-        openImmediately: timedOut,
-      });
-      options.hooks?.onFailure?.({
-        attempt,
-        category,
-        circuit,
-        error,
-        rpcUrl: endpoint.rpcUrl,
-        willRetryAnotherEndpoint:
-          !timedOut && index + 1 < selection.endpoints.length,
-      });
-
-      // A client-side timeout can happen after a transaction was broadcast.
-      // Do not submit through another endpoint in the same invocation. The
-      // scheduler contract ignores trigger IDs already deleted by a successful
-      // execution, so the SQS retry can safely resolve the ambiguous outcome.
-      if (timedOut) throw error;
     }
   }
 

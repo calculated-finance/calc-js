@@ -44,6 +44,18 @@ describe("calcOrderNodeId", () => {
     })
 })
 
+describe("accountNodeId", () => {
+    it("encodes the Relay global id for a THORChain account", () => {
+        const id = accountNodeId("thor17dxtxrne37gguxdeun4n36vqd5jmxxku5tr6gkuhhsh4lz9e8gksck4ygu")
+        expect(atob(id)).toBe("Account:thor17dxtxrne37gguxdeun4n36vqd5jmxxku5tr6gkuhhsh4lz9e8gksck4ygu")
+    })
+
+    it("is distinct from the strategy id for the same address", () => {
+        const address = "thor17dxtxrne37gguxdeun4n36vqd5jmxxku5tr6gkuhhsh4lz9e8gksck4ygu"
+        expect(accountNodeId(address)).not.toBe(calcOrderNodeId(address))
+    })
+})
+
 describe("phoenix frame codec", () => {
     it("round-trips a control frame", () => {
         const frame = {

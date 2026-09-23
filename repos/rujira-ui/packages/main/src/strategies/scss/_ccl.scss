@@ -1,0 +1,60 @@
+.ccl {
+  &__chart {
+    position: relative;
+    display: flex;
+    height: 426px;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  &__chart--dragging {
+    user-select: none;
+  }
+
+  &__candle {
+    width: 80%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  &__bars {
+    width: 20%;
+    height: 400px;
+    overflow: hidden;
+  }
+
+  &__overlay {
+    position: absolute;
+    left: 0;
+    right: 0;
+    background: rgba($grey, 0.1);
+    //mix-blend-mode: hard-light;
+    cursor: grab;
+    pointer-events: auto;
+
+    &--dragging {
+      cursor: grabbing;
+    }
+  }
+
+  &__handle {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 10px;
+    cursor: ns-resize;
+    background-color: rgba($grey, 0.1);
+
+    &:hover {
+      background-color: rgba($grey, 0.2);
+    }
+
+    &--top {
+      top: -5px;
+    }
+
+    &--bottom {
+      bottom: -5px;
+    }
+  }
+}

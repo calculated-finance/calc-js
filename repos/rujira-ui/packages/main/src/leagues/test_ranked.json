@@ -1,0 +1,352 @@
+[
+  {
+    "wallet": "thor164sqww2m1zs3zomj7p9il7qcz9a3chx86x4r08",
+    "points": 198824,
+    "change": 8,
+    "txs": 1000,
+    "rank": 1
+  },
+  {
+    "wallet": "thor1mko1rutcx0ohsi4wl60belcor1fp1zcvhiurwn",
+    "points": 195994,
+    "change": 3,
+    "txs": 984,
+    "rank": 2
+  },
+  {
+    "wallet": "thor1pnwdfuk2t3cbaea617lw5g4jbyh36vj40yua7j",
+    "points": 190934,
+    "change": -19,
+    "txs": 958,
+    "rank": 3
+  },
+  {
+    "wallet": "thor15akziddg77cldgxkzfwqsxnw5svvmqdaqy6yo2",
+    "points": 190921,
+    "change": -12,
+    "txs": 1017,
+    "rank": 4
+  },
+  {
+    "wallet": "thor1f9173fivyzerv2pwwiz3uz0k2ceakhvonjzygm",
+    "points": 190328,
+    "change": 12,
+    "txs": 954,
+    "rank": 5
+  },
+  {
+    "wallet": "thor1qzgh000wmr0lypvi4w0k5o23o1tbn6fn8uua90",
+    "points": 189875,
+    "change": 11,
+    "txs": 952,
+    "rank": 6
+  },
+  {
+    "wallet": "thor13nk6z1l62hbqlr93bg4nzwdk3fejk2hwzs4grz",
+    "points": 188027,
+    "change": 6,
+    "txs": 942,
+    "rank": 7
+  },
+  {
+    "wallet": "thor197kin1k9c8d61tda2bltpser1xhy1yx573fmgo",
+    "points": 187518,
+    "change": 15,
+    "txs": 1098,
+    "rank": 8
+  },
+  {
+    "wallet": "thor1yjxlooztsq6jsejttw6kuxk287l3b1axntxt22",
+    "points": 187238,
+    "change": -1,
+    "txs": 938,
+    "rank": 9
+  },
+  {
+    "wallet": "thor1w5okj4mqothyg7hq4cde9jvni0uf3z3awazfyy",
+    "points": 186908,
+    "change": -20,
+    "txs": 936,
+    "rank": 10
+  },
+  {
+    "wallet": "thor1gh1rqww9rox11of4l7ynfk9zhznaasb2evi69l",
+    "points": 184658,
+    "change": 11,
+    "txs": 924,
+    "rank": 11
+  },
+  {
+    "wallet": "thor1kpuffutpoc6oh6b4yec7y20wv0eudala7zix2a",
+    "points": 183622,
+    "change": 15,
+    "txs": 1020,
+    "rank": 12
+  },
+  {
+    "wallet": "thor1y9htw9z4d8msijs80p46avcwvei6h58cg9nld6",
+    "points": 181284,
+    "change": 7,
+    "txs": 906,
+    "rank": 13
+  },
+  {
+    "wallet": "thor1cvzuhryme0wwv5iemukgha7zesm8pn02wq2d78",
+    "points": 176464,
+    "change": 6,
+    "txs": 881,
+    "rank": 14
+  },
+  {
+    "wallet": "thor1sivqmpspihjnna60tozbufq3ulaels8qbt0q12",
+    "points": 166933,
+    "change": -12,
+    "txs": 830,
+    "rank": 15
+  },
+  {
+    "wallet": "thor1sql8g0a3tokxvkikwj6rna4e3kouot09e8gd29",
+    "points": 163057,
+    "change": 12,
+    "txs": 809,
+    "rank": 16
+  },
+  {
+    "wallet": "thor1fne6g3xqrmre7zlfg6oxdh6y98vvpvdwjg3dit",
+    "points": 158596,
+    "change": -17,
+    "txs": 786,
+    "rank": 17
+  },
+  {
+    "wallet": "thor1wihhsb95w0dtagldol6l9m9st34mba3vg5oh6b",
+    "points": 155139,
+    "change": 1,
+    "txs": 767,
+    "rank": 18
+  },
+  {
+    "wallet": "thor1zx4huji06qstpq43fg3s8k50zm5u3vj3ax3npi",
+    "points": 153131,
+    "change": -15,
+    "txs": 757,
+    "rank": 19
+  },
+  {
+    "wallet": "thor1863b5m22go9vm6wlljtfee03riijpggwgvcpzk",
+    "points": 147826,
+    "change": -5,
+    "txs": 728,
+    "rank": 20
+  },
+  {
+    "wallet": "thor1hskxrth7y6m4p44e9mzgkdy8vtsmwgeujw3lrq",
+    "points": 145792,
+    "change": 14,
+    "txs": 718,
+    "rank": 21
+  },
+  {
+    "wallet": "thor1dizvkztbi8isimi3m66gj9l2siljumnuz206jq",
+    "points": 143451,
+    "change": -15,
+    "txs": 705,
+    "rank": 22
+  },
+  {
+    "wallet": "thor1gvtu5dpv5hgaotqsqm6twnb5otzmrpomwf5edt",
+    "points": 140563,
+    "change": 18,
+    "txs": 690,
+    "rank": 23
+  },
+  {
+    "wallet": "thor18qxvinjywug4p8os5lfdymrk94608k6tzhk191",
+    "points": 140355,
+    "change": -18,
+    "txs": 689,
+    "rank": 24
+  },
+  {
+    "wallet": "thor1ju95pd96k2w8sv3ytgy7fj2hndonzgpsuwiprw",
+    "points": 136947,
+    "change": 20,
+    "txs": 671,
+    "rank": 25
+  },
+  {
+    "wallet": "thor1w0zmag7h6f1ttcv2ar6j6kkjrqhsf9rkpurslx",
+    "points": 128020,
+    "change": -17,
+    "txs": 623,
+    "rank": 26
+  },
+  {
+    "wallet": "thor1khjtwfwp14lp3le3z9b60f8y599ucqsatbc3yy",
+    "points": 123216,
+    "change": -20,
+    "txs": 598,
+    "rank": 27
+  },
+  {
+    "wallet": "thor1w3818hdrvl2v9jasfrazuzxqe5av9vut0hn4p1",
+    "points": 116837,
+    "change": 1,
+    "txs": 564,
+    "rank": 28
+  },
+  {
+    "wallet": "thor1uo3tjgi3kuiem8vr229b3p9lj6miilkj285kps",
+    "points": 114114,
+    "change": 19,
+    "txs": 549,
+    "rank": 29
+  },
+  {
+    "wallet": "thor1wb5joyyack01adcf75to3ku4wbxch271fzymic",
+    "points": 108984,
+    "change": -17,
+    "txs": 522,
+    "rank": 30
+  },
+  {
+    "wallet": "thor1p6cphggy0chqnnv4lu0zsparmpm8uagx2onr9n",
+    "points": 103873,
+    "change": 12,
+    "txs": 495,
+    "rank": 31
+  },
+  {
+    "wallet": "thor1z7x6ro0qckdzz5u935fxs5sfdn0qgcs4bir6wi",
+    "points": 102115,
+    "change": 8,
+    "txs": 485,
+    "rank": 32
+  },
+  {
+    "wallet": "thor1o4znu2atoxuj0x386lc8x5dzi3i1o0m3qelmlr",
+    "points": 80501,
+    "change": 0,
+    "txs": 371,
+    "rank": 33
+  },
+  {
+    "wallet": "thor1qjct9aj05l6cku8pofic31e9vo9dsq4kztqczz",
+    "points": 78182,
+    "change": 0,
+    "txs": 358,
+    "rank": 34
+  },
+  {
+    "wallet": "thor19exo2c0uk2gjs3583rx73pjhrl9ssnxgb7f822",
+    "points": 77768,
+    "change": -5,
+    "txs": 356,
+    "rank": 35
+  },
+  {
+    "wallet": "thor18i5tisybk4ck7n474r8na57bbckbu0fgrias6a",
+    "points": 63158,
+    "change": 0,
+    "txs": 278,
+    "rank": 36
+  },
+  {
+    "wallet": "thor1czyv1lnpi92pjlukpl6pvzwu6tzizjb3jh9kww",
+    "points": 59783,
+    "change": -13,
+    "txs": 260,
+    "rank": 37
+  },
+  {
+    "wallet": "thor1drtcxq2eyr4dkvulpmph3nmq0krrv435ahmfyp",
+    "points": 59070,
+    "change": 8,
+    "txs": 257,
+    "rank": 38
+  },
+  {
+    "wallet": "thor1gyd32zpy0x08h7oje0ouhpr9wea7fhwz24ab8h",
+    "points": 55644,
+    "change": 15,
+    "txs": 238,
+    "rank": 39
+  },
+  {
+    "wallet": "thor1z0mzdzika63ifikp39hh4cx5roplc7a9u2e04w",
+    "points": 52359,
+    "change": 12,
+    "txs": 221,
+    "rank": 40
+  },
+  {
+    "wallet": "thor1ju4bsf4ivkzakxe0a0bd2ytkqxidqoe1plq6vy",
+    "points": 52143,
+    "change": 1,
+    "txs": 220,
+    "rank": 41
+  },
+  {
+    "wallet": "thor1ikw47n3txr7rijemmnmz0cysflydoqqjz8ap4r",
+    "points": 51803,
+    "change": 2,
+    "txs": 218,
+    "rank": 42
+  },
+  {
+    "wallet": "thor1r8lpih0f9cmpuwes7paq1efr2nubekiz1324tx",
+    "points": 43950,
+    "change": -4,
+    "txs": 176,
+    "rank": 43
+  },
+  {
+    "wallet": "thor1qy8nkieqyf75t77utsi2gbdwy9jn8mswpj6ebe",
+    "points": 43233,
+    "change": -2,
+    "txs": 172,
+    "rank": 44
+  },
+  {
+    "wallet": "thor1fxjd4iuet281vimhbibqcvmwoec62tw52elzg1",
+    "points": 31447,
+    "change": 20,
+    "txs": 110,
+    "rank": 45
+  },
+  {
+    "wallet": "thor10neefiapk0oxtgnw3v11m4ufekkb8het7ftilj",
+    "points": 27615,
+    "change": -12,
+    "txs": 89,
+    "rank": 46
+  },
+  {
+    "wallet": "thor1rzhmc8gc69neu9p0jdsu1u0qo3b8sluum3aula",
+    "points": 21984,
+    "change": -12,
+    "txs": 59,
+    "rank": 47
+  },
+  {
+    "wallet": "thor1xlxpkbo2lib6lhc2hry6psm74mx74ak0cfhalf",
+    "points": 20525,
+    "change": -11,
+    "txs": 52,
+    "rank": 48
+  },
+  {
+    "wallet": "thor1qdlar4teao8v84g4s83qgvfsxf0dxidiv8x9yg",
+    "points": 19461,
+    "change": -12,
+    "txs": 46,
+    "rank": 49
+  },
+  {
+    "wallet": "thor1e3r1sk9rvdwg0uuvmke4ybvusyfvj5yx3xwb1k",
+    "points": 12582,
+    "change": 2,
+    "txs": 10,
+    "rank": 50
+  }
+]

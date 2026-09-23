@@ -1,0 +1,20 @@
+{
+  "pageTitle": "Rujira Rangliste",
+  "leaderboard": "Rangliste",
+  "participatingAddresses": "Teilnehmende Adressen",
+  "pointsGenerated": "Generierte Punkte",
+  "rujiLeagues": "RUJI Ligen",
+  "leaderboardPosition": "Ranglistenposition",
+  "myPosition": "Meine Position",
+  "search": "Suchen",
+  "noResultsFound": "Keine Ergebnisse für deine Suche gefunden",
+  "rank": "Rang",
+  "change7d": "Änderung (7T)",
+  "points": "Punkte",
+  "totalTxs": "Gesamte TXs",
+  "connectWalletMessage": "Verbinde eine unterstützte Wallet, um deine Punkte zu sehen",
+  "pageDescription": "Nutze Rujira-Apps, um Punkte in den RUJI Leagues zu verdienen. Je mehr Aktivit?t und Umsatz du im Netzwerk generierst, desto gr??er ist dein Anteil an zuk?nftigen Belohnungen, sobald die Verteilungen beginnen.",
+  "leaderTooltip": "{{badge}} Anführer",
+  "share": "Teilen",
+  "screenshot": "Screenshot"
+}

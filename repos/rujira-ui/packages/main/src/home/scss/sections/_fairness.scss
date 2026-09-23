@@ -1,0 +1,485 @@
+.home {
+  &__fairness {
+    padding-top: clamp(6rem, 9vw, 8.5rem);
+    padding-bottom: clamp(4.5rem, 10vw, 8rem);
+
+    &-intro {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      margin: 0 auto clamp(3.5rem, 6vw, 4.5rem);
+
+      .pill {
+        margin-bottom: 1.5rem;
+      }
+    }
+
+    &-title {
+      max-width: none;
+      white-space: nowrap;
+      letter-spacing: 0;
+      margin-bottom: 1.25rem;
+      color: $white;
+    }
+
+    &-copy {
+      max-width: 50rem;
+      color: rgba($primary5, 0.78);
+    }
+
+    &-copy-sentence {
+      display: inline;
+    }
+
+    &-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    &-row {
+      display: grid;
+      gap: 1rem;
+      align-items: start;
+
+      &--top {
+        grid-template-columns: minmax(0, 472fr) minmax(0, 334fr) minmax(
+            0,
+            334fr
+          );
+      }
+
+      &--bottom {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    &-card {
+      position: relative;
+      overflow: hidden;
+      border-radius: 1.25rem;
+      background: linear-gradient(
+          180deg,
+          rgba($white, 0.026) 0%,
+          rgba($white, 0) 55.9%
+        ),
+        $black;
+      isolation: isolate;
+
+      &__surface {
+        display: block;
+        width: 100%;
+        max-width: none;
+        height: auto;
+        pointer-events: none;
+        user-select: none;
+      }
+
+      &__content {
+        position: absolute;
+        z-index: 2;
+        top: 1.5rem;
+        left: 1.5rem;
+        right: 1.5rem;
+        max-width: 24.5rem;
+        pointer-events: none;
+
+        h3 {
+          margin-bottom: 0.875rem;
+          font-size: 1.125rem;
+          line-height: 1.35;
+          font-weight: 600;
+          color: $white;
+        }
+
+        p {
+          font-size: 0.96875rem;
+          line-height: 1.58;
+          color: rgba($primary5, 0.74);
+        }
+      }
+
+      &__footer-logo {
+        position: absolute;
+        z-index: 3;
+        right: 1.5rem;
+        bottom: clamp(1.25rem, 5.8%, 1.875rem);
+        left: 1.5rem;
+        width: min(10rem, calc(100% - 3rem));
+        height: auto;
+        margin-inline: auto;
+        pointer-events: none;
+        user-select: none;
+      }
+
+      &__copy {
+        margin: 0;
+
+        &--phone,
+        &--mobile {
+          display: none;
+        }
+      }
+
+      &__line {
+        display: block;
+      }
+
+      &--decentralized {
+        .home__fairness-card__content {
+          max-width: 31rem;
+        }
+      }
+
+      &--liquidity {
+        .home__fairness-card__content {
+          max-width: 18rem;
+        }
+      }
+
+      &--assets {
+        .home__fairness-card__content {
+          max-width: 17rem;
+        }
+      }
+
+      &--platform {
+        .home__fairness-card__content {
+          max-width: 29rem;
+        }
+      }
+
+      &--scale {
+        .home__fairness-card__content {
+          max-width: 23rem;
+        }
+      }
+    }
+
+    @media screen and (min-width: 1200px) {
+      &-card {
+        &__line {
+          white-space: nowrap;
+        }
+      }
+    }
+
+    @media screen and (max-width: 1199px) {
+      &-card {
+        &__copy {
+          &--desktop {
+            display: none;
+          }
+
+          &--mobile {
+            display: block;
+          }
+        }
+
+        &__line {
+          white-space: normal;
+        }
+
+        &__content {
+          h3 {
+            margin-bottom: 0.75rem;
+            font-size: 1rem;
+            line-height: 1.3;
+          }
+
+          p {
+            font-size: 0.875rem;
+            line-height: 1.5;
+          }
+        }
+      }
+    }
+
+    @media screen and (max-width: ($large - 1px)) {
+      &-row {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      &-card {
+        &__content {
+          max-width: calc(100% - 3rem);
+
+          h3 {
+            margin-bottom: 0.75rem;
+            font-size: 1rem;
+            line-height: 1.3;
+          }
+
+          p {
+            font-size: 0.875rem;
+            line-height: 1.5;
+          }
+        }
+
+        &--liquidity,
+        &--assets,
+        &--scale {
+          .home__fairness-card__content {
+            max-width: 18rem;
+          }
+        }
+      }
+    }
+
+    @media screen and (max-width: 1120px) {
+      &-grid {
+        max-width: min(100%, 58rem);
+        margin-inline: auto;
+      }
+
+      &-row {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      &-card {
+        &__content {
+          h3 {
+            font-size: 1.125rem;
+          }
+
+          p {
+            font-size: 1rem;
+            line-height: 1.55;
+          }
+        }
+
+        &--decentralized,
+        &--liquidity,
+        &--assets,
+        &--platform {
+          .home__fairness-card__content {
+            max-width: calc(100% - 3rem);
+          }
+
+          .home__fairness-card__line {
+            display: inline;
+
+            &::after {
+              content: " ";
+            }
+
+            &:last-child::after {
+              content: none;
+            }
+          }
+        }
+      }
+    }
+
+    @media screen and (min-width: $medium) and (max-width: 1120px) {
+      padding-top: 8.5rem;
+
+      &-card {
+        --fairness-tablet-image-bleed: 1.5rem;
+        --fairness-tablet-image-drop: 1.25rem;
+
+        background: $black;
+
+        &__surface {
+          position: absolute;
+          bottom: calc(-1 * var(--fairness-tablet-image-drop));
+          left: calc(-1 * var(--fairness-tablet-image-bleed));
+          width: calc(100% + (var(--fairness-tablet-image-bleed) * 2));
+          height: auto;
+        }
+
+        &__content {
+          h3 {
+            font-size: 1.375rem;
+          }
+
+          p {
+            font-size: 1.125rem;
+          }
+        }
+
+        &__footer-logo {
+          width: min(12rem, calc(100% - 3rem));
+        }
+
+        &--decentralized {
+          aspect-ratio: 472 / 320;
+        }
+
+        &--liquidity,
+        &--assets {
+          aspect-ratio: 334 / 260;
+        }
+
+        &--platform,
+        &--scale {
+          aspect-ratio: 580 / 320;
+        }
+
+        &--scale {
+          .home__fairness-card__content {
+            max-width: 31rem;
+          }
+        }
+      }
+    }
+
+    @media screen and (max-width: ($medium - 1px)) {
+      padding-top: 7.5rem;
+      padding-bottom: 6.75rem;
+
+      &-title {
+        white-space: normal;
+      }
+
+      &-copy-sentence {
+        display: block;
+
+        & + .home__fairness-copy-sentence {
+          margin-top: 0.5rem;
+        }
+      }
+
+      &-row {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      &-card {
+        --fairness-card-visual-height: clamp(14rem, 55vw, 16rem);
+
+        height: calc(var(--fairness-card-visual-height) + 2.75rem);
+        max-height: none;
+
+        &__surface {
+          position: absolute;
+          right: 0;
+          bottom: 0;
+          left: 0;
+          width: 100%;
+          height: var(--fairness-card-visual-height);
+          object-fit: cover;
+        }
+
+        &__content {
+          top: 1.125rem;
+          left: 1.125rem;
+          right: 1.125rem;
+          max-width: min(22rem, calc(100% - 2.25rem));
+
+          h3 {
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+            line-height: 1.28;
+          }
+
+          p {
+            max-width: 18.5rem;
+            font-size: 0.875rem;
+            line-height: 1.42;
+          }
+        }
+
+        &__footer-logo {
+          display: none;
+        }
+
+        &__line {
+          display: inline;
+          white-space: normal;
+
+          &::after {
+            content: " ";
+          }
+
+          &:last-child::after {
+            content: none;
+          }
+        }
+
+        &--decentralized,
+        &--liquidity,
+        &--assets,
+        &--platform {
+          .home__fairness-card__content {
+            max-width: calc(100% - 2.25rem);
+          }
+        }
+
+        &--has-phone-copy {
+          .home__fairness-card__copy--mobile {
+            display: none;
+          }
+
+          .home__fairness-card__copy--phone {
+            display: block;
+          }
+        }
+
+        &--decentralized {
+          .home__fairness-card__surface {
+            object-position: center bottom;
+          }
+        }
+
+        &--liquidity,
+        &--assets {
+          .home__fairness-card__surface {
+            object-position: center bottom;
+          }
+        }
+
+        &--liquidity {
+          .home__fairness-card__surface {
+            object-position: center 62%;
+          }
+        }
+
+        &--assets {
+          .home__fairness-card__surface {
+            object-position: center 68%;
+          }
+        }
+
+        &--platform {
+          .home__fairness-card__surface {
+            object-position: center bottom;
+          }
+
+          .home__fairness-card__content {
+            max-width: min(21rem, calc(100% - 2.25rem));
+          }
+        }
+
+        &--scale {
+          .home__fairness-card__surface {
+            object-position: center bottom;
+          }
+
+          .home__fairness-card__content {
+            max-width: min(17.25rem, calc(100% - 2.25rem));
+          }
+        }
+      }
+    }
+
+    @media screen and (max-width: 360px) {
+      &-card {
+        &__content {
+          top: 1rem;
+          left: 1rem;
+          right: 1rem;
+
+          h3 {
+            font-size: 0.9375rem;
+          }
+
+          p {
+            font-size: 0.8125rem;
+            line-height: 1.38;
+          }
+        }
+      }
+    }
+  }
+}

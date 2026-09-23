@@ -1,0 +1,31 @@
+.deposit-modal {
+  &__content {
+    max-height: 60vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+
+    &::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    
+    &::-webkit-scrollbar-track {
+      background: $black;
+      border-radius: 4px;
+    }
+    
+    &::-webkit-scrollbar-thumb {
+      background: $grey;
+      border-radius: 4px;
+      border: 2px solid $black;
+    }
+    
+    &::-webkit-scrollbar-thumb:hover {
+      background: $primary1;
+      border-width: 1px;
+    }
+    &::-webkit-scrollbar-corner {
+      background: transparent;
+    }
+  }
+}

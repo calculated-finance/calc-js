@@ -1,0 +1,51 @@
+.docs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+  min-height: 100vh;
+  background-color: #FAFAFA;
+
+  &__header {
+    flex-grow: 0;
+    display: flex;
+    width: 100%;
+    height: 5rem;
+    align-items: center;
+    padding: 1rem 2rem;
+
+    svg {
+      display: block;
+      height: 3rem;
+      width: auto;
+    }
+  }
+  
+  &__container {
+    display: flex;
+    min-height: calc(100vh - 5rem);
+    width: 100%;
+    max-width: 135rem;
+    margin: 0 2rem;
+  }
+
+  &__inner {
+    width: 100%;
+    max-width: 50rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  &__nav {
+    width: 20rem;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: 2rem;
+  }
+  
+  &__page {
+    flex: 1;
+    background: #fff;
+    padding: 2rem 3rem;
+  }
+}

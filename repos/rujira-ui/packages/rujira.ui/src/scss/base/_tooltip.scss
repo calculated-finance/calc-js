@@ -1,0 +1,10 @@
+.tooltip {
+  background: $deepBlack !important;
+  font-size: 0.875rem;
+  font-family: "Barlow Semi Condensed", Verdana, sans-serif;
+  font-weight: 400;
+  color: $white;
+  //padding: 0.5rem !important;
+  z-index: 300;
+  max-width: 90vw;
+}

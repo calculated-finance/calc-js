@@ -1,0 +1,147 @@
+.ruji {
+  &__banner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    height: calc(100vh - 96px);
+    min-height: calc(420px + 15vh);
+    max-height: 752px;
+    text-align: center;
+
+    h3 {
+      max-width: 725px;
+    }
+  }
+  &__key {
+    text-align: center;
+    margin-bottom: 8.25rem;
+
+    &-point {
+      display: flex;
+      height: 100%;
+      border-radius: 20px;
+      background: url(../assets/why-1.png);
+      background-size: 100% 100%;
+      padding: 3px;
+
+      &.bg2 {
+        background-image: url(../assets/why-2.png);
+      }
+      &.bg3 {
+        background-image: url(../assets/why-3.png);
+      }
+      &.bg4 {
+        background-image: url(../assets/why-4.png);
+      }
+      
+      div {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        background: rgba(#181921, 0.95);
+        padding: 30px 20px;
+        width: 100%;
+        height: 100%;
+        border-radius: 17px;
+      }
+
+      h3 {
+        font-size: 1.125rem;
+        line-height: 1.25rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        margin-bottom: 0.875rem;
+        text-align: center;
+        color: $white;
+
+        @media screen and (min-width: $medium) {
+          font-size: 1.25rem;
+          line-height: 1.5rem;
+        }
+      }
+
+      p {
+        font-size: 1rem;
+        line-height: 1.25rem;
+        max-width: 256px;
+      }
+    }
+  }
+  &__allocation {
+    text-align: center;
+
+    &-graph {
+      display: block;
+      width: 100%;
+      max-width: 549px;
+      margin: 0 auto;
+      
+      @media screen and (min-width: $large) {
+        max-width: 876px;
+      }
+    }
+
+    svg {
+      display: block;
+      width: 100%;
+      height: auto;
+      
+      &:nth-child(1) {
+        @media screen and (min-width: $large) {
+          display: none;
+        }
+      }
+
+      &:nth-child(2) {
+        display: none;
+        @media screen and (min-width: $large) {
+          display: block;
+        }
+      }
+    }
+  }
+
+  &__roadmap {
+    margin-top: 12rem;
+    text-align: center;
+
+    @media screen and (min-width: $large) {
+      margin-top: 16.875rem;
+    }
+
+    & > div:first-child {
+      max-width: 761px;
+      margin: 0 auto;
+    }
+
+    h2 {
+      color: #EEECF2;
+    }
+
+    img {
+      display: block;
+      width: 100%;
+      height: auto;
+      margin: 5rem auto 12rem;
+      
+      @media screen and (min-width: $large) {
+        margin: 7.5rem auto 16.8125rem;
+      }
+      
+      &:nth-of-type(1) {
+        display: none;
+        max-width: 1086px;
+        @media screen and (min-width: $large) {
+          display: block;
+        }
+      }
+      &:nth-of-type(2) {
+        max-width: 425px;
+        @media screen and (min-width: $large) {
+          display: none;
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,20 @@
+.hr {
+  padding: 0;
+  border: 0;
+  background: rgba($grey, 0.5);
+  height: 1px;
+  width: 100%;
+
+  &--dark {
+    background: rgba($black, 0.5);
+  }
+}
+
+.link {
+  color: $pink;
+  transition: color 0.15s;
+
+  &:hover {
+    color: $white;
+  }
+}

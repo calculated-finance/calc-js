@@ -1,0 +1,24 @@
+[package]
+name = "calc-rs"
+version = "0.0.1"
+authors = ["james <james@calculated.fi>"]
+edition = "2021"
+
+exclude = []
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+anybuf = { workspace = true }
+chrono = { version = "0.4", default-features = false, features = ["serde"] }
+cosmwasm-schema = { workspace = true }
+cosmwasm-std = { workspace = true }
+cron = { version = "0.15.0" }
+cw-storage-plus = { workspace = true }
+prost = { workspace = true }
+rujira-rs = { workspace = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+calc-rs-test = { workspace = true }

@@ -1,0 +1,59 @@
+{
+  "name": "rujira.js",
+  "version": "1.1.1",
+  "type": "module",
+  "main": "./lib/cjs/index.js",
+  "module": "./lib/esm/index.js",
+  "types": "./lib/esm/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/esm/index.d.ts",
+      "import": "./lib/esm/index.js",
+      "require": "./lib/cjs/index.js",
+      "development": "./src/index.ts",
+      "default": "./lib/esm/index.js"
+    }
+  },
+  "files": [
+    "lib",
+    "src"
+  ],
+  "scripts": {
+    "test": "vitest run",
+    "build": "tsc -p tsconfig.json && tsc -p tsconfig.cjs.json && node ./scripts/write-package-types.cjs",
+    "prepack": "pnpm run build"
+  },
+  "dependencies": {
+    "@confio/ics23": "^0.6.8",
+    "@cosmjs/encoding": "^0.32.4",
+    "@cosmjs/json-rpc": "^0.32.4",
+    "@cosmjs/math": "^0.32.4",
+    "@cosmjs/stream": "^0.32.4",
+    "@ethereumjs/util": "^10.0.0",
+    "@keplr-wallet/types": "^0.12.219",
+    "@noble/hashes": "^1.5.0",
+    "@noble/secp256k1": "^2.3.0",
+    "@tonconnect/sdk": "^3.3.1",
+    "bitcoinjs-lib": "7.0.0-rc.0",
+    "buffer": "^6.0.3",
+    "cashaddrjs": "^0.4.4",
+    "ethers": "^6.13.4",
+    "long": "^5.2.3",
+    "readonly-date": "^1.0.0",
+    "ton": "^13.9.0",
+    "tronweb": "^6.0.4",
+    "viem": "^2.33.2",
+    "xrpl": "^4.3.0",
+    "xstream": "^11.14.0"
+  },
+  "devDependencies": {
+    "@types/cashaddrjs": "^0.3.3",
+    "@typescript-eslint/eslint-plugin": "^8.2.0",
+    "@typescript-eslint/parser": "^8.2.0",
+    "@vitejs/plugin-react-swc": "^3.5.0",
+    "eslint": "^8.57.0",
+    "typescript": "^5.5.4",
+    "vite": "^5.2.0",
+    "vitest": "^1.6.0"
+  }
+}

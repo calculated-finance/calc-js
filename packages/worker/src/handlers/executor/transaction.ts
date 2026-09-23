@@ -1,4 +1,4 @@
-import type { SigningCosmWasmClient } from "@cosmjs/cosmwasm-stargate";
+import type { SigningCosmWasmClient } from "@cosmjs/cosmwasm";
 import { sha256 } from "@cosmjs/crypto";
 import { toHex, toUtf8 } from "@cosmjs/encoding";
 import type { EncodeObject } from "@cosmjs/proto-signing";
@@ -8,8 +8,8 @@ import {
   type GasPrice,
   type IndexedTx,
 } from "@cosmjs/stargate";
-import { TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx.js";
-import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx.js";
+import { TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
+import { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx";
 import {
   BroadcastOutcomeUnknownError,
   isTxAlreadyKnown,

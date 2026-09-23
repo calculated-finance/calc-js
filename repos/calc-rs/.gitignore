@@ -1,0 +1,10 @@
+/target
+.vscode/
+export.json
+.DS_Store
+.env
+node_modules/
+GEMINI.md
+*.ts
+*.js
+query.proto

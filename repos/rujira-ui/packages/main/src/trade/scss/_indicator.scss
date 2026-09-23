@@ -1,0 +1,18 @@
+.trade {
+  &__indicator {
+    display: flex;
+    justify-content: center;
+
+    &-pad {
+      padding: 0.75rem 0.375rem;
+    }
+
+    i {
+      display: block;
+      width: 0.5rem;
+      height: 0.5rem;
+      border-radius: 0.5rem;
+      background-color: $grey;
+    }
+  }
+}

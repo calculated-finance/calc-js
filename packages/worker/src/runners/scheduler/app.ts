@@ -1,6 +1,10 @@
 import { SendMessageBatchCommand, SQSClient } from "@aws-sdk/client-sqs";
-import { CosmWasmClient } from "@cosmjs/cosmwasm-stargate";
-import type { Trigger } from "@template/domain/calc2";
+import { CosmWasmClient } from "@cosmjs/cosmwasm";
+import type {
+  ConditionFilter,
+  SchedulerQueryMsg,
+  Trigger,
+} from "@template/domain/calc";
 import {
   CHAINS_BY_ID,
   RUJIRA,
@@ -11,17 +15,10 @@ import {
   makeRotatingClient,
   type RotatingClient,
 } from "@template/domain/cosmwasm";
-import type {
-  ConditionFilter,
-  SchedulerQueryMsg,
-} from "@template/domain/types";
 import { Config, DateTime, Effect, Schema, Stream } from "effect";
+import "@template/domain/bigint-json";
 import { getFreshBlock } from "./fresh-block.js";
 import { rpcRetrySchedule } from "./rpc-retry.js";
-
-(BigInt.prototype as any).toJSON = function () {
-  return this.toString();
-};
 
 export class SQSSendMessageError extends Schema.TaggedError<SQSSendMessageError>()(
   "SQSSendMessageError",

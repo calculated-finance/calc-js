@@ -1,0 +1,72 @@
+// primary
+$primary1:  #D615EB;
+$primary2:  #8436F5;
+$primary3:  #5A2AD1;
+$primary4:  #070E50;
+$primary5:  #ECEDF2;
+$primary6:  #D9D5E2;
+
+$pink:      #D615EB;
+$purple:    #8436F5;
+
+// secondary
+$teal:      #60fbd0;
+$darkTeal:  #34aa89;
+$blue:      #1e92e6;
+$darkBlue:  #1c6599;
+$orange:    #f57c00;
+$darkOrange:#ff5722;
+$red:       #e53935;
+$darkRed:   #B71C1C;
+
+// greys
+$grey:      #71909F;
+$lightGrey: #90a4ae;
+$darkGrey:  #22242f;
+$black:     #161721;
+$deepBlack: #0c0a0f;
+$white:     #ffffff;
+
+$colors: (
+  "primary1": $primary1,
+  "primary2": $primary2,
+  "primary3": $primary3,
+  "primary4": $primary4,
+  "primary5": $primary5,
+  "primary6": $primary6,
+  "pink": $pink,
+  "purple": $purple,
+  "teal": $teal,
+  "darkTeal": $darkTeal,
+  "blue": $blue,
+  "darkBlue": $darkBlue,
+  "orange": $orange,
+  "darkOrange": $darkOrange,
+  "red": $red,
+  "darkRed": $darkRed,
+  "grey": $grey,
+  "lightGrey": $lightGrey,
+  "darkGrey": $darkGrey,
+  "black": $black,
+  "deepBlack": $deepBlack,
+  "white": $white
+);
+
+$xsmall:      420px;
+$small:       576px;
+$medium:      768px;
+$large:       1024px;
+$xl:          1440px;
+$xxl:         1680px;
+$hd:          1920px;
+$ultra:       2560px;
+
+$sizes: ("xs": $xsmall, "sm": $small, "md": $medium, "lg": $large, "xl": $xl, "xxl": $xxl, "hd": $hd, "ultra": $ultra);
+
+@mixin boxShadow {
+  box-shadow: 1px 2px 2px hsl(220deg 60% 50% / 0.2),
+    2px 4px 4px hsl(220deg 60% 50% / 0.2),
+    4px 8px 8px hsl(220deg 60% 50% / 0.2),
+    8px 16px 16px hsl(220deg 60% 50% / 0.2),
+    16px 32px 32px hsl(220deg 60% 50% / 0.2);
+}

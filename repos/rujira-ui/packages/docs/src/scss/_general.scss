@@ -1,0 +1,51 @@
+.docs {
+  color: $darkGrey;
+
+  .link {
+    color: $pink;
+    text-decoration: none;
+
+    &:hover {
+      color: $purple;
+      text-decoration: underline;
+    }
+  }
+  
+  .example {
+    & > div:first-child {
+      border-radius: 0.5rem 0 0 0.5rem;
+    }
+    pre {
+      border-radius: 0 0.5rem 0.5rem 0;
+    }
+    
+    &--with-controls {
+      & > div:first-child {
+        border-radius: 0.5rem 0 0 0;
+      }
+      pre {
+        border-radius: 0 0 0.5rem 0.5rem;
+        border-top: 2px solid $black;
+      }
+    }
+    
+    &__controls {
+      background: #263238;
+      border-radius: 0 0.5rem 0 0;
+      display: flex;
+      flex-direction: column;
+    }
+  }
+  
+  .dark-bg {
+    background: #263238;
+  }
+}
+code {
+  background-color: $primary5;
+  font-size: 0.75rem;
+  line-height: 1.25em;
+  padding: 0.25rem;
+  border-radius: 0.25rem;
+  display: inline-block;
+}

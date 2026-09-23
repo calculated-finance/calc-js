@@ -1,0 +1,34 @@
+{
+  "root": ".",
+  "sources": {
+    "src": "main",
+    "src/analytics": "analytics",
+    "src/developer/analytics": "analytics",
+    "src/algorithmic/analytics": "analytics"
+  },
+  "excludes": ["**/node_modules/**", "**/__mocks__/**", "**/__generated__/**"],
+  "projects": {
+    "main": {
+      "language": "typescript",
+      "schema": "data/schema.graphql",
+      "eagerEsModules": true,
+      "customScalarTypes": {
+        "Address": "string",
+        "AssetString": "string",
+        "Bigint": "bigint"
+      }
+    },
+    "analytics": {
+      "language": "typescript",
+      "schema": "data/analytics-schema.graphql",
+      "eagerEsModules": true,
+      "customScalarTypes": {
+        "Address": "string",
+        "AssetString": "string",
+        "Bigint": "bigint",
+        "Timestamp": "string",
+        "Resolution": "string"
+      }
+    }
+  }
+}

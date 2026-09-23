@@ -1,0 +1,345 @@
+@use "sass:math";
+
+// auto margin
+.my-a {
+  margin-top: auto;
+  margin-bottom: auto;
+}
+.mx-a {
+  margin-left: auto;
+  margin-right: auto;
+}
+.mt-a {
+  margin-top: auto;
+}
+.mr-a {
+  margin-right: auto;
+}
+.mb-a {
+  margin-bottom: auto;
+}
+.ml-a {
+  margin-left: auto;
+}
+
+@for $i from 0 through 150 {
+  $space: math.div($i, 2) * 1rem;
+  $qSpace: $space + 0.25rem;
+  // margin
+  .m-#{$i} {
+    margin: $space;
+  }
+  .m-#{$i}\.5 {
+    margin: $qSpace;
+  }
+  .my-#{$i} {
+    margin-top: $space;
+    margin-bottom: $space;
+  }
+  .my-#{$i}\.5 {
+    margin-top: $qSpace;
+    margin-bottom: $qSpace;
+  }
+  .mx-#{$i} {
+    margin-left: $space;
+    margin-right: $space;
+  }
+  .mx-#{$i}\.5 {
+    margin-left: $qSpace;
+    margin-right: $qSpace;
+  }
+  .mt-#{$i} {
+    margin-top: $space;
+  }
+  .mt-#{$i}\.5 {
+    margin-top: $qSpace;
+  }
+  .mb-#{$i} {
+    margin-bottom: $space;
+  }
+  .mb-#{$i}\.5 {
+    margin-bottom: $qSpace;
+  }
+  .ml-#{$i} {
+    margin-left: $space;
+  }
+  .ml-#{$i}\.5 {
+    margin-left: $qSpace;
+  }
+  .mr-#{$i} {
+    margin-right: $space;
+  }
+  .mr-#{$i}\.5 {
+    margin-right: $qSpace;
+  }
+  // padding
+  .p-#{$i} {
+    padding: $space;
+  }
+  .p-#{$i}\.5 {
+    padding: $qSpace;
+  }
+  .py-#{$i} {
+    padding-top: $space;
+    padding-bottom: $space;
+  }
+  .py-#{$i}\.5 {
+    padding-top: $qSpace;
+    padding-bottom: $qSpace;
+  }
+  .px-#{$i} {
+    padding-left: $space;
+    padding-right: $space;
+  }
+  .px-#{$i}\.5 {
+    padding-left: $qSpace;
+    padding-right: $qSpace;
+  }
+  .pt-#{$i} {
+    padding-top: $space;
+  }
+  .pt-#{$i}\.5 {
+    padding-top: $qSpace;
+  }
+  .pb-#{$i} {
+    padding-bottom: $space;
+  }
+  .pb-#{$i}\.5 {
+    padding-bottom: $qSpace;
+  }
+  .pl-#{$i} {
+    padding-left: $space;
+  }
+  .pl-#{$i}\.5 {
+    padding-left: $qSpace;
+  }
+  .pr-#{$i} {
+    padding-right: $space;
+  }
+  .pr-#{$i}\.5 {
+    padding-right: $qSpace;
+  }
+  // width
+  .w-#{$i} {
+    width: $space;
+  }
+  .w-#{$i}\.5 {
+    width: $qSpace;
+  }
+  // height
+  .h-#{$i} {
+    height: $space;
+  }
+  .h-#{$i}\.5 {
+    height: $qSpace;
+  }
+  // border radius
+  .br-#{$i} {
+    border-radius: $space;
+  }
+  .br-#{$i}\.5 {
+    border-radius: $qSpace;
+  }
+  // gap
+  .gap-#{$i} {
+    gap: $space;
+  }
+  .gap-#{$i}\.5 {
+    gap: $qSpace;
+  }
+  .gap-x-#{$i} {
+    column-gap: $space;
+  }
+  .gap-x-#{$i}\.5 {
+    column-gap: $qSpace;
+  }
+  .gap-y-#{$i} {
+    row-gap: $space;
+  }
+  .gap-y-#{$i}\.5 {
+    row-gap: $qSpace;
+  }
+}
+// pizel width
+.w-px {
+  width: 1px;
+}
+// full size
+.w-full {
+  width: 100%;
+}
+.h-full {
+  height: 100%;
+}
+// auto size
+.w-a {
+  width: auto;
+}
+.h-a {
+  height: auto;
+}
+.h-lh {
+  height: 1lh;
+}
+
+@each $s, $bp in $sizes {
+  @media only screen and (min-width: $bp) {
+    @for $i from 0 through 150 {
+      $space: math.div($i, 2) * 1rem;
+      $qSpace: $space + 0.25rem;
+
+      // margin
+      .m-#{$s}-#{$i} {
+        margin: $space;
+      }
+      .m-#{$s}-#{$i}\.5 {
+        margin: $qSpace;
+      }
+      .my-#{$s}-#{$i} {
+        margin-top: $space;
+        margin-bottom: $space;
+      }
+      .my-#{$s}-#{$i}\.5 {
+        margin-top: $qSpace;
+        margin-bottom: $qSpace;
+      }
+      .mx-#{$s}-#{$i} {
+        margin-left: $space;
+        margin-right: $space;
+      }
+      .mx-#{$s}-#{$i}\.5 {
+        margin-left: $qSpace;
+        margin-right: $qSpace;
+      }
+      .mt-#{$s}-#{$i} {
+        margin-top: $space;
+      }
+      .mt-#{$s}-#{$i}\.5 {
+        margin-top: $qSpace;
+      }
+      .mb-#{$s}-#{$i} {
+        margin-bottom: $space;
+      }
+      .mb-#{$s}-#{$i}\.5 {
+        margin-bottom: $qSpace;
+      }
+      .ml-#{$s}-#{$i} {
+        margin-left: $space;
+      }
+      .ml-#{$s}-#{$i}\.5 {
+        margin-left: $qSpace;
+      }
+      .mr-#{$s}-#{$i} {
+        margin-right: $space;
+      }
+      .mr-#{$s}-#{$i}\.5 {
+        margin-right: $qSpace;
+      }
+      // padding
+      .py-#{$s}-#{$i} {
+        padding-top: $space;
+        padding-bottom: $space;
+      }
+      .py-#{$s}-#{$i}\.5 {
+        padding-top: $qSpace;
+        padding-bottom: $qSpace;
+      }
+      .px-#{$s}-#{$i} {
+        padding-left: $space;
+        padding-right: $space;
+      }
+      .px-#{$s}-#{$i}\.5 {
+        padding-left: $qSpace;
+        padding-right: $qSpace;
+      }
+      .pt-#{$s}-#{$i} {
+        padding-top: $space;
+      }
+      .pt-#{$s}-#{$i}\.5 {
+        padding-top: $qSpace;
+      }
+      .pb-#{$s}-#{$i} {
+        padding-bottom: $space;
+      }
+      .pb-#{$s}-#{$i}\.5 {
+        padding-bottom: $qSpace;
+      }
+      .pl-#{$s}-#{$i} {
+        padding-left: $space;
+      }
+      .pl-#{$s}-#{$i}\.5 {
+        padding-left: $qSpace;
+      }
+      .pr-#{$s}-#{$i} {
+        padding-right: $space;
+      }
+      .pr-#{$s}-#{$i}\.5 {
+        padding-right: $qSpace;
+      }
+      // width
+      .w-#{$s}-#{$i} {
+        width: $space;
+      }
+      .w-#{$s}-#{$i}\.5 {
+        width: $qSpace;
+      }
+      // height
+      .h-#{$s}-#{$i} {
+        height: $space;
+      }
+      .h-#{$s}-#{$i}\.5 {
+        height: $qSpace;
+      }
+      // gap
+      .gap-#{$s}-#{$i} {
+        gap: $space;
+      }
+      .gap-#{$s}-#{$i}\.5 {
+        gap: $qSpace;
+      }
+      .gap-x-#{$s}-#{$i} {
+        column-gap: $space;
+      }
+      .gap-x-#{$s}-#{$i}\.5 {
+        column-gap: $qSpace;
+      }
+      .gap-y-#{$s}-#{$i} {
+        row-gap: $space;
+      }
+      .gap-y-#{$s}-#{$i}\.5 {
+        row-gap: $qSpace;
+      }
+    }
+    // pixel width
+    .w-#{$s}-px {
+      width: 1px;
+    }
+    // full size
+    .w-#{$s}-full {
+      width: 100%;
+    }
+    .h-#{$s}-full {
+      height: 100%;
+    }
+    // auto size
+    .w-#{$s}-a {
+      width: auto;
+    }
+    .h-#{$s}-a {
+      height: auto;
+    }
+    .mt-#{$s}-a {
+      margin-top: auto;
+    }
+    .mr-#{$s}-a {
+      margin-right: auto;
+    }
+    .mb-#{$s}-a {
+      margin-top: auto;
+    }
+    .ml-#{$s}-a {
+      margin-left: auto;
+    }
+    
+  }
+}

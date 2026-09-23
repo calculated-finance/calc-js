@@ -1,0 +1,20 @@
+{
+  "pageTitle": "Rujira Leaderboard",
+  "leaderboard": "Leaderboard",
+  "participatingAddresses": "Participating Addresses",
+  "pointsGenerated": "Points Generated",
+  "rujiLeagues": "RUJI Leagues",
+  "leaderboardPosition": "Leaderboard Position",
+  "myPosition": "My Position",
+  "search": "Search",
+  "noResultsFound": "No results found for your search",
+  "rank": "Rank",
+  "change7d": "Change (7d)",
+  "points": "Points",
+  "totalTxs": "Total TXs",
+  "connectWalletMessage": "Connect a supported wallet to see your points",
+  "pageDescription": "Use Rujira apps to earn points through RUJI Leagues. The more activity and revenue you generate across the network, the larger your share of future rewards when distributions begin.",
+  "leaderTooltip": "{{badge}} leader",
+  "share": "Share",
+  "screenshot": "Screenshot"
+}

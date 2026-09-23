@@ -1,0 +1,37 @@
+.lp {
+  display: flex;
+
+  .icon-denom {
+    width: 1.5rem !important;
+    height: 1.5rem !important;
+
+    &:last-child:not(:only-child) {
+      margin-top: 0.5rem;
+      margin-left: -0.5rem;
+    }
+  }
+
+  h1 &, &.big {
+    .icon-denom {
+      width: 2.5rem !important;
+      height: 2.5rem !important;
+
+      &:last-child:not(:only-child) {
+        margin-top: 0.833rem;
+        margin-left: -0.833rem;
+      }
+    }
+  }
+
+  &.small {
+    .icon-denom {
+      width: 1rem !important;
+      height: 1rem !important;
+
+      &:last-child:not(:only-child) {
+        margin-top: 0.33rem;
+        margin-left: -0.33rem;
+      }
+    }
+  }
+}

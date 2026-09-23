@@ -1,0 +1,79 @@
+.radio-checkbox {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  position: relative;
+
+  input {
+    cursor: pointer;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    position: relative;
+    width: 1rem;
+    height: 1rem;
+    border: 1px solid #0000;
+    padding: 1px;
+    background: 
+      conic-gradient($black 0 0) padding-box,
+      linear-gradient(45deg, $grey, $grey) border-box;
+      
+      
+    &:checked {
+      &:before {
+        content: "";
+        display: block;
+        position: absolute;
+      }
+
+      background: 
+        conic-gradient($black 0 0) padding-box,
+        linear-gradient(45deg, $primary2, $primary1) border-box;
+    }
+
+    &[type="radio"] {
+      border-radius: 0.5rem;
+
+      &:checked:before {
+        left: 0.1875rem;
+        top: 0.1875rem;
+        width: 0.5rem;
+        height: 0.5rem;
+        border-radius: 0.25rem;
+        background: linear-gradient(45deg, $primary2, $primary1);
+      }
+    }
+
+    &[type="checkbox"] {
+      border-radius: 0.25rem;
+
+      &:checked:before {
+        left: 0.1875rem;
+        top: 0.25rem;
+        width: 9px;
+        height: 7px;
+        background: url('data:image/svg+xml,<svg fill="none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 9 7"><path d="M2.538 6.037a.854.854 0 0 0 1.21 0l4.568-4.574A.857.857 0 0 0 7.106.252L3.14 4.22 1.462 2.54a.857.857 0 0 0-1.21 1.21l2.285 2.286Z" fill="url(%23rad_a)"/><defs><linearGradient id="rad_a" x1="8.567" y1="0" x2="2.566" y2="8.173" gradientUnits="userSpaceOnUse"><stop stop-color="%23D615EB"/><stop offset="1" stop-color="%238436F5"/></linearGradient></defs></svg>');
+      }
+    }
+  }
+  
+  label {
+    cursor: pointer;
+    font-size: 0.875rem;
+    line-height: 1em;
+    font-family: "Barlow Semi Condensed", Verdana, sans-serif;
+    font-weight: 500;
+    color: $white;
+    margin-left: 0.5rem;
+
+    a {
+      text-decoration: underline;
+      transition: color 0.2s;
+      color: $white;
+
+      &:hover {
+        color: $primary1;
+      }
+    }
+  }
+}

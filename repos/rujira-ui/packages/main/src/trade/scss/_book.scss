@@ -1,0 +1,343 @@
+.trade {
+  &__book {
+    display: flex;
+    flex-direction: column;
+    padding: 0.25rem 0.75rem 0.25rem;
+    background-color: $black;
+    
+    @media screen and (max-width: ($tradeBreak - 1px)) {
+      height: 15rem;
+    }
+
+    @media screen and (min-width: $tradeBreak) {
+      border-radius: 0.5rem;
+      padding: 1.1875rem 0.75rem 0;
+      //background: linear-gradient(180deg, rgba($black, 0) 0, rgba($black, 1) 48px);
+    }
+
+    &-switch {
+      //height: 2rem;
+      display: flex;
+      align-items: center;
+
+      @media screen and (max-width: ($tradeBreak - 1px)) {
+        display: none;
+      }
+    }
+
+    &-filter {
+      align-self: center;
+      margin-right: 0.5rem;
+      //margin-left: auto;
+      display: flex;
+      align-self: center;
+
+      svg {
+        display: block;
+        &:nth-child(2) {
+          margin: 0 0.25rem;
+        }
+      }
+
+      /* @media screen and (min-width: $tradeBreak) {
+        display: block;
+      } */
+    }
+
+    &-stat {
+      margin-left: 0.5rem;
+      color: $white;
+      font-size: 0.75rem;
+      line-height: 1rem;
+
+      @media screen and (min-width: $tradeBreak) {
+        margin-left: 1rem;
+        font-size: 0.875rem;
+      }
+
+      h4 {
+        color: $grey;
+        font-weight: 500;
+      }
+    }
+
+    &-overflow {
+      flex-grow: 1;
+      height: 0;
+      margin: 0 0.5rem;
+      display: flex;
+      font-weight: 400;
+      font-family: "mono", monospace;
+      overflow: hidden;
+      flex-direction: row-reverse;
+
+      @media screen and (min-width: $tradeBreak) {
+        padding-right: 0.5rem;
+        padding-left: 0.5rem;
+        overflow: auto;
+        flex-direction: column;
+        margin: 0.5rem 0;
+      }
+    }
+
+    &-table {
+      flex-grow: 1;
+      height: 0;
+      display: flex;
+      flex-direction: column;
+      font-weight: 400;
+      margin: 0.75rem 0.5rem 0;
+
+      @media screen and (min-width: $tradeBreak) {
+        margin: 1.5rem 0 0.5rem 0.5rem;
+      }
+
+      .table {
+        font-family: "mono", monospace;
+
+        th {
+          line-height: 1rem;
+
+          @media screen and (max-width: ($tradeBreak - 1px)) {
+            font-size: 0.75rem;
+            padding-bottom: 0.5625rem;
+          }
+        }
+
+        tbody {
+          line-height: 1em;
+          font-size: 0.75rem;
+          color: $lightGrey;
+
+          @media screen and (max-width: ($tradeBreak - 1px)) {
+            td {
+              padding-top: 0.125rem;
+              padding-bottom: 0.125rem;
+            }
+          }
+        }
+      }
+    }
+
+    &-header {
+      margin: 0.75rem 0.5rem 0;
+      align-items: flex-end;
+      font-weight: 500;
+      font-family: "Barlow Semi Condensed", Verdana, sans-serif;
+      display: none;
+
+      @media screen and (min-width: $tradeBreak) {
+        margin: 0 0.5rem;
+        display: flex;
+      }
+
+      div {
+        flex: 1 1 0;
+        color: $grey;
+        font-size: 0.75rem;
+        line-height: 1rem;
+        padding-top: 0;
+        border-bottom: 1px solid rgba($grey, 0.15);
+        padding-bottom: 0.5rem;
+
+        @media screen and (min-width: $tradeBreak) {
+          font-size: 0.875rem;
+        }
+      }
+    }
+
+    &-row {
+      display: flex;
+      align-items: center;
+      padding: 0;
+      font-size: 0.75rem;
+      line-height: 1em;
+      height: 1.25rem;
+
+      position: relative;
+      color: $lightGrey;
+      cursor: default;
+      min-height: 1rem;
+
+      & > span {
+        display: block;
+        position: relative;
+        z-index: 2;
+        flex: 1 1 0%;
+
+        &:not(:first-child) {
+          padding-left: 0.5rem;
+        }
+
+        &:not(.decimal__dec):not(:first-child) {
+          text-align: right;
+
+          @media screen and (min-width: $tradeBreak) {
+            padding-left: 0.375rem;
+          }
+        }
+
+        @media screen and (max-width: ($tradeBreak - 1px)) {
+          &:first-child {
+            padding: 0 0.25rem;
+          }
+          &:nth-of-type(2) {
+            padding-left: 0;
+          }
+
+          &:nth-of-type(3) {
+            display: none;
+          }
+        }
+      }
+
+      i {
+        content: "";
+        display: block;
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        z-index: 1;
+        opacity: 0.2;
+      }
+
+      &--bid:before {
+        content: "";
+        display: block;
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        z-index: 1;
+        width: 0.25rem;
+      }
+    }
+
+    &-row--sell {
+      & > span:first-child {
+        color: $red;
+      }
+      i {
+        background: $red;
+      }
+      &:hover ~ .trade__book-row--sell {
+        opacity: 0.5;
+      }
+    }
+
+    &-row--buy {
+      & > span:first-child {
+        color: $teal;
+      }
+      i {
+        background: $teal;
+      }
+
+      &:hover ~ .trade__book-row--buy {
+        opacity: 0.5;
+      }
+
+      @media screen and (max-width: ($tradeBreak - 1px)) {
+        flex-direction: row-reverse;
+        i {
+          left: auto;
+          right: 0;
+        }
+
+        span {
+          text-align: right;
+          &:not(:first-child):not(.decimal__dec) {
+            text-align: left;
+          }
+        }
+      }
+    }
+
+    &-row--mine {
+      &:before {
+        position: absolute;
+        content: "";
+        display: block;
+        width: 0.1875rem;
+        left: -0.375rem;
+        top: 0.25rem;
+        bottom: 0.25rem;
+        background: $grey;
+      }
+    }
+
+    &-row--sell#{&}-row--mine {
+      &:before {
+        background-color: $red;
+      }
+    }
+
+    &-row--buy#{&}-row--mine {
+      &:before {
+        background-color: $teal;
+      }
+    }
+
+    &-buys {
+      flex-direction: column;
+    }
+
+    &-sells {
+      display: flex;
+      flex-direction: column;
+
+      @media screen and (min-width: $tradeBreak) {
+        flex-direction: column-reverse;
+      }
+    }
+    
+    &-sells,
+    &-buys {
+      display: flex;
+      @media screen and (max-width: ($tradeBreak - 1px)) {
+        width: 50%;
+      }
+    }
+
+    &-mid {
+      display: none;
+      align-items: center;
+      padding: 0.25rem 0 0.25rem;
+
+      @media screen and (min-width: $tradeBreak) {
+        display: flex;
+      }
+
+      h3 {
+        color: $white;
+        font-size: 1rem;
+        line-height: 1em;
+        font-weight: 500;
+        margin-right: 0.5rem;
+      }
+
+      h4 {
+        font-size: 0.75rem;
+      }
+
+      div {
+        font-size: 0.75rem;
+      }
+    }
+
+    &-history {
+      position: relative;
+      &:before {
+        position: absolute;
+        display: block;
+        content: "";
+        width: 1px;
+        left: 0;
+        top: 1.5rem;
+        bottom: 0;
+        background: rgba($grey, 0.15);
+      }
+    }
+  }
+}

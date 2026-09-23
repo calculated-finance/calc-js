@@ -1,0 +1,1479 @@
+schema {
+  subscription: RootSubscriptionType
+  query: RootQueryType
+}
+
+type RootQueryType {
+  "Fetch a single node using its global Relay-compatible ID."
+  node(id: ID): Node
+
+  "Fetch multiple nodes by their global Relay-compatible IDs."
+  nodes(ids: [ID!]!): [Node!]!
+
+  "Lists all supported Relay node types with their ID structure."
+  supportedNodeTypes: [NodeTypeDescriptor!]!
+
+  "Unified FIN analytics — volume, TVL, revenue, top pairs, and range positions."
+  finV3: FinV3!
+
+  "Swap analytics — time-series bins and volume breakdowns."
+  swap: Swap!
+
+  "Staking analytics — time-series bins with revenue, APR, and flow data."
+  staking: Staking!
+
+  "User analytics — trading\/depositor activity, retention, and tier distributions."
+  users: Users!
+
+  "THORChain system-wide overview — income, volume, swap counts, and valuation ratios."
+  thorchainOverview: ThorchainOverview!
+
+  "THORChain pool analytics — balances, prices, volume, earnings, and APR."
+  thorchainPools: ThorchainPools!
+
+  "Unified pool analytics — aggregated bins and TVL breakdowns."
+  pools: Pools!
+}
+
+type RootSubscriptionType {
+  "Live OHLCV candle updates for a fin pair at a resolution, pushed on every trade."
+  finCandle(contract: Address!, resolution: Resolution!): FinCandle
+}
+
+"Represents any Relay-compliant node object with a globally unique ID."
+interface Node {
+  id: ID!
+}
+
+type NodeTypeDescriptor {
+  "The `type` value used in a Relay global ID, e.g. `Layer1Account` in `Layer1Account:chain:address`"
+  type: String!
+
+  "The internal `id` format used before encoding to base64"
+  format: String!
+}
+
+"""
+The `Timestamp` scalar type represents a date and time in the UTC
+timezone. The DateTime appears in a JSON response as an ISO8601 formatted
+string, including UTC timezone ("Z"). The parsed date and time string will
+be converted to UTC and any UTC offset other than 0 will be rejected.
+
+Example:
+"2025-06-19T15:30:00Z"
+"""
+scalar Timestamp
+
+"""
+The `Resolution` scalar type represents a time interval. It is a string that
+can be one of the following values:
+
+1. "1" - 1 minute
+2. "3" - 3 minutes
+3. "5" - 5 minutes
+4. "15" - 15 minutes
+5. "30" - 30 minutes
+6. "60" - 1 hour
+7. "120" - 2 hours
+8. "180" - 3 hours
+9. "240" - 4 hours
+10. "1D" - 1 day
+11. "1M" - 1 month
+12. "12M" - 12 months
+"""
+scalar Resolution
+
+"""
+The `BigInt` scalar type represents a signed large integer used for representing token amounts or fixed-point decimal values.
+
+- Can be positive or negative.
+- Token amounts (e.g., balances) are integers already scaled to the token's on-chain precision.
+  Example: 10.23 RUJI (8 decimals) → 1023000000
+- Decimal values (e.g., prices) are scaled to 12 decimal places.
+  Example: $1.12 → 1120000000000
+- Always returned as a string to preserve precision.
+"""
+scalar Bigint
+
+"A string representation of a THORChain compatible asset"
+scalar AssetString
+
+"An address associated with a blockchain account\/public key"
+scalar Address
+
+enum SortDir {
+  ASC
+  DESC
+}
+
+"""
+Represents supported blockchain networks.
+
+Each value corresponds to a chain identifier used across accounts, transactions, and other protocol-specific data.
+This enum is used to differentiate Layer 1 networks (e.g., Ethereum, Bitcoin, Thorchain, etc.).
+"""
+enum Chain {
+  AVAX
+  BASE
+  BTC
+  BCH
+  BSC
+  DOGE
+  ETH
+  GAIA
+  KUJI
+  LTC
+  NOBLE
+  OSMO
+  SOL
+  THOR
+  TERRA2
+  TERRA
+  TON
+  TRON
+  XRP
+  TRON
+}
+
+type Asset implements Node {
+  "The ID of an object"
+  id: ID!
+
+  asset: AssetString!
+
+  type: AssetType!
+
+  chain: Chain!
+
+  metadata: Metadata!
+
+  price: Price
+
+  "Explicit Layer 1 and Secured variants of a Layer 1 asset"
+  variants: AssetVariants!
+}
+
+type AssetVariants {
+  "The THORChain layer 1 asset string (eg BTC.BTC, THOR.RUNE, GAIA.ATOM)"
+  layer1: Asset
+
+  "The THORChain secured asset string (eg BTC-BTC, GAIA-ATOM)"
+  secured: Asset
+}
+
+"Metadata for a token"
+type Metadata {
+  symbol: String!
+  decimals: Int!
+  description: String
+  display: String
+  name: String
+  uri: String
+  uriHash: String
+  pngUrl: String
+  svgUrl: String
+}
+
+"Price data for a token"
+type Price implements Node {
+  "The ID of an object"
+  id: ID!
+
+  "Current price, 12 decimal places"
+  current: Bigint
+}
+
+enum AssetType {
+  LAYER_1
+  SECURED
+  NATIVE
+  SYNTH
+}
+
+type ThorchainOracle implements Node {
+  "The ID of an object"
+  id: ID!
+
+  asset: Asset!
+
+  price: Bigint!
+}
+
+"A staking_pool represents the configuration about a rujira-staking contract"
+type StakingPool implements Node {
+  "The ID of an object"
+  id: ID!
+
+  address: Address!
+
+  contract: ContractInfo
+
+  bondAsset: Asset!
+
+  revenueAsset: Asset!
+
+  receiptAsset: Asset!
+
+  status: StakingStatus
+
+  summary: StakingSummary!
+
+  "The token balances on revenue converter contracts that feed this staking pool"
+  pendingBalances: [Balance!]!
+
+  "The analytics bins for this staking pool"
+  analyticsBins(
+    after: String, first: Int, before: String, last: Int, from: Timestamp!, to: Timestamp!, resolution: Resolution!, period: Int!
+  ): StakingBinsConnection
+}
+
+"A staking_status represents current status about the rujira-staking contract"
+type StakingStatus implements Node {
+  "The ID of an object"
+  id: ID!
+
+  "The amount of [bond_denom] bonded in Accounts"
+  accountBond: Bigint!
+
+  "The total amount of [revenue_denom] available for Account staking to claim"
+  accountRevenue: Bigint!
+
+  "The total shares issued for the liquid bonded tokens"
+  liquidBondShares: Bigint!
+
+  "The total size of the Share Pool of liquid bonded tokens"
+  liquidBondSize: Bigint!
+
+  "The amount of [revenue_denom] pending distribution"
+  pendingRevenue: Bigint!
+
+  valueUsd: Bigint!
+}
+
+"A staking_account represents data about account address related to the staking pool"
+type StakingAccount implements Node {
+  "The ID of an object"
+  id: ID!
+
+  pool: StakingPool!
+
+  account: Address!
+
+  "The balance of bonded token that has been deposited by the account"
+  bonded: Balance!
+
+  "The balance of liquid staked token that is held by the account"
+  liquid: Balance!
+
+  "The balance of liquid staked token that is held by the account"
+  liquidShares: Balance!
+
+  "The value of liquid staked token that is held by the account, denominated in the bond token"
+  liquidSize: Balance!
+
+  "The balance of pending revenue earned and still not claimed by this account"
+  pendingRevenue: Balance!
+
+  "The total USD value of liquid tokens, bonded tokens, and pending rewards"
+  valueUsd: Bigint!
+}
+
+"A summary represents apr and revenue earned calculated on a defined resolution"
+type StakingSummary implements Node {
+  "The ID of an object"
+  id: ID!
+
+  "Annualized APR based on 30 day revenue over current value staked"
+  apr: Apr!
+
+  "Annualized APY based on 30 day revenue over current value staked"
+  apy: Apr!
+
+  "The total amount of [revenue_denom] sent to contract in the last 7 days"
+  revenue7: Bigint!
+}
+
+"A compiled WebAssembly (WASM) binary for smart contracts"
+type Code {
+  checksum: String!
+  creator: Address!
+  contracts: [Contract!]!
+}
+
+"An instantiated smart contract with query and state access"
+type Contract implements Node {
+  "The ID of an object"
+  id: ID!
+
+  address: Address
+
+  info: ContractInfo
+
+  config: String
+
+  querySmart(
+    "JSON-encoded query message to send to the contract"
+    query: String
+  ): String
+
+  state: [StateEntry]!
+
+  version: ContractVersion
+}
+
+"Metadata and configuration for a deployed smart contract"
+type ContractInfo {
+  codeId: Int!
+  code: Code!
+  creator: Address!
+  admin: Address
+  label: String!
+  created: TxPosition
+  ibcPortId: String
+  extension: String
+}
+
+"Data stored under the contract_info key inside the contract's storage"
+type ContractVersion {
+  contract: String
+  version: String
+}
+
+"Key-value pair in a contract's state storage"
+type StateEntry {
+  key: String
+  keyAscii: String
+  value: String
+}
+
+"Blockchain position of a transaction"
+type TxPosition {
+  blockHeight: Int!
+  txIndex: Int!
+}
+
+"An individual deployment target for a contract"
+type DeploymentTarget implements Node {
+  "The ID of an object"
+  id: ID!
+
+  address: Address!
+
+  module: String!
+
+  name: String!
+
+  version: String!
+}
+
+"The balance of an asset"
+type Balance {
+  asset: Asset!
+  amount: Bigint!
+  valueUsd: Bigint!
+}
+
+enum AprStatus {
+  AVAILABLE
+  SOON
+  NOT_APPLICABLE
+}
+
+type Apr {
+  value: Bigint
+  status: AprStatus!
+}
+
+type FinPairConnection {
+  pageInfo: PageInfo!
+  edges: [FinPairEdge]
+}
+
+type FinRangeConnection {
+  pageInfo: PageInfo!
+  edges: [FinRangeEdge]
+}
+
+type FinCandleConnection {
+  pageInfo: PageInfo!
+  edges: [FinCandleEdge]
+}
+
+"A fin_pair represents informations about a specific rujira-fin contract"
+type FinPair implements Node {
+  "The ID of an object"
+  id: ID!
+
+  address: Address!
+
+  assetBase: Asset!
+
+  assetQuote: Asset!
+
+  tick: Bigint!
+
+  feeTaker: Bigint!
+
+  feeMaker: Bigint!
+
+  feeAddress: Address!
+
+  summary: FinSummary
+
+  rangeSummary: FinRangeSummary
+
+  "OHLCV candles for this pair at a given resolution"
+  candles(
+    after: String, first: Int, before: String, last: Int, from: Timestamp!, to: Timestamp!, resolution: Resolution!
+  ): FinCandleConnection
+
+  "Time-series analytics bins for this pair"
+  analyticsBins(
+    after: String, first: Int, before: String, last: Int, from: Timestamp!, to: Timestamp!, resolution: Resolution!, period: Int!
+  ): FinBinsConnection
+
+  "Time-series range (CCL) bins for this pair"
+  rangeBins(
+    after: String, first: Int, before: String, last: Int, from: Timestamp!, to: Timestamp!, resolution: Resolution!, period: Int!
+  ): FinRangeBinConnection
+
+  "Waterfall chart data for range (CCL) performance on this pair"
+  rangeWaterfall(from: Timestamp!, to: Timestamp!, resolution: Resolution!): FinRangeWaterfall
+
+  "Revenue breakdown between trading fees and arbitrage profits for this pair"
+  revenueBreakdown(from: Timestamp!, to: Timestamp!): [FinRevenueSource!]!
+}
+
+"Single concentrated liquidity range position on a fin pair"
+type FinRange implements Node {
+  "The ID of an object"
+  id: ID!
+
+  pair: FinPair!
+
+  "Unique identifier for the range"
+  idx: Bigint!
+
+  "Owner address of the range"
+  owner: Address!
+
+  "Upper price bound"
+  high: Bigint!
+
+  "Lower price bound"
+  low: Bigint!
+
+  "Position skew (signed)"
+  skew: Bigint!
+
+  "Spread within range"
+  spread: Bigint!
+
+  "Fee rate"
+  fee: Bigint!
+
+  "Base token amount"
+  base: Bigint!
+
+  "Quote token amount"
+  quote: Bigint!
+
+  "Current price"
+  price: Bigint!
+
+  "Current ask price"
+  ask: Bigint!
+
+  "Current bid price"
+  bid: Bigint!
+
+  "Accumulated base fees"
+  feesBase: Bigint!
+
+  "Accumulated quote fees"
+  feesQuote: Bigint!
+
+  "USD value of the range position"
+  valueUsd: Bigint!
+
+  "Fee rate relative to spread, fee \/ spread (scaled 1e12)"
+  rewardStrategy: Bigint
+
+  "How tight the range is, low \/ high (scaled 1e12)"
+  tightnessFactor: Bigint
+
+  "Analytics for this range position"
+  analytics: FinRangePositionAnalytics
+}
+
+"OHLCV candle for a fin pair at a given resolution"
+type FinCandle implements Node {
+  "The ID of an object"
+  id: ID!
+
+  "Pair contract address"
+  contract: Address!
+
+  "Candle resolution (e.g. 1, 60, 1D, 1W)"
+  resolution: String!
+
+  "Bucket start time"
+  bin: Timestamp!
+
+  "Open price (quote per base, scaled 1e12)"
+  open: Bigint!
+
+  "High price (quote per base, scaled 1e12)"
+  high: Bigint!
+
+  "Low price (quote per base, scaled 1e12)"
+  low: Bigint!
+
+  "Close price (quote per base, scaled 1e12)"
+  close: Bigint!
+
+  "Base-token volume (1e8)"
+  volumeBase: Bigint!
+
+  "Quote-side volume in USD"
+  volumeUsd: Bigint!
+}
+
+type FinSummary {
+  "Share of this pair's 24h volume vs total FIN volume"
+  volumeDayShare: Bigint!
+
+  "24h trading volume in USD"
+  volumeDay: Bigint!
+
+  "30d trading volume in USD"
+  volumeMonth: Bigint!
+
+  "24h base layer volume in USD"
+  volumeBaseLayerDay: Bigint!
+
+  "Current AMM TVL in USD"
+  ammTvl: Bigint!
+
+  "24h liquidity utilization (volume \/ tvl)"
+  liquidityUtilizationDay: Bigint!
+
+  "30d average liquidity utilization"
+  liquidityUtilizationMonthAvg: Bigint!
+
+  "24h trade count"
+  countDay: Bigint!
+
+  "24h revenue in USD"
+  revenueDay: Bigint!
+
+  "30d revenue in USD"
+  revenueMonth: Bigint!
+
+  "30d average revenue per $100 TVL"
+  revenuePerHundredTvlMonthAvg: Bigint!
+
+  "Bid-ask spread in USD"
+  spreadUsd: Bigint!
+
+  "Bid-ask spread in basis points"
+  spreadBps: Bigint!
+
+  "Total bid liquidity within 2% of center price"
+  depthBidTwoPct: Bigint!
+
+  "Total ask liquidity within 2% of center price"
+  depthAskTwoPct: Bigint!
+}
+
+"""
+Unified FIN analytics access point combining:
+- Global analytics (overview, volume sources, top pairs)
+- Trading pairs with nested analytics
+- All range positions across contracts
+"""
+type FinV3 {
+  "Global FIN pair analytics across all pairs"
+  overviewBins(
+    after: String, first: Int, before: String, last: Int, from: Timestamp!, to: Timestamp!, resolution: Resolution!, period: Int!
+  ): FinOverviewBinsConnection
+
+  "Volume breakdown by source (user_orders, vs, xyk, ccl)"
+  volumeBySource(from: Timestamp!, to: Timestamp!): [FinVolumeSource!]!
+
+  "Revenue breakdown between trading fees and arbitrage profits"
+  revenueBreakdown(from: Timestamp!, to: Timestamp!): [FinRevenueSource!]!
+
+  "Top pairs by volume for the selected period"
+  topPairsByVolume(from: Timestamp!, to: Timestamp!, limit: Int): [FinPairVolume!]!
+
+  "All trading pairs"
+  pairs(after: String, first: Int, before: String, last: Int, query: String, sortBy: FinSortBy!, sortDir: SortDir!): FinPairConnection
+
+  "All range positions across all contracts"
+  ranges(
+    after: String, first: Int, before: String, last: Int, contracts: [Address!], status: FinRangeStatus, sortBy: FinRangeSortBy, sortDir: SortDir
+  ): FinRangeConnection
+}
+
+enum FinSortBy {
+  NAME
+  VOLUME
+  VOLUME_USD
+  CHANGE
+}
+
+"Sort options for FIN range positions"
+enum FinRangeSortBy {
+  "Sort by contract address"
+  CONTRACT
+
+  "Sort by APR"
+  APR
+
+  "Sort by weighted average investment age"
+  INVESTMENT_AGE
+
+  "Sort by total invested amount"
+  TOTAL_INVESTED
+}
+
+type Point {
+  value: Bigint!
+  movingAvg: Bigint!
+}
+
+enum Protocol {
+  SWAP
+  FIN
+  PERPS
+}
+
+type PoolsAggregatedBinsConnection {
+  pageInfo: PageInfo!
+  edges: [PoolsAggregatedBinsEdge]
+}
+
+"Pool strategy type"
+enum PoolType {
+  "BOW XYK pools"
+  XYK
+
+  "FIN concentrated liquidity"
+  CCL
+}
+
+type Pools {
+  "Aggregated bins across all pools"
+  aggregatedBins(
+    after: String, first: Int, before: String, last: Int, from: Timestamp!, to: Timestamp!, resolution: Resolution!, period: Int!
+  ): PoolsAggregatedBinsConnection
+
+  "Current TVL breakdown by pool type"
+  tvlByStrategy: [PoolsTvlBreakdown!]!
+
+  "Current TVL breakdown by token (combined from all pools)"
+  tvlByToken: [PoolsTokenTvl!]!
+}
+
+"Time-series aggregated data across all pools"
+type PoolsAggregatedBins {
+  resolution: Resolution!
+
+  bin: Timestamp!
+
+  "Total TVL across all pools"
+  closingValue: Point!
+
+  "Total deposit value"
+  depositValue: Point!
+
+  "Total withdrawal value"
+  withdrawalValue: Point!
+
+  "Total trade volume in USD"
+  tradeVolumeUsd: Point!
+
+  "Total trade count"
+  tradeCount: Point!
+
+  "Weighted average utilization ratio"
+  utilizationRatio: Point!
+}
+
+type PoolsTvlBreakdown {
+  strategy: PoolType!
+  tvl: Bigint!
+  percentage: Bigint!
+}
+
+type PoolsTokenTvl {
+  token: String!
+  tvl: Bigint!
+  percentage: Bigint!
+}
+
+type ThorchainOverviewBinsConnection {
+  pageInfo: PageInfo!
+  edges: [ThorchainOverviewBinsEdge]
+}
+
+type ThorchainOverview {
+  "Time-series bins with income, volume, swap counts, and valuation ratios."
+  bins(
+    after: String, first: Int, before: String, last: Int, from: Timestamp!, to: Timestamp!, resolution: Resolution!, period: Int!
+  ): ThorchainOverviewBinsConnection
+}
+
+type ThorchainOverviewBins {
+  resolution: Resolution!
+
+  bin: Timestamp!
+
+  "Total gross system income from block rewards (USD)"
+  grossSystemIncome: Point!
+
+  "Net system income after deducting dev fund, system burn, TCY, marketing, POL (USD)"
+  netSystemIncome: Point!
+
+  "Annualized gross system income (gross × 365\/12\/1 depending on resolution)"
+  annualizedGrossIncome: Point!
+
+  "Annualized net system income"
+  annualizedNetIncome: Point!
+
+  "Total Rujira revenue (converter payments to TC + VS base layer fees) (USD)"
+  rujiraRevenue: Point!
+
+  "Rujira protocol revenue sent to the THORChain reserve via the Revenue Converter (USD)"
+  revConverterValue: Point!
+
+  "Base layer liquidity fees paid by Virtualization Strategy swaps (USD)"
+  vsBaseLayerFees: Point!
+
+  "Rujira revenue as a percentage of Gross System Income (basis points)"
+  rujiraRevenuePct: Point!
+
+  "Total THORChain swap volume (USD)"
+  totalVolume: Point!
+
+  "Swap volume from the Virtualization Strategy (USD)"
+  vsVolume: Point!
+
+  "Swap volume from external sources excluding the Virtualization Strategy (USD)"
+  externalVolume: Point!
+
+  "Virtualization Strategy volume as a percentage of total volume (basis points)"
+  vsVolumePct: Point!
+
+  "Total number of base layer swaps"
+  totalSwaps: Point!
+
+  "Number of swaps from the Virtualization Strategy"
+  vsSwaps: Point!
+
+  "Number of swaps from external sources"
+  externalSwaps: Point!
+
+  "Virtualization Strategy swaps as a percentage of total swaps (basis points)"
+  vsSwapsPct: Point!
+
+  "Fully Diluted Valuation = RUNE price × total supply (USD)"
+  fdv: Point!
+
+  "Annualized gross system income per RUNE token (cents)"
+  annualizedGrossPerRune: Point!
+
+  "Price-to-Sales ratio = FDV \/ Annualized Gross Income (basis points)"
+  psRatio: Point!
+
+  "Price-to-Earnings ratio = FDV \/ Annualized Net Income (basis points)"
+  peRatio: Point!
+}
+
+type UsersBinsConnection {
+  pageInfo: PageInfo!
+  edges: [UsersBinsEdge]
+}
+
+type Users {
+  bins(
+    after: String, first: Int, before: String, last: Int, from: Timestamp!, to: Timestamp!, protocols: [Protocol], resolution: Resolution!, period: Int!
+  ): UsersBinsConnection
+
+  overview(protocols: [Protocol]): UsersOverview!
+
+  "Breakdown of total users by protocol since inception"
+  breakdownByProtocol: UsersBreakdown!
+
+  "Volume aggregated by trader tiers"
+  topTradersByVolume(protocols: [Protocol]): [UserTierAmount!]!
+
+  "Traders distribution by volume size for bar chart"
+  tradersByVolumeDistribution(protocols: [Protocol]): [AmountBucket!]!
+
+  "Depositor bins with first-time addresses, retention, and moving averages"
+  depositorBins(
+    after: String, first: Int, before: String, last: Int, from: Timestamp!, to: Timestamp!, contexts: [String], resolution: Resolution!, period: Int!
+  ): UsersBinsConnection
+
+  "Depositor overview metrics for last 30 days"
+  depositorOverview(contexts: [String]): UsersOverview!
+
+  "Value aggregated by depositor tiers"
+  topDepositorsByValue(contexts: [String]): [UserTierAmount!]!
+
+  "Depositors distribution by value size for bar chart"
+  depositorsByValueDistribution(contexts: [String]): [AmountBucket!]!
+}
+
+type UsersBins {
+  resolution: Resolution!
+
+  bin: Timestamp!
+
+  activeUsers: Point!
+
+  newUsers: Point!
+
+  totalUsers: Bigint!
+
+  "Users active 31-60 days before this bin (base for retention)"
+  cohort: Point!
+
+  "Cohort users who returned 1-30 days before this bin"
+  retained: Point!
+
+  "Rolling 30-day retention rate (percentage) with moving average"
+  retentionRate: Point!
+}
+
+type UsersOverview {
+  "Absolute number of users growth over the last 30 days"
+  absUsers: Bigint!
+
+  "Percentage change in users over the last 30 days"
+  prctUsers: Bigint!
+
+  "Absolute number of active users growth over the last 30 days"
+  absActiveUsers: Bigint!
+
+  "Percentage change in active users over the last 30 days"
+  prctActiveUsers: Bigint!
+}
+
+type UsersBreakdown {
+  breakdown: [UsersProtocolCount!]!
+  total: Int!
+}
+
+type UsersProtocolCount {
+  protocol: Protocol!
+  count: Int!
+  percentage: Bigint!
+}
+
+type UserTierAmount {
+  tier: String!
+  amount: Bigint!
+  percentage: Bigint!
+}
+
+type AmountBucket {
+  bucket: String!
+  count: Int!
+}
+
+type ThorchainPoolsBinsConnection {
+  pageInfo: PageInfo!
+  edges: [ThorchainPoolsBinsEdge]
+}
+
+type ThorchainPools {
+  bins(
+    after: String, first: Int, before: String, last: Int, from: Timestamp!, to: Timestamp!, resolution: Resolution!, period: Int!, pool: String!
+  ): ThorchainPoolsBinsConnection
+}
+
+type ThorchainPoolsBins {
+  resolution: Resolution!
+  bin: Timestamp!
+  pool: String!
+  openingBalanceAsset: Point!
+  openingBalanceRune: Point!
+  openingValue: Point!
+  closingBalanceAsset: Point!
+  closingBalanceRune: Point!
+  closingValue: Point!
+  openingPriceAsset: Point!
+  openingPriceRune: Point!
+  closingPriceAsset: Point!
+  closingPriceRune: Point!
+  openingLpUnits: Point!
+  closingLpUnits: Point!
+  depositsAsset: Point!
+  depositsRune: Point!
+  depositValue: Point!
+  withdrawalsAsset: Point!
+  withdrawalsRune: Point!
+  withdrawalValue: Point!
+  earnings: Point!
+  earningsInRune: Point!
+  earningsPerLpUnits: Point!
+  volume: Point!
+  impermanentLoss: Point!
+  pricePl: Point!
+  pricePlApprox: Point!
+  apr: Point!
+  moneyMultiple: Point!
+  liquidityUtilization: Point!
+}
+
+type StakingBinsConnection {
+  pageInfo: PageInfo!
+  edges: [StakingBinsEdge]
+}
+
+type RevenuePaidToTcBinConnection {
+  pageInfo: PageInfo!
+  edges: [RevenuePaidToTcBinEdge]
+}
+
+type StakingPoolConnection {
+  pageInfo: PageInfo!
+  edges: [StakingPoolEdge]
+}
+
+type Staking {
+  "All staking pools as a Relay connection"
+  pools(after: String, first: Int, before: String, last: Int): StakingPoolConnection
+
+  bins(
+    after: String, first: Int, before: String, last: Int, from: Timestamp!, to: Timestamp!, contract: Address!, resolution: Resolution!, period: Int!
+  ): StakingBinsConnection
+
+  revenuePaidToTcBins(
+    after: String, first: Int, before: String, last: Int, from: Timestamp!, to: Timestamp!, resolution: Resolution!, period: Int!
+  ): RevenuePaidToTcBinConnection
+}
+
+type RevenuePaidToTcBin {
+  resolution: Resolution!
+  bin: Timestamp!
+  amount: Point!
+  value: Point!
+}
+
+type StakingBins {
+  resolution: Resolution!
+
+  bin: Timestamp!
+
+  totalRevenue: Point!
+
+  accountRevenue: Point!
+
+  liquidRevenue: Point!
+
+  accountApr: Point!
+
+  liquidApy: Point!
+
+  accountRevenuePerShare: Point!
+
+  totalBalanceStaked: Point!
+
+  accountBalanceStaked: Point!
+
+  liquidBalanceStaked: Point!
+
+  liquidWeight: Bigint!
+
+  totalSupplyStakedPercentage: Point
+
+  totalValueStaked: Point!
+
+  accountValueStaked: Point!
+
+  liquidValueStaked: Point!
+
+  "Total USD value of pending rewards in the revenue converter for this pool"
+  pendingRewardsValue: Point!
+
+  "Total USD value of revenue sent to the protocol from this pool"
+  protocolRevenue: Point!
+
+  "Annualized USD revenue per token staked — (total_revenue * annualization_factor) \/ total_balance"
+  annualizedRevenuePerToken: Point!
+
+  inflowAccountStaked: Point!
+
+  inflowLiquidStaked: Point!
+
+  inflowTotalStaked: Point!
+
+  outflowAccountStaked: Point!
+
+  outflowLiquidStaked: Point!
+
+  outflowTotalStaked: Point!
+
+  netFlowAccountStaked: Bigint!
+
+  netFlowLiquidStaked: Bigint!
+
+  netFlowTotalStaked: Bigint!
+}
+
+type SwapBinsConnection {
+  pageInfo: PageInfo!
+  edges: [SwapBinsEdge]
+}
+
+type Swap {
+  bins(
+    after: String, first: Int, before: String, last: Int, from: Timestamp!, to: Timestamp!, resolution: Resolution!, period: Int!
+  ): SwapBinsConnection
+
+  "Breakdown of swap volumes by assets on which the swap occurred excluding RUNE considered as medium of exchange"
+  swapVolumeByAsset(from: Timestamp!, to: Timestamp!): [SwapSnapshotAsset!]
+
+  "Breakdown of swap volumes by chains on which the swap occurred. THORChain only accounted for native asset volumes eg. RUJI -> RUNE"
+  swapVolumeByChain(from: Timestamp!, to: Timestamp!): [SwapSnapshotChain!]
+}
+
+type SwapBins {
+  resolution: Resolution!
+  bin: Timestamp!
+  uniqueSwapUsers: Point!
+  swaps: Point!
+  volume: Point!
+  volumeShareOverTotal: Bigint!
+  liquidityFeePaidToTc: Point!
+  liquidityFeePaidToTcShareOverTotal: Bigint!
+  revenue: Point!
+}
+
+type SwapSnapshotAsset {
+  asset: Asset!
+  volume: Bigint!
+  weight: Bigint!
+}
+
+type SwapSnapshotChain {
+  sourceChain: Chain!
+  volume: Bigint!
+  weight: Bigint!
+}
+
+type FinRangeBinConnection {
+  pageInfo: PageInfo!
+  edges: [FinRangeBinEdge]
+}
+
+enum FinRangeStatus {
+  OPEN
+  CLOSED
+}
+
+type FinRangeBin {
+  contract: Address!
+
+  bin: Timestamp!
+
+  resolution: String!
+
+  "Opening LP value, in quote"
+  openingValue: Point!
+
+  "Closing LP value, in quote"
+  closingValue: Point!
+
+  openingBalanceBase: Point!
+
+  openingBalanceQuote: Point!
+
+  closingBalanceBase: Point!
+
+  closingBalanceQuote: Point!
+
+  "Deposits, in quote"
+  depositValue: Point!
+
+  "Withdrawals, in quote"
+  withdrawalValue: Point!
+
+  "Trade volume, in quote"
+  tradeVolume: Point!
+
+  "Fees earned, in quote"
+  yield: Point!
+
+  apr: Point!
+
+  moneyMultiple: Point!
+
+  utilizationRatio: Point!
+}
+
+type FinRangeSummary implements Node {
+  "The ID of an object"
+  id: ID!
+
+  "Current TVL in USD"
+  tvl: Bigint!
+
+  "24h trade volume in USD"
+  volumeDay: Bigint!
+
+  "30d trade volume in USD"
+  volumeMonth: Bigint!
+
+  "24h liquidity utilization (volume_day \/ tvl)"
+  liquidityUtilizationDay: Bigint!
+
+  "Number of trades in last 24h"
+  tradeCountDay: Bigint!
+
+  "30d average APR"
+  aprMonth: Bigint!
+}
+
+"""
+Performance summary for waterfall chart showing value changes between two dates.
+Components: Opening Value → Deposits → Price P&L → IL → Earnings → Withdrawals → Closing Value
+"""
+type FinRangeWaterfall {
+  "LP value at the beginning of the period, in quote"
+  openingValue: Bigint!
+
+  "Total deposits during the period, in quote"
+  deposits: Bigint!
+
+  "Price gains or losses, in quote"
+  pricePl: Bigint!
+
+  "Approximate price P&L based on asset price changes, in quote"
+  pricePlApprox: Bigint!
+
+  "Impermanent loss (negative means loss), in quote"
+  impermanentLoss: Bigint!
+
+  "Total earnings (fees) during the period, in quote"
+  earnings: Bigint!
+
+  "Total withdrawals during the period, in quote"
+  withdrawals: Bigint!
+
+  "LP value at the end of the period, in quote"
+  closingValue: Bigint!
+}
+
+type FinRangePositionAnalytics {
+  id: ID!
+
+  status: FinRangeStatus!
+
+  firstDepositDate: Timestamp
+
+  "Total deposited, in quote"
+  totalDeposited: Bigint!
+
+  "Total withdrawn, in quote"
+  totalWithdrawn: Bigint!
+
+  "Realized (claimed) yield, in quote"
+  totalRealizedYield: Bigint!
+
+  "Total trade volume routed through the range, in quote"
+  totalVolume: Bigint!
+
+  "Number of trade fills that touched the range"
+  totalTrades: Int!
+
+  "Current position value at current prices, in quote"
+  totalUnrealized: Bigint!
+
+  "Unclaimed yield at current prices, in quote"
+  totalUnrealizedYield: Bigint!
+
+  "Deposited base leg, in base token"
+  depositedBase: Bigint!
+
+  "Deposited quote leg, in quote token"
+  depositedQuote: Bigint!
+
+  "Withdrawn base leg, in base token"
+  withdrawnBase: Bigint!
+
+  "Withdrawn quote leg, in quote token"
+  withdrawnQuote: Bigint!
+
+  "Realized yield base leg, in base token"
+  realizedYieldBase: Bigint!
+
+  "Realized yield quote leg, in quote token"
+  realizedYieldQuote: Bigint!
+
+  "Current principal base leg still held, in base token"
+  unrealizedBase: Bigint!
+
+  "Current principal quote leg still held, in quote token"
+  unrealizedQuote: Bigint!
+
+  "Unclaimed yield base leg still held, in base token"
+  unrealizedYieldBase: Bigint!
+
+  "Unclaimed yield quote leg still held, in quote token"
+  unrealizedYieldQuote: Bigint!
+
+  weightedAverageEntryDate: Timestamp
+
+  weightedAverageExitDate: Timestamp
+
+  weightedAverageInvestmentAgeDays: Int!
+
+  "Total realized value, in quote"
+  totalRealizedValue: Bigint!
+
+  "Total unrealized value, in quote"
+  totalUnrealizedValue: Bigint!
+
+  moic: Bigint!
+
+  dpi: Bigint!
+
+  apr: Bigint!
+}
+
+type FinBinsConnection {
+  pageInfo: PageInfo!
+  edges: [FinBinsEdge]
+}
+
+type FinOverviewBinsConnection {
+  pageInfo: PageInfo!
+  edges: [FinOverviewBinsEdge]
+}
+
+enum FinVolumeSourceType {
+  USER_ORDERS
+  VS
+  XYK
+  CCL
+}
+
+enum FinRevenueSourceType {
+  TRADING_FEES
+  ARBITRAGE_PROFITS
+}
+
+type FinBins {
+  resolution: Resolution!
+
+  bin: Timestamp!
+
+  contract: Address!
+
+  volumeAppLayer: Point!
+
+  volumeBaseLayer: Point!
+
+  volumeVs: Point!
+
+  volumeNonVs: Point!
+
+  volumeVsShare: Point!
+
+  revenueShareTcTheoretical: Point!
+
+  ammTvl: Point!
+
+  vsTvl: Point!
+
+  revenue: Point!
+
+  revenueBaseLayer: Point!
+
+  revenueAppLayer: Point!
+
+  vsBaseLayerFees: Point!
+
+  arbProfit: Point!
+
+  count: Point!
+
+  liquidityUtilization: Point!
+
+  vsLiquidityUtilization: Point!
+
+  revenuePerVolumeUnit: Point!
+
+  revenuePerHundredUsdTvl: Point!
+
+  revenueShareTcActual: Point!
+
+  "Average trading fee in bps (trading_fees \/ volume × 10_000)"
+  avgTradingFeeBps: Point!
+
+  "Average arbitrage profit in bps (arb_profit \/ volume × 10_000)"
+  avgArbProfitBps: Point!
+
+  "Average total revenue in bps (revenue \/ volume × 10_000)"
+  avgTotalRevenueBps: Point!
+}
+
+type FinOverviewBins {
+  resolution: Resolution!
+
+  bin: Timestamp!
+
+  volumeAppLayer: Point!
+
+  volumeBaseLayer: Point!
+
+  volumeVs: Point!
+
+  volumeNonVs: Point!
+
+  volumeVsShare: Point!
+
+  revenueShareTcTheoretical: Point!
+
+  ammTvl: Point!
+
+  vsTvl: Point!
+
+  revenue: Point!
+
+  revenueBaseLayer: Point!
+
+  revenueAppLayer: Point!
+
+  vsBaseLayerFees: Point!
+
+  arbProfit: Point!
+
+  count: Point!
+
+  liquidityUtilization: Point!
+
+  vsLiquidityUtilization: Point!
+
+  revenuePerVolumeUnit: Point!
+
+  revenuePerHundredUsdTvl: Point!
+
+  revenueShareTcActual: Point!
+
+  "Average trading fee in bps (trading_fees \/ volume × 10_000)"
+  avgTradingFeeBps: Point!
+
+  "Average arbitrage profit in bps (arb_profit \/ volume × 10_000)"
+  avgArbProfitBps: Point!
+
+  "Average total revenue in bps (revenue \/ volume × 10_000)"
+  avgTotalRevenueBps: Point!
+}
+
+type FinVolumeSource {
+  source: FinVolumeSourceType!
+  volume: Bigint!
+  percentage: Bigint!
+}
+
+type FinPairVolume {
+  contract: Address!
+  volume: Bigint!
+  percentage: Bigint!
+}
+
+type FinRevenueSource {
+  source: FinRevenueSourceType!
+  value: Bigint!
+  percentage: Bigint!
+}
+
+type PageInfo {
+  "When paginating backwards, are there more items?"
+  hasPreviousPage: Boolean!
+
+  "When paginating forwards, are there more items?"
+  hasNextPage: Boolean!
+
+  "When paginating backwards, the cursor to continue."
+  startCursor: String
+
+  "When paginating forwards, the cursor to continue."
+  endCursor: String
+}
+
+type FinOverviewBinsEdge {
+  node: FinOverviewBins
+  cursor: String
+}
+
+type FinBinsEdge {
+  node: FinBins
+  cursor: String
+}
+
+type FinRangeBinEdge {
+  node: FinRangeBin
+  cursor: String
+}
+
+type SwapBinsEdge {
+  node: SwapBins
+  cursor: String
+}
+
+type StakingPoolEdge {
+  node: StakingPool
+  cursor: String
+}
+
+type RevenuePaidToTcBinEdge {
+  node: RevenuePaidToTcBin
+  cursor: String
+}
+
+type StakingBinsEdge {
+  node: StakingBins
+  cursor: String
+}
+
+type ThorchainPoolsBinsEdge {
+  node: ThorchainPoolsBins
+  cursor: String
+}
+
+type UsersBinsEdge {
+  node: UsersBins
+  cursor: String
+}
+
+type ThorchainOverviewBinsEdge {
+  node: ThorchainOverviewBins
+  cursor: String
+}
+
+type PoolsAggregatedBinsEdge {
+  node: PoolsAggregatedBins
+  cursor: String
+}
+
+type FinCandleEdge {
+  node: FinCandle
+  cursor: String
+}
+
+type FinRangeEdge {
+  node: FinRange
+  cursor: String
+}
+
+type FinPairEdge {
+  node: FinPair
+  cursor: String
+}

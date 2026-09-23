@@ -60,7 +60,7 @@ export const handler = async (event: any) => {
       isBase64Encoded: true,
       body: Buffer.from(body).toString("base64"),
     };
-  } catch (e) {
+  } catch {
     return res(502, { error: "upstream_failed" }, corsAllowed);
   }
 };

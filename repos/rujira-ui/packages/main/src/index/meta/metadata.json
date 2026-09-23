@@ -1,0 +1,17 @@
+{
+    "yrune": {
+        "symbol": "yRUNE",
+        "description": "The Yield Bearing RUNE Index (yRUNE) is a auto-rebalancing index that tracks the performance of RUNE and TCY, while generating yield from TCY staking.",
+        "imagePath": "/index/yrune-graph.png"
+    },
+    "ytcy": {
+        "symbol": "yTCY",
+        "description": "Liquid Staked TCY (yTCY) is an auto-rebalancing index designed to track the performance of both RUNE and TCY, with a strategic overweight on TCY to maximize yield potential.",
+        "imagePath": "/index/ytcy-graph.png"
+    },
+    "rji": {
+        "symbol": "RJI",
+        "description": "The Rujira Index (RJI) is a fixed unit asset index that tracks the performance of tokens on the Rujira App Layer. RJI does not auto-rebalance, therefore by design continously overweighting the top performers and underweighting the under-performers.",
+        "imagePath": "/index/ytcy-graph.png"
+    }
+}

@@ -1,0 +1,51 @@
+@for $i from 0 through 20 {
+  $o: $i * 0.05;
+  .opacity-#{$i} {
+    opacity: $o;
+  }
+}
+.invert {
+  filter: invert(1);
+}
+.desaturate {
+  filter: none;
+  -webkit-filter: grayscale(100%);
+  -moz-filter: grayscale(100%);
+  -ms-filter: grayscale(100%);
+  -o-filter: grayscale(100%);
+}
+.blur-bg {
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
+}
+
+.filter-primary {
+  filter: brightness(0) saturate(100%) invert(18%) sepia(63%) saturate(5472%) hue-rotate(287deg) brightness(103%) contrast(104%);
+}
+.filter-orange {
+  filter: brightness(0) saturate(100%) invert(55%) sepia(66%) saturate(3684%) hue-rotate(7deg) brightness(101%) contrast(104%);
+}
+.filter-white {
+  filter: brightness(0) saturate(100%) invert(100%) sepia(100%) saturate(2%) hue-rotate(322deg) brightness(102%) contrast(101%);
+}
+.filter-grey {
+  filter: brightness(0) saturate(100%) invert(54%) sepia(47%) saturate(208%) hue-rotate(155deg) brightness(93%) contrast(84%);
+}
+.filter-teal {
+  filter: brightness(0) saturate(100%) invert(98%) sepia(99%) saturate(912%) hue-rotate(76deg) brightness(111%) contrast(97%);
+}
+.filter-darkGrey {
+  filter: brightness(0) saturate(100%) invert(9%) sepia(6%) saturate(2803%) hue-rotate(193deg) brightness(92%) contrast(87%);
+}
+.filter-black {
+  filter: brightness(0) saturate(100%) invert(7%) sepia(14%) saturate(1325%) hue-rotate(197deg) brightness(98%) contrast(95%);
+}
+.filter-red {
+  filter: brightness(0) saturate(100%) invert(36%) sepia(79%) saturate(1478%) hue-rotate(333deg) brightness(84%) contrast(116%);
+}
+
+.button:has(.hover-filter-white):hover {
+  .hover-filter-white {
+    filter: brightness(0) saturate(100%) invert(100%) sepia(100%) saturate(2%) hue-rotate(322deg) brightness(102%) contrast(101%);
+  }
+}

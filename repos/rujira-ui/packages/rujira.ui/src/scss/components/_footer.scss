@@ -1,0 +1,164 @@
+.rujira {
+  &__footer {
+    background: $deepBlack;
+    padding: 4.25rem 2rem 2rem;
+    position: relative;
+    z-index: 1;
+
+    &::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      height: 1px;
+      background: linear-gradient(
+        90deg,
+        rgba(143, 133, 171, 0),
+        rgba(132, 54, 245, 0.35),
+        rgba(143, 133, 171, 0)
+      );
+    }
+
+    &-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 2.5rem 1.5rem;
+
+      @media screen and (min-width: 760px) {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      @media screen and (min-width: 1120px) {
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 2.5rem 1.75rem;
+      }
+    }
+
+    &-section {
+      min-width: 0;
+
+      &--social {
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+
+        @media screen and (max-width: 759px) {
+          grid-column: 1 / -1;
+        }
+
+        @media screen and (min-width: 1120px) {
+          padding-left: 0.5rem;
+        }
+      }
+    }
+
+    &-social-group {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.75rem;
+      min-width: 0;
+    }
+
+    &-title {
+      font-size: 1rem;
+      line-height: 1.25rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      color: $white;
+      margin: 0 0 1rem;
+    }
+
+    &-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    &-link {
+      font-size: 0.95rem;
+      line-height: 1.45;
+      text-decoration: none;
+      color: $grey;
+      transition:
+        color 0.2s ease,
+        transform 0.2s ease,
+        opacity 0.2s ease;
+      display: inline-block;
+
+      &[href]:hover {
+        color: $white;
+        transform: translateX(2px);
+      }
+    }
+
+    &-socials {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      flex-wrap: nowrap;
+      gap: 0.6rem;
+      min-width: 0;
+
+      a {
+        display: inline-flex;
+        flex: 0 0 auto;
+        align-items: center;
+        justify-content: center;
+        color: $grey;
+        text-decoration: none;
+        transition:
+          color 0.2s ease,
+          transform 0.2s ease;
+
+        &:hover {
+          color: $white;
+          transform: translateY(-1px);
+        }
+      }
+    }
+
+    &-social-icon {
+      width: 1.5rem;
+      height: 1.5rem;
+      display: block;
+
+      &--tiktok {
+        width: 1.75rem;
+        height: 1.75rem;
+      }
+    }
+
+    &-bottom {
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid rgba(143, 133, 171, 0.15);
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem 1.5rem;
+    }
+
+    &-logo {
+      display: block;
+      width: auto;
+      height: 2.75rem;
+      flex-shrink: 0;
+
+      @media screen and (min-width: $medium) {
+        height: 3rem;
+      }
+    }
+
+    &-copy {
+      color: #8f85ab;
+      margin: 0;
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+    }
+  }
+}

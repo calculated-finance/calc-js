@@ -1,0 +1,304 @@
+.card {
+  border-radius: 1rem;
+  background: $black;
+
+  &--shadow {
+    box-shadow: 2.8px 2.8px 2.2px rgba(0, 0, 0, 0.07),
+      6.7px 6.7px 5.3px rgba(0, 0, 0, 0.05),
+      12.5px 12.5px 10px rgba(0, 0, 0, 0.042),
+      22.3px 22.3px 17.9px rgba(0, 0, 0, 0.035),
+      41.8px 41.8px 33.4px rgba(0, 0, 0, 0.028),
+      100px 100px 80px rgba(0, 0, 0, 0.02);
+  }
+
+  &--semi-transparent {
+    background: rgba($black, 0.75);
+  }
+
+  &--very-transparent {
+    background: rgba($black, 0.25);
+  }
+
+  &--transparent {
+    background: transparent;
+  }
+
+  &--blur {
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+  }
+
+  &--hide-overflow {
+    overflow: hidden;
+  }
+
+  &--h-full {
+    height: 100%;
+  }
+
+  &--stretch {
+    min-height: 100%;
+  }
+
+  &--vertical-split {
+    height: 50%;
+  }
+
+  &--tabbed {
+    border-top: 0;
+    border-radius: 0 0 1rem 1rem;
+  }
+  
+
+  &--border {
+    border: 1px solid rgba($grey, 0.5);
+    cursor: pointer;
+  }
+
+  &--border-solid {
+    border: 1px solid $grey;
+  }
+
+  &--hover-border {
+    &:hover {
+      outline: 1px solid rgba($grey, 0.5);
+    }
+  }
+
+  &--shaow {
+    box-shadow: 2.8px 2.8px 2.2px rgba(0, 0, 0, 0.07),
+      6.7px 6.7px 5.3px rgba(0, 0, 0, 0.05),
+      12.5px 12.5px 10px rgba(0, 0, 0, 0.042),
+      22.3px 22.3px 17.9px rgba(0, 0, 0, 0.035),
+      41.8px 41.8px 33.4px rgba(0, 0, 0, 0.028),
+      100px 100px 80px rgba(0, 0, 0, 0.02);
+  }
+
+  &--hover-shadow {
+    cursor: pointer;
+    
+    &:hover {
+      box-shadow: 2.8px 2.8px 2.2px rgba(0, 0, 0, 0.07),
+        6.7px 6.7px 5.3px rgba(0, 0, 0, 0.05),
+        12.5px 12.5px 10px rgba(0, 0, 0, 0.042),
+        22.3px 22.3px 17.9px rgba(0, 0, 0, 0.035),
+        41.8px 41.8px 33.4px rgba(0, 0, 0, 0.028),
+        100px 100px 80px rgba(0, 0, 0, 0.02);
+    }
+  }
+  
+  &--hover-shadow.card--ring-primary {
+    &:hover {
+      box-shadow: 0 0 0 0.25rem rgba($primary1, 0.25), 0 0 0 1px rgba($primary1, 0.25),
+        2.8px 2.8px 2.2px rgba(0, 0, 0, 0.07),
+        6.7px 6.7px 5.3px rgba(0, 0, 0, 0.05),
+        12.5px 12.5px 10px rgba(0, 0, 0, 0.042),
+        22.3px 22.3px 17.9px rgba(0, 0, 0, 0.035),
+        41.8px 41.8px 33.4px rgba(0, 0, 0, 0.028),
+        100px 100px 80px rgba(0, 0, 0, 0.02);
+    }
+  }
+
+  &--outline-primary {
+    outline: 1px solid rgba($primary1, 1);
+  }
+
+  &--ring-primary {
+    box-shadow: 0 0 0 0.25rem rgba($primary1, 0.25), 0 0 0 1px rgba($primary1, 0.25);
+    background: transparent;
+    cursor: pointer;
+  }
+  
+  &--border {
+    cursor: pointer;
+  }
+}
+
+button.card {
+  width: 100%;
+  cursor: pointer;
+  border: 0;
+}
+
+a.card {
+  transition: all 0.25s;
+  cursor: pointer;
+
+  &:not([class^="b-hover-"]):not([class*=" b-hover-"]):hover {
+    box-shadow: 0 0 0 1px rgba($grey, 1);
+  }
+}
+
+.gradient-card-container {
+  z-index: 0;
+  position: relative;
+}
+
+.gradient-card {
+  position: relative;
+  $border: 1px;
+  background-clip: padding-box;
+  border: solid $border transparent;
+  border-radius: 1em;
+  //padding: 20px;
+
+  &:before {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: -1;
+    margin: -$border;
+    border-radius: inherit;
+    background: linear-gradient(
+      45deg,
+      rgba($grey, 0.5),
+      rgba($lightGrey, 0.1)
+    );
+  }
+
+  &--purple {
+    &:before {
+      background: linear-gradient(
+        45deg,
+        rgba($pink, 1),
+        rgba($purple, 1)
+      );
+    }
+  }
+
+  &--blue {
+    &:before {
+      background: linear-gradient(
+        45deg,
+        rgba($teal, 1),
+        rgba($blue, 1)
+      );
+    }
+  }
+
+  &--gold {
+    &:before {
+      background: linear-gradient(
+        45deg,
+        rgba(#D6AF36, 1),
+        rgba(#A77044, 1)
+      );
+    }
+  }
+}
+
+a.gradient-card {
+  text-decoration: none;
+}
+
+.share-card {
+  width: 100%;
+  max-width: 1200px;
+  aspect-ratio: 1200 / 630;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: $black;
+  overflow: hidden;
+  position: relative;
+
+  &__badge {
+    position: absolute;
+    top: 20px;
+    left: 30px;
+    z-index: 10;
+  }
+
+  @media (max-width: 425px) {
+    width: calc(100vw - 3.5rem);
+    height: calc((100vw - 3.5rem) * 0.525);
+    aspect-ratio: unset;
+  }
+
+  @media (min-width: 768px) {
+    width: 630px;
+    height: 315px;
+    aspect-ratio: unset;
+  }
+
+  &__content {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: stretch;
+  }
+
+  &__left {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    
+    @media (min-width: 768px) {
+      padding: 1.5rem;
+    }
+  }
+
+  &__right {
+    flex: 2;
+    display: flex;
+    align-items: center;
+    padding: 1rem;
+    
+    @media (min-width: 768px) {
+      padding: 1.5rem;
+    }
+  }
+}
+
+.share-card-tier-badge {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.glow-card {
+  position: relative;
+  border-radius: 1rem;
+
+  &::after, &::before {
+    content: "";
+    position: absolute;
+    /* left: 0;
+    top: 0; */
+    height: calc(100% + 2px);
+    width: calc(100% + 2px);
+    background-image: conic-gradient(from var(--angle), $primary1, $primary2, $primary3, $primary2, $primary1);
+    top: 50%;
+    left: 50%;
+    translate: -50% -50%;
+    z-index: -1;
+    padding: 5px;
+    border-radius: 1rem;
+    animation: 1.5s spin linear infinite;
+  }
+
+  &::before{
+    filter: blur(0.5rem);
+    opacity: 0.5;
+  }
+}
+
+@property --angle{
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes spin{
+  from{
+    --angle: 0deg;
+  }
+  to{
+    --angle: 360deg;
+  }
+}

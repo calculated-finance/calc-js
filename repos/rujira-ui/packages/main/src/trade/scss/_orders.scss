@@ -1,0 +1,299 @@
+@keyframes in-range-triangle-pulse {
+  0% {
+    filter: drop-shadow(0 0 2px rgba($teal, 0.9));
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    filter: drop-shadow(0 0 6px rgba($teal, 0.7));
+    transform: translateX(-50%) scale(1.3);
+  }
+  100% {
+    filter: drop-shadow(0 0 2px rgba($teal, 0.9));
+    transform: translateX(-50%) scale(1);
+  }
+}
+
+.in-range-triangle {
+  animation: in-range-triangle-pulse 3s ease-in-out infinite;
+  position: absolute;
+  top: -10px;
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 7px solid $teal;
+}
+
+.out-of-range-triangle {
+  position: absolute;
+  top: -10px;
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 7px solid $orange;
+}
+
+.in-range {
+  min-width: 100px;
+  position: relative;
+  margin: 20px 0 4px;
+
+  &__track {
+    position: relative;
+    flex: 1;
+  }
+
+  &__price {
+    position: absolute;
+    top: -26px;
+    transform: translateX(-50%);
+    white-space: nowrap;
+  }
+
+  &__limits {
+    position: relative;
+    height: 16px;
+  }
+
+  &__limit-low {
+    position: absolute;
+    left: 0;
+  }
+
+  &__limit-high {
+    position: absolute;
+    left: 100%;
+    transform: translateX(-100%);
+  }
+}
+
+.out-of-range {
+  min-width: 100px;
+  padding-top: 20px;
+
+  &__track {
+    position: relative;
+    flex: 1;
+  }
+
+  &__price {
+    position: absolute;
+    top: -26px;
+    transform: translateX(-50%);
+    white-space: nowrap;
+  }
+
+  &__limits {
+    display: flex;
+    margin-top: 4px;
+  }
+}
+
+.closed-range {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  margin: 12px 0;
+}
+
+.trade {
+  &__orders {
+    background-color: $black;
+    display: flex;
+    flex-direction: column;
+    padding: 0.75rem 0.25rem 0.25rem 0.75rem;
+    width: 100%;
+
+    @media screen and (max-width: ($tradeBreak - 1px)) {
+      height: 15rem;
+      margin-top: 0.5rem;
+    }
+
+    @media screen and (min-width: $tradeBreak) {
+      border-radius: 0 0.5rem 0 0;
+    }
+
+    @media screen and (min-width: $xl) {
+      padding: 1.5rem 0.5rem 0.25rem 1.5rem;
+    }
+
+    &-table {
+      flex-grow: 1;
+      overflow: auto;
+      //padding-right: 0.5rem;
+
+      .table {
+        @media screen and (max-width: ($tradeBreak - 1px)) {
+          font-size: 0.75rem;
+
+          th {
+            line-height: 0.875rem;
+            padding-bottom: 0.625rem;
+          }
+        }
+      }
+    }
+  }
+}
+
+.recurring-icons {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+
+  &__pair {
+    display: flex;
+    gap: 0.25rem;
+    transition: opacity 0.12s;
+  }
+
+  &__copy {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    background: transparent;
+    border: 0;
+    padding: 0;
+    height: 1.25rem;
+    width: 1.25rem;
+    margin-left: 0.35rem;
+    margin-top: 0.05rem;
+    cursor: pointer;
+    transition: opacity 0.12s;
+
+    &--expanded {
+      height: 1.5rem;
+      width: 1.5rem;
+      margin-left: 0.75rem;
+      margin-top: 0.25rem;
+    }
+  }
+
+  &:hover &__pair {
+    opacity: 0;
+  }
+  &:hover &__copy {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+.edit-limit-order {
+  &__summary,
+  &__summary-content {
+    min-width: 0;
+  }
+
+  &__summary {
+    column-gap: 1rem;
+    flex-wrap: wrap;
+    row-gap: 1rem;
+  }
+
+  &__summary-content {
+    flex-wrap: wrap;
+    row-gap: 0.75rem;
+  }
+
+  &__details {
+    min-width: 0;
+    max-width: 100%;
+
+    .table {
+      width: 100%;
+    }
+
+    td:first-child {
+      padding-right: 0.75rem;
+      white-space: nowrap;
+    }
+
+    td:last-child {
+      min-width: 0;
+    }
+  }
+
+  &__price-value,
+  &__deviation-value {
+    align-items: baseline;
+    column-gap: 0.25rem;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    min-width: 0;
+    row-gap: 0.125rem;
+    text-align: right;
+
+    .decimal {
+      min-width: 0;
+      max-width: 100%;
+    }
+  }
+
+  @media screen and (max-width: ($medium - 1px)) {
+    &__summary {
+      align-items: flex-start;
+    }
+
+    &__summary-content {
+      flex: 1 1 100%;
+      margin-left: 0 !important;
+    }
+
+    &__details {
+      flex: 1 1 100%;
+      margin-left: 0 !important;
+    }
+  }
+
+  @media screen and (max-width: ($small - 1px)) {
+    &__details {
+      tr {
+        align-items: baseline;
+        column-gap: 0.75rem;
+        display: grid;
+        grid-template-columns: minmax(6rem, auto) minmax(0, 1fr);
+      }
+
+      td {
+        display: block;
+        min-width: 0;
+      }
+    }
+
+    &__settlement-row {
+      row-gap: 0.75rem;
+
+      > .col-6 {
+        flex: 0 0 100%;
+        max-width: 100%;
+      }
+    }
+  }
+}
+
+.orders-header {
+  flex-wrap: wrap;
+  justify-content: space-between; // Distribute space between nav and controls
+  gap: 0.5rem;
+
+  nav {
+    flex: 1 1 auto; // Grow and shrink as needed
+    min-width: min-content; // Don't shrink below content size
+  }
+
+  &__controls {
+    flex: 0 0 auto; // Don't grow or shrink
+    margin-right: 1.5rem;
+    white-space: nowrap; // Prevent internal wrapping
+
+    padding-left: 0.25rem;
+  }
+}

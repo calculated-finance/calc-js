@@ -1,0 +1,458 @@
+.home {
+  &__ruji-token {
+    overflow: hidden;
+    padding-top: clamp(3.6rem, 6.8vw, 5.4rem);
+    padding-bottom: clamp(5.5rem, 10vw, 8rem);
+
+    &-feature {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: clamp(2rem, 4vw, 3rem);
+      margin-top: clamp(5rem, 9vw, 7.25rem);
+      isolation: isolate;
+
+      &::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        top: 0;
+        width: 14rem;
+        height: 10rem;
+        opacity: 0.18;
+        background-image: radial-gradient(
+          rgba($primary2, 0.9) 1px,
+          transparent 1px
+        );
+        background-size: 0.8rem 0.8rem;
+        mask-image: radial-gradient(
+          circle at center,
+          rgba(0, 0, 0, 0.95) 0%,
+          rgba(0, 0, 0, 0) 74%
+        );
+        transform: translateX(-50%);
+        pointer-events: none;
+      }
+    }
+
+    &-copy {
+      position: relative;
+      z-index: 1;
+      max-width: 34rem;
+    }
+
+    &-copy--center {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      max-width: 54rem;
+      text-align: center;
+
+      .home__ruji-token-body {
+        max-width: 52rem;
+      }
+    }
+
+    &-pill {
+      margin-bottom: 1.25rem;
+    }
+
+    &-title {
+      margin: 0 0 1rem;
+      font-size: 2rem;
+      line-height: 1.15;
+      letter-spacing: 0;
+      color: $white;
+
+      &-line {
+        display: inline;
+
+        &--top {
+          display: block;
+        }
+
+        &--middle::after {
+          content: " ";
+        }
+      }
+    }
+
+    &-subtitle {
+      margin-bottom: 1.25rem;
+      font-size: 1.125rem;
+      line-height: 1.55;
+      color: rgba($primary5, 0.82);
+    }
+
+    &-body {
+      max-width: 31.25rem;
+      margin-bottom: 1.5rem;
+      font-size: 1.125rem;
+      line-height: 1.55;
+      color: rgba($primary5, 0.74);
+    }
+
+    &-graphic {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      img {
+        display: block;
+        width: min(100%, 31rem);
+        height: auto;
+      }
+    }
+
+    &-showcase {
+      position: relative;
+      display: grid;
+      grid-template-columns: minmax(0, 0.88fr) minmax(20rem, 1.12fr);
+      align-items: center;
+      gap: clamp(2.5rem, 5vw, 5rem);
+      min-height: 26rem;
+      isolation: isolate;
+
+      &::before {
+        content: "";
+        position: absolute;
+        right: -10%;
+        top: 4%;
+        z-index: 0;
+        width: min(34rem, 44vw);
+        height: min(30rem, 42vw);
+        border-radius: 50%;
+        background: radial-gradient(
+          circle,
+          rgba($primary2, 0.2) 0%,
+          rgba($primary2, 0.08) 36%,
+          rgba($primary2, 0) 72%
+        );
+        filter: blur(3.5rem);
+        pointer-events: none;
+      }
+
+      & + .home__ruji-token-showcase {
+        margin-top: clamp(4.5rem, 8vw, 6.5rem);
+      }
+
+      &--secured {
+        .home__ruji-token-showcase-graphic {
+          justify-content: flex-end;
+        }
+      }
+
+      &--oracles {
+        grid-template-columns: minmax(20rem, 1.12fr) minmax(0, 0.88fr);
+
+        &::before {
+          right: auto;
+          left: -10%;
+        }
+
+        .home__ruji-token-showcase-copy {
+          justify-self: end;
+        }
+
+        .home__ruji-token-showcase-graphic {
+          justify-content: flex-start;
+        }
+      }
+    }
+
+    &-showcase-copy {
+      max-width: 35rem;
+    }
+
+    &-showcase-graphic {
+      img {
+        width: min(100%, 43rem);
+        max-height: 34rem;
+        object-fit: contain;
+      }
+    }
+
+    &-ecosystem {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 72.0625rem;
+      margin-inline: auto;
+      filter: drop-shadow(0 1.5rem 4rem rgba($primary2, 0.08));
+    }
+
+    &-ecosystem-map {
+      display: block;
+      width: 100%;
+      height: auto;
+      overflow: visible;
+    }
+
+    &-ecosystem-link {
+      outline: none;
+
+      .home__ruji-token-ecosystem-hit {
+        cursor: pointer;
+      }
+    }
+
+    &-ecosystem-hit {
+      fill: rgba($primary2, 0);
+      stroke: rgba($primary2, 0);
+      stroke-width: 2;
+      transition:
+        fill 180ms ease,
+        filter 180ms ease,
+        stroke 180ms ease;
+    }
+
+    &-ecosystem-link:hover &-ecosystem-hit,
+    &-ecosystem-link:focus-visible &-ecosystem-hit {
+      fill: rgba($primary2, 0.1);
+      stroke: rgba($primary3, 0.96);
+      filter: drop-shadow(0 0 0.45rem rgba($primary3, 0.62))
+        drop-shadow(0 0 1rem rgba($teal, 0.28));
+    }
+
+    &-ecosystem-hit--disabled {
+      pointer-events: none;
+    }
+
+    &-ecosystem-soon {
+      pointer-events: none;
+
+      rect {
+        fill: rgba($primary2, 0.26);
+        stroke: rgba($primary3, 0.72);
+        stroke-width: 1;
+      }
+
+      text {
+        fill: $white;
+        font-size: 8px;
+        font-weight: 700;
+        letter-spacing: 0;
+        text-anchor: middle;
+      }
+    }
+
+    &-ecosystem-logo {
+      overflow: visible;
+      pointer-events: none;
+    }
+
+    &-ecosystem-logo > div {
+      width: 100%;
+      height: 100%;
+      display: grid;
+      place-items: center;
+    }
+
+    &-ecosystem-logo-mark {
+      display: block;
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 0 0.75rem rgba($primary2, 0.72))
+        drop-shadow(0 0 2.5rem rgba($primary2, 0.32));
+    }
+
+    &-button {
+      position: relative;
+      z-index: 1;
+      width: fit-content;
+      border-radius: 0.5rem;
+      box-shadow: 0 0.875rem 2rem rgba($primary2, 0.16);
+
+      &--feature {
+        min-height: 2.25rem;
+      }
+
+      &--cta {
+        min-height: 2.875rem;
+        padding-inline: 1.5rem;
+      }
+    }
+
+    &-cta {
+      position: relative;
+      margin-top: clamp(5rem, 10vw, 7.5rem);
+      padding: clamp(4.5rem, 9vw, 7rem) 1.5rem 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    &-journey-glow {
+      position: absolute;
+      left: 50%;
+      bottom: -46rem;
+      z-index: 0;
+      width: min(90rem, 112vw);
+      max-width: none;
+      height: auto;
+      transform: translateX(-50%);
+      -webkit-mask-image: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(0, 0, 0, 0.92) 18%,
+        rgba(0, 0, 0, 0.92) 82%,
+        transparent 100%
+      );
+      mask-image: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(0, 0, 0, 0.92) 18%,
+        rgba(0, 0, 0, 0.92) 82%,
+        transparent 100%
+      );
+      pointer-events: none;
+    }
+
+    &-cta-title {
+      position: relative;
+      z-index: 1;
+      margin: 0 0 1.25rem;
+      font-size: 2rem;
+      line-height: 1.15;
+      letter-spacing: 0;
+      color: $white;
+    }
+
+    &-cta-copy {
+      position: relative;
+      z-index: 1;
+      margin: 0 0 1.5rem;
+      font-size: 1.25rem;
+      line-height: 1.5;
+      color: rgba($primary5, 0.78);
+    }
+
+    @media screen and (max-width: ($large - 1px)) {
+      &-showcase {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 3rem;
+      }
+
+      &-copy {
+        max-width: 38rem;
+      }
+
+      &-showcase-copy {
+        order: 1;
+      }
+
+      &-graphic,
+      &-showcase-graphic {
+        order: 2;
+      }
+
+      &-showcase-graphic {
+        justify-content: center;
+      }
+
+      &-showcase--oracles {
+        .home__ruji-token-showcase-copy {
+          justify-self: auto;
+        }
+      }
+
+      &-ecosystem {
+        max-width: 64rem;
+      }
+    }
+
+    @media screen and (max-width: ($medium - 1px)) {
+      &-feature {
+        gap: 2.5rem;
+        margin-top: clamp(4rem, 14vw, 5.5rem);
+      }
+
+      &-showcase {
+        min-height: auto;
+        gap: 2rem;
+
+        &::before {
+          right: -18%;
+          width: 22rem;
+          height: 18rem;
+          filter: blur(2.5rem);
+        }
+      }
+
+      &-copy {
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+
+      &-showcase-copy {
+        margin: 0;
+        align-items: center;
+        text-align: center;
+      }
+
+      &-showcase-graphic {
+        img {
+          width: min(100%, 35rem);
+          max-height: 26rem;
+        }
+      }
+
+      &-ecosystem {
+        max-width: 100%;
+      }
+
+      &-ecosystem-logo-mark {
+        filter: drop-shadow(0 0 0.45rem rgba($primary2, 0.72))
+          drop-shadow(0 0 1.5rem rgba($primary2, 0.3));
+      }
+
+      &-title {
+        font-size: 2rem;
+
+        &-line {
+          &--middle {
+            display: block;
+            white-space: nowrap;
+
+            &::after {
+              content: none;
+            }
+          }
+
+          &--bottom {
+            display: block;
+          }
+        }
+      }
+
+      &-subtitle {
+        font-size: 1rem;
+        line-height: 1.55;
+      }
+
+      &-body {
+        font-size: 1rem;
+      }
+
+      &-cta-title {
+        font-size: 2rem;
+      }
+
+      &-cta-copy {
+        font-size: 1.0625rem;
+      }
+
+      &-journey-glow {
+        bottom: -26rem;
+        width: min(58rem, 165vw);
+      }
+    }
+  }
+}

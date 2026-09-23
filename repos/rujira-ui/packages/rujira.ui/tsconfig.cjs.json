@@ -1,0 +1,25 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "baseUrl": ".",
+    "paths": {
+      "@ledgerhq/device-management-kit": [
+        "./node_modules/@ledgerhq/device-management-kit/lib/types/index.d.ts"
+      ],
+      "@ledgerhq/device-signer-kit-bitcoin": [
+        "./node_modules/@ledgerhq/device-signer-kit-bitcoin/lib/types/index.d.ts"
+      ],
+      "@ledgerhq/device-transport-kit-web-hid": [
+        "./node_modules/@ledgerhq/device-transport-kit-web-hid/lib/types/index.d.ts"
+      ],
+      "bitcoinjs-lib/src/address": [
+        "./node_modules/bitcoinjs-lib/src/cjs/address.d.ts"
+      ]
+    },
+    "outDir": "./lib/cjs",
+    "declaration": false,
+    "declarationMap": false
+  }
+}

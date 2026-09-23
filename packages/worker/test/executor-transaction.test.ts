@@ -6,8 +6,8 @@ import {
   type IndexedTx,
   type StdFee,
 } from "@cosmjs/stargate";
-import { TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx.js";
-import type { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx.js";
+import { TxRaw } from "cosmjs-types/cosmos/tx/v1beta1/tx";
+import type { MsgExecuteContract } from "cosmjs-types/cosmwasm/wasm/v1/tx";
 import { describe, expect, it } from "vitest";
 import {
   BroadcastOutcomeUnknownError,

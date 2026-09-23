@@ -1,0 +1,61 @@
+.button-group {
+  display: flex;
+  font-family: "Barlow Semi Condensed", Verdana, sans-serif;
+  
+  font-size: 0.875rem;
+  font-weight: 400;
+  color: $white;
+  column-gap: 0.5rem;
+  
+  button {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid rgba($grey, 0.5);
+    background: $darkGrey;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+    flex: 1 0 auto;
+    color: inherit;
+    height: 1.5rem;
+    border-radius: 0.375rem;
+    position: relative;
+
+    &:hover:not(:disabled):not(:focus) {
+      box-shadow: 0 0 0 .125rem rgba($grey,.25);
+    }
+    
+    &:after {
+      content: "";
+      display: block;
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      opacity: 0;
+      border-radius: 0.25rem;
+      transition: all 0.5s;
+      box-shadow: 0 0 0 0.375rem $grey;
+    }
+  
+    &:not(:disabled):active {
+      filter: brightness(1.5);
+    }
+
+    &:not(:disabled):active:after {
+      box-shadow: 0 0 0 0 $grey;
+      position: absolute;
+      left: 0;
+      top: 0;
+      opacity: 1;
+      transition: 0s;
+    }
+  }
+
+  &--no-border {
+    button {
+      border: none;
+    }
+  }
+}

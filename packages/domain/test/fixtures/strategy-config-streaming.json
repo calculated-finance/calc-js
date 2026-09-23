@@ -1,0 +1,220 @@
+{
+  "manager": "thor136rwqvwy3flttm9wfnc5xgnlr6mu5k8e2elgzs2hdhuwf50w3l2q0nu2qu",
+  "owner": "thor18dndl2902yym8c95zrdcmkug7wgxxrlw25uq03",
+  "nodes": [
+    {
+      "condition": {
+        "condition": {
+          "balance_available": {
+            "address": null,
+            "amount": {
+              "denom": "rune",
+              "amount": "1000"
+            }
+          }
+        },
+        "index": 0,
+        "on_success": 1,
+        "on_failure": 6
+      }
+    },
+    {
+      "condition": {
+        "condition": {
+          "can_swap": {
+            "swap_amount": {
+              "denom": "rune",
+              "amount": "4000000000"
+            },
+            "minimum_receive_amount": {
+              "denom": "tcy",
+              "amount": "0"
+            },
+            "maximum_slippage_bps": 500,
+            "adjustment": "fixed",
+            "routes": [
+              {
+                "fin": {
+                  "pair_address": "thor12ds7fxj5g47jwzfzvzzhzxxd3cp6v55flgwxva0803r8k5mzm44skth6wa"
+                }
+              },
+              {
+                "thorchain": {
+                  "streaming_interval": null,
+                  "max_streaming_quantity": null,
+                  "affiliate_code": null,
+                  "affiliate_bps": null,
+                  "latest_swap": null
+                }
+              }
+            ]
+          }
+        },
+        "index": 1,
+        "on_success": 3,
+        "on_failure": 2
+      }
+    },
+    {
+      "condition": {
+        "condition": {
+          "schedule": {
+            "scheduler_address": "thor1t2cnyn98xusxakgemsenn2p9n3ykd6accr2c0zg22nczh097ln7qeze20f",
+            "manager_address": "thor136rwqvwy3flttm9wfnc5xgnlr6mu5k8e2elgzs2hdhuwf50w3l2q0nu2qu",
+            "cadence": {
+              "blocks": {
+                "interval": 10,
+                "previous": null
+              }
+            },
+            "next": null,
+            "execution_rebate": [],
+            "executors": [],
+            "jitter": null,
+            "executions": null,
+            "max_executions": null
+          }
+        },
+        "index": 2,
+        "on_success": null,
+        "on_failure": null
+      }
+    },
+    {
+      "condition": {
+        "condition": {
+          "schedule": {
+            "scheduler_address": "thor1t2cnyn98xusxakgemsenn2p9n3ykd6accr2c0zg22nczh097ln7qeze20f",
+            "manager_address": "thor136rwqvwy3flttm9wfnc5xgnlr6mu5k8e2elgzs2hdhuwf50w3l2q0nu2qu",
+            "cadence": {
+              "blocks": {
+                "interval": 10,
+                "previous": 22940618
+              }
+            },
+            "next": null,
+            "execution_rebate": [],
+            "executors": [],
+            "jitter": null,
+            "executions": 10,
+            "max_executions": null
+          }
+        },
+        "index": 3,
+        "on_success": 4,
+        "on_failure": null
+      }
+    },
+    {
+      "action": {
+        "action": {
+          "swap": {
+            "swap_amount": {
+              "denom": "rune",
+              "amount": "4000000000"
+            },
+            "minimum_receive_amount": {
+              "denom": "tcy",
+              "amount": "0"
+            },
+            "maximum_slippage_bps": 500,
+            "adjustment": "fixed",
+            "routes": [
+              {
+                "fin": {
+                  "pair_address": "thor12ds7fxj5g47jwzfzvzzhzxxd3cp6v55flgwxva0803r8k5mzm44skth6wa"
+                }
+              },
+              {
+                "thorchain": {
+                  "streaming_interval": null,
+                  "max_streaming_quantity": null,
+                  "affiliate_code": "rj",
+                  "affiliate_bps": 10,
+                  "latest_swap": {
+                    "swap_amount": {
+                      "denom": "rune",
+                      "amount": "4000000000"
+                    },
+                    "expected_receive_amount": {
+                      "denom": "tcy",
+                      "amount": "21982737721"
+                    },
+                    "starting_block": 22940620,
+                    "streaming_swap_blocks": 0,
+                    "memo": "=:THOR.TCY:thor1exulhuwd3yrdym4vk6qhlsngj2rtt2wyqsk95cj0zhs8cct2sg4ss5nf85/thor1exulhuwd3yrdym4vk6qhlsngj2rtt2wyqsk95cj0zhs8cct2sg4ss5nf85:0/3/0:rj:10"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "index": 4,
+        "next": 5
+      }
+    },
+    {
+      "condition": {
+        "condition": {
+          "balance_available": {
+            "address": null,
+            "amount": {
+              "denom": "rune",
+              "amount": "1000"
+            }
+          }
+        },
+        "index": 5,
+        "on_success": null,
+        "on_failure": 6
+      }
+    },
+    {
+      "action": {
+        "action": {
+          "distribute": {
+            "denoms": [
+              "rune",
+              "tcy"
+            ],
+            "destinations": [
+              {
+                "shares": "10000",
+                "recipient": {
+                  "bank": {
+                    "address": "thor18dndl2902yym8c95zrdcmkug7wgxxrlw25uq03"
+                  }
+                },
+                "label": null,
+                "distributions": [
+                  {
+                    "denom": "tcy",
+                    "amount": "219413932042"
+                  }
+                ]
+              },
+              {
+                "shares": "25",
+                "recipient": {
+                  "bank": {
+                    "address": "thor17dxtxrne37gguxdeun4n36vqd5jmxxku5tr6gkuhhsh4lz9e8gksck4ygu"
+                  }
+                },
+                "label": "CALC",
+                "distributions": [
+                  {
+                    "denom": "tcy",
+                    "amount": "548534831"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "index": 6,
+        "next": null
+      }
+    }
+  ],
+  "withdrawals": []
+}

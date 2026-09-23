@@ -38,6 +38,7 @@
     "@template/domain": "workspace:^",
     "aws-embedded-metrics": "^4.2.1",
     "axios": "^1.19.0",
+    "cosmjs-types": "^0.11.0",
     "dotenv": "^17.4.2",
     "effect": "latest"
   },

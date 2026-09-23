@@ -51,3 +51,9 @@ variable "chain_id" {
   type        = string
   default     = "thorchain"
 }
+
+variable "alarm_action_arns" {
+  description = "SNS topic or other action ARNs notified by executor and queue alarms"
+  type        = list(string)
+  default     = []
+}

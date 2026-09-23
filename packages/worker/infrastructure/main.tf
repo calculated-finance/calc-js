@@ -55,8 +55,9 @@ module "secrets" {
 module "sqs" {
   source = "./modules/sqs"
 
-  project_name = var.project_name
-  environment  = var.environment
+  project_name  = var.project_name
+  environment   = var.environment
+  alarm_actions = var.alarm_action_arns
 }
 
 module "ecr" {
@@ -96,12 +97,25 @@ module "lambda" {
   signer_secret_arns = module.secrets.signer_secret_arns
   chain_id           = var.chain_id
   triggers_queue_arn = module.sqs.triggers_queue_arn
+  alarm_actions      = var.alarm_action_arns
   # transactions_queue_arn = module.sqs.transactions_queue_arn
   source_dir = "../dist/handlers"
   # events_table_name      = module.dynamodb.events_table_name
   # events_table_arn       = module.dynamodb.events_table_arn
   # strategies_table_name  = module.dynamodb.strategies_table_name
   # strategies_table_arn   = module.dynamodb.strategies_table_arn
+}
+
+module "cloudwatch" {
+  source = "./modules/cloudwatch"
+
+  chain_id                = var.chain_id
+  cluster_name            = module.ecs.cluster_name
+  dashboard_name          = "${upper(var.project_name)}-X"
+  executor_function_names = module.lambda.executor_function_names
+  region                  = var.aws_region
+  scheduler_service_name  = module.ecs.scheduler_service_name
+  triggers_queue_name     = module.sqs.triggers_queue_name
 }
 
 module "apigw" {

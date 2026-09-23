@@ -23,6 +23,16 @@ output "scheduler_cloudwatch_log_group" {
   value       = module.ecs.scheduler_log_group_name
 }
 
+output "cloudwatch_dashboard_arn" {
+  description = "ARN of the Terraform-managed CloudWatch dashboard"
+  value       = module.cloudwatch.dashboard_arn
+}
+
+output "cloudwatch_dashboard_name" {
+  description = "Name of the Terraform-managed CloudWatch dashboard"
+  value       = module.cloudwatch.dashboard_name
+}
+
 # output "indexer_service_name" {
 #   description = "Name of the indexer ECS service"
 #   value       = module.ecs.indexer_service_name

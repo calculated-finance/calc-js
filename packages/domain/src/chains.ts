@@ -106,8 +106,8 @@ export const RUJIRA = {
   hdPath: "m/44'/931'/0'/0/0",
   rpcUrls: [
     "https://gateway.liquify.com/chain/thorchain_rpc",
+    // rorcual last: single-origin box with a history of 502s/timeouts
     "https://rpc-thorchain.rorcual.xyz",
-    "https://thorchain.ibs.team/rpc/",
   ],
   defaultGasPrice: "0.0rune",
   managerContract:

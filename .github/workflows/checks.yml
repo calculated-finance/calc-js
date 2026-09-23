@@ -45,6 +45,9 @@ jobs:
       - name: Test domain
         run: pnpm --filter @template/domain exec vitest run
 
+      - name: Test worker
+        run: pnpm --filter @template/worker exec vitest run
+
       - name: Test client
         run: pnpm --filter client test
 
